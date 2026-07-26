@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "layout.training_video",
+  "version": "1.0.0",
+  "name": "TrainingVideo 標準構図",
+  "status": "active",
+  "supported_outputs": ["training_video"],
+  "regions": [
+    {"region_id": "region.opening", "region_role": "role.opening", "order": 1, "parent_region_id": null},
+    {"region_id": "region.main", "region_role": "role.main", "order": 2, "parent_region_id": null},
+    {"region_id": "region.recap", "region_role": "role.recap", "order": 3, "parent_region_id": null},
+    {"region_id": "region.closing", "region_role": "role.closing", "order": 4, "parent_region_id": null}
+  ],
+  "placements": [
+    {"placement_id": "placement.hook", "item_kind": "content", "item_id": "section.hook", "region_id": "region.opening", "order": 1, "is_optional": false},
+    {"placement_id": "placement.organ_distribution", "item_kind": "visual", "item_id": "visual.organ_distribution", "region_id": "region.opening", "order": 2, "is_optional": true},
+    {"placement_id": "placement.main_story", "item_kind": "content", "item_id": "section.main_story", "region_id": "region.main", "order": 1, "is_optional": false},
+    {"placement_id": "placement.reaction", "item_kind": "visual", "item_id": "visual.reaction_diagram", "region_id": "region.main", "order": 2, "is_optional": false},
+    {"placement_id": "placement.flowchart", "item_kind": "visual", "item_id": "visual.flowchart", "region_id": "region.recap", "order": 1, "is_optional": true},
+    {"placement_id": "placement.comparison_visual", "item_kind": "visual", "item_id": "visual.comparison_table", "region_id": "region.recap", "order": 2, "is_optional": false},
+    {"placement_id": "placement.call_to_action", "item_kind": "content", "item_id": "section.call_to_action", "region_id": "region.closing", "order": 1, "is_optional": false}
+  ]
+}
+

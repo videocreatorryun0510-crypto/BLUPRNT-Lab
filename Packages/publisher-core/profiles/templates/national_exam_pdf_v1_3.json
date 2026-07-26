@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "template_id": "template.national_exam_pdf",
+  "version": "1.3.0",
+  "template_family": "family.national_exam_pdf",
+  "name": "国家試験PDF Diagram Intent Version 1",
+  "status": "active",
+  "output_kind": "pdf",
+  "series_id": "series.clinical_exam_core",
+  "content_profile_ref": {"profile_id": "content.national_exam_pdf", "version": "1.1.0"},
+  "education_profile_ref": {"profile_id": "education.national_exam", "version": "1.0.0"},
+  "visual_profile_ref": {"profile_id": "visual.ast_learning", "version": "1.1.0"},
+  "visual_grammar_profile_ref": {"profile_id": "visual_grammar.ast_learning", "version": "1.0.0"},
+  "diagram_intent_profile_ref": {"profile_id": "diagram_intent.ast_learning", "version": "1.0.0"},
+  "layout_profile_ref": {"profile_id": "layout.national_exam_pdf", "version": "1.1.0"},
+  "theme_ref": {"profile_id": "theme.bluprnt_exam", "version": "1.0.0"},
+  "design_system_ref": {"profile_id": "design_system.clinical_exam", "version": "1.1.0"},
+  "media_profile_ref": null
+}

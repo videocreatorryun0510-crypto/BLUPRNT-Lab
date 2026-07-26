@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000007",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "グラム染色用ヨウ素液",
+    "english_name": "Gram's iodine",
+    "aliases": ["ヨウ素液"]
+  },
+  "classification": {
+    "term_type": "reagent",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_reagent_iodine_definition",
+        "assertion": "グラム染色用ヨウ素液は、クリスタルバイオレットと複合体を形成させる媒染剤である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "reagent_v1.0",
+    "reagent": {
+      "reagent_kind": "mordant",
+      "purposes": [
+        {
+          "claim_id": "clm_reagent_iodine_purpose",
+          "use_case": "Gram染色の媒染",
+          "assertion": "ヨウ素液はクリスタルバイオレットを媒染し、色素・ヨウ素複合体の形成に用いる。"
+        }
+      ],
+      "targets": [
+        {
+          "claim_id": "clm_reagent_iodine_target",
+          "target_name": "クリスタルバイオレットで一次染色した細菌塗抹標本",
+          "target_kind": "stained_smear_specimen",
+          "assertion": "ヨウ素液はクリスタルバイオレットによる一次染色後の塗抹標本へ適用する。"
+        }
+      ],
+      "usage_steps": [
+        {
+          "claim_id": "clm_reagent_iodine_usage",
+          "usage_phase": "mordant_treatment",
+          "application": "一次染色後の塗抹標本をヨウ素液で覆い、規定時間作用させた後に洗浄する。",
+          "conditions": "作用時間と洗浄条件は製品添付文書または施設の標準作業書に従う。",
+          "assertion": "Gram染色では一次染色の次の媒染工程でヨウ素液を使用する。"
+        }
+      ],
+      "cautions": [
+        {
+          "claim_id": "clm_reagent_iodine_caution",
+          "assertion": "取扱い時は製品の安全データシートと施設のリスク評価に従い、皮膚・眼への接触を防ぐ。"
+        }
+      ],
+      "storage_conditions": [
+        {
+          "claim_id": "clm_reagent_iodine_storage",
+          "temperature": null,
+          "conditions": "容器、遮光、温度、有効期限は製品添付文書および施設の試薬管理手順に従う。",
+          "assertion": "グラム染色用ヨウ素液は製品ごとに指定された保管条件で管理する。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_reagent_iodine_cdc_gram",
+      "source_priority_rank": 3,
+      "title": "Core Microbiology Skills: How to Perform a Gram Stain",
+      "issuing_organization": "Centers for Disease Control and Prevention",
+      "edition": null,
+      "publication_year": 2023,
+      "url": "https://reach.cdc.gov/sites/default/files/video-transcripts/How%20to%20Perform%20a%20Gram%20Stain.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "Gram stain reagents and procedure",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_reagent_iodine_definition",
+        "clm_reagent_iodine_purpose",
+        "clm_reagent_iodine_target",
+        "clm_reagent_iodine_usage",
+        "clm_reagent_iodine_caution",
+        "clm_reagent_iodine_storage"
+      ],
+      "evidence_role": "primary"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "note": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "training_video": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "national_exam": {"priority_claim_ids": [], "priority_exam_metadata": []}
+  }
+}

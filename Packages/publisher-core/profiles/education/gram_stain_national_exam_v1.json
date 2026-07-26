@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "education.gram_stain_national_exam",
+  "version": "1.0.0",
+  "name": "Gram染色 国家試験対策 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "learning_purposes": [
+    "national_exam_preparation",
+    "review",
+    "conceptual_understanding"
+  ],
+  "level_policy": {
+    "difficulty_level": "standard",
+    "max_claims_per_section": 6,
+    "max_items_per_education_block": 8,
+    "include_optional_content": true,
+    "include_optional_education_blocks": true,
+    "include_optional_visuals": true
+  },
+  "claim_ordering": "exam_priority_then_education",
+  "learning_sequence": [
+    {"step_id": "learning.gram.definition", "target_kind": "content_role", "target_key": "role.definition", "order": 1, "is_required": true},
+    {"step_id": "learning.gram.frequent", "target_kind": "education_block", "target_key": "education.frequent_points", "order": 2, "is_required": true},
+    {"step_id": "learning.gram.workflow_visual", "target_kind": "visual_type", "target_key": "diagram.laboratory_workflow", "order": 3, "is_required": true},
+    {"step_id": "learning.gram.workflow", "target_kind": "content_role", "target_key": "role.staining_workflow", "order": 4, "is_required": true},
+    {"step_id": "learning.gram.principle", "target_kind": "content_role", "target_key": "role.staining_principle", "order": 5, "is_required": true},
+    {"step_id": "learning.gram.comparison_visual", "target_kind": "visual_type", "target_key": "table.gram_reaction_comparison", "order": 6, "is_required": true},
+    {"step_id": "learning.gram.comparison", "target_kind": "content_role", "target_key": "role.comparison", "order": 7, "is_required": true},
+    {"step_id": "learning.gram.related_comparison", "target_kind": "education_block", "target_key": "education.related_comparison", "order": 8, "is_required": true},
+    {"step_id": "learning.gram.cautions", "target_kind": "content_role", "target_key": "role.cautions", "order": 9, "is_required": false},
+    {"step_id": "learning.gram.trick", "target_kind": "education_block", "target_key": "education.trick_points", "order": 10, "is_required": false},
+    {"step_id": "learning.gram.errors", "target_kind": "education_block", "target_key": "education.common_errors", "order": 11, "is_required": false},
+    {"step_id": "learning.gram.memory", "target_kind": "education_block", "target_key": "education.memory_aid", "order": 12, "is_required": false},
+    {"step_id": "learning.gram.history", "target_kind": "education_block", "target_key": "education.exam_history", "order": 13, "is_required": true},
+    {"step_id": "learning.gram.ranking", "target_kind": "education_block", "target_key": "education.priority_claim_ranking", "order": 14, "is_required": true}
+  ],
+  "exam_emphasis": {
+    "is_enabled": true,
+    "frequent_min_appearances": 2,
+    "show_frequency": true,
+    "show_importance": true,
+    "bands": [
+      {"band_id": "exam_priority.highest", "minimum_score": 80, "emphasis_level": 5, "label": "最重要"},
+      {"band_id": "exam_priority.frequent", "minimum_score": 60, "emphasis_level": 4, "label": "頻出"},
+      {"band_id": "exam_priority.important", "minimum_score": 40, "emphasis_level": 3, "label": "重要"},
+      {"band_id": "exam_priority.supplementary", "minimum_score": 0, "emphasis_level": 2, "label": "補足"}
+    ]
+  },
+  "comparison_policy": {
+    "is_required": true,
+    "content_roles": ["role.comparison"],
+    "visual_types": ["table.gram_reaction_comparison"],
+    "show_related_tests": false
+  },
+  "visual_priority": [
+    {"visual_type": "diagram.laboratory_workflow", "rank": 1, "is_required": true},
+    {"visual_type": "table.gram_reaction_comparison", "rank": 2, "is_required": true}
+  ],
+  "education_blocks": [
+    {
+      "block_id": "education.frequent_points",
+      "block_type": "frequent_points",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["priority_claims", "frequency", "importance"],
+      "order": 2,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.related_comparison",
+      "block_type": "related_comparison",
+      "input_sources": ["knowledge_claims", "exam_metadata"],
+      "content_roles": ["role.comparison"],
+      "exam_fields": ["related_terms"],
+      "order": 8,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.trick_points",
+      "block_type": "trick_points",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["common_errors"],
+      "order": 10,
+      "is_required": false,
+      "max_items": 5,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.common_errors",
+      "block_type": "common_errors",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["common_errors"],
+      "order": 11,
+      "is_required": false,
+      "max_items": 5,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.memory_aid",
+      "block_type": "memory_aid",
+      "input_sources": ["knowledge_claims", "publisher_generated"],
+      "content_roles": ["role.staining_workflow", "role.staining_principle"],
+      "exam_fields": [],
+      "order": 12,
+      "is_required": false,
+      "max_items": 3,
+      "requires_generation": true
+    },
+    {
+      "block_id": "education.exam_history",
+      "block_type": "exam_history",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["history", "frequency"],
+      "order": 13,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.priority_claim_ranking",
+      "block_type": "priority_claim_ranking",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["priority_claims", "importance"],
+      "order": 14,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    }
+  ]
+}

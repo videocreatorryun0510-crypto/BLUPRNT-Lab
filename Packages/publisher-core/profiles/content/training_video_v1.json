@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "content.training_video",
+  "version": "1.0.0",
+  "name": "TrainingVideo 標準掲載内容",
+  "status": "active",
+  "supported_outputs": ["training_video"],
+  "sections": [
+    {
+      "section_id": "section.hook",
+      "content_role": "role.hook",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.is_leakage_enzyme"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 100,
+      "is_required": true,
+      "max_items": 2
+    },
+    {
+      "section_id": "section.main_story",
+      "content_role": "role.main_story",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.jscc", "ast.measurement.340nm", "ast.combination.alt"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 90,
+      "is_required": true,
+      "max_items": 10
+    },
+    {
+      "section_id": "section.call_to_action",
+      "content_role": "role.call_to_action",
+      "source": "registry_metadata",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": ["approval_status"]
+      },
+      "priority": 30,
+      "is_required": true,
+      "max_items": 1
+    }
+  ]
+}
+

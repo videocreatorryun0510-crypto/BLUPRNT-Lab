@@ -1,0 +1,65 @@
+{
+  "document_id": "MP-P1-0001",
+  "content_version": "1.0",
+  "generated_at": "2026-07-12T21:00:00+09:00",
+  "review_status": "unreviewed",
+  "disease_name": "2型糖尿病",
+  "english_name": "Type 2 diabetes mellitus",
+  "aliases": [
+    "T2DM"
+  ],
+  "one_line_summary": "インスリンの作用不足を背景に慢性高血糖を来し、血管・神経を含む全身の合併症につながる代謝疾患。",
+  "pathophysiology": [
+    "インスリン抵抗性とインスリン分泌低下が組み合わさり、血糖を十分に利用・調節できなくなる。",
+    "遺伝的要因に加え、過体重、身体活動不足などが発症リスクに関与する。",
+    "慢性高血糖は血管や神経を障害し、網膜・腎臓・足・心血管系などへ影響する。"
+  ],
+  "symptoms_and_signs": [
+    "初期は自覚症状に乏しく、健診や別目的の検査で発見されることがある。",
+    "高血糖が進むと口渇、多飲、多尿、倦怠感、意図しない体重減少などを認める。",
+    "進行後は視覚障害、腎障害、末梢神経障害、足病変などが問題となる。"
+  ],
+  "diagnosis": [
+    "血糖値やHbA1cを用い、症状、臨床所見、家族歴、体重歴などと合わせて総合的に判断する。",
+    "一度の検査結果だけで診断できない場合があり、ガイドラインに従って再検査や経過確認を行う。",
+    "病型、合併症、併存疾患を評価し、個別の治療計画につなげる。"
+  ],
+  "treatment": [
+    "食事、身体活動、体重、禁煙などの生活支援を基盤とし、必要に応じて薬物療法を組み合わせる。",
+    "治療は年齢、合併症、低血糖リスク、生活背景などを考慮して個別化する。",
+    "血糖だけでなく、血圧、脂質、腎機能、眼、足などを継続的に評価する。"
+  ],
+  "red_flags": [
+    "意識障害、著しい脱水、嘔吐、急速な全身状態悪化は高血糖緊急症などを疑う。",
+    "低血糖を疑う症状や、感染・足病変の急な悪化にも注意する。"
+  ],
+  "learning_points": [
+    "病態の軸はインスリン抵抗性と相対的分泌不足。",
+    "症状が乏しくても合併症評価と定期的検査が重要。",
+    "細小血管障害と大血管障害を整理する。",
+    "診断基準の数値は最新版ガイドラインで確認する。"
+  ],
+  "references": [
+    {
+      "source_id": "S1",
+      "title": "糖尿病診療ガイドライン2024",
+      "publisher": "日本糖尿病学会",
+      "published_year": 2024,
+      "url": "https://www.jds.or.jp/modules/education/index.php?content_id=11"
+    },
+    {
+      "source_id": "S2",
+      "title": "糖尿病",
+      "publisher": "厚生労働省 e-ヘルスネット",
+      "published_year": 2025,
+      "url": "https://kennet.mhlw.go.jp/information/information/metabolic/m-05-002"
+    },
+    {
+      "source_id": "S3",
+      "title": "Diabetes fact sheet",
+      "publisher": "World Health Organization",
+      "published_year": 2024,
+      "url": "https://www.who.int/news-room/fact-sheets/detail/diabetes"
+    }
+  ]
+}

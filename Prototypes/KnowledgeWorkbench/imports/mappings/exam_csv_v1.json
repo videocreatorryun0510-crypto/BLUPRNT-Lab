@@ -1,0 +1,93 @@
+{
+  "mapping_id": "clinical-lab-exam-csv",
+  "mapping_version": "1.0",
+  "encoding": "utf-8-sig",
+  "delimiter": ",",
+  "required_fields": [
+    "session_number",
+    "exam_year",
+    "section",
+    "question_number",
+    "theme",
+    "patterns",
+    "tested_claims"
+  ],
+  "column_aliases": {
+    "session_number": ["試験回", "回", "session_number"],
+    "exam_year": ["年度", "試験年度", "exam_year"],
+    "section": ["午前午後", "区分", "section"],
+    "question_number": ["問題番号", "問番号", "question_number"],
+    "theme": ["テーマ", "用語", "theme"],
+    "source_row_id": ["元行ID", "source_row_id"],
+    "patterns": ["出題パターン", "問題形式", "patterns"],
+    "related_terms": ["関連用語", "related_terms"],
+    "image_reference": ["画像参照", "画像ID", "image_reference"],
+    "tested_claims": ["確認知識", "出題知識", "tested_claims"]
+  },
+  "ignored_columns": ["備考", "データ種別"],
+  "list_separator": "|",
+  "section_aliases": {
+    "午前": "morning",
+    "AM": "morning",
+    "morning": "morning",
+    "午後": "afternoon",
+    "PM": "afternoon",
+    "afternoon": "afternoon",
+    "不明": "unspecified",
+    "unspecified": "unspecified"
+  },
+  "pattern_aliases": {
+    "単独知識": "standalone_knowledge",
+    "鑑別問題": "differential",
+    "画像問題": "image",
+    "計算問題": "calculation",
+    "消去法": "elimination",
+    "組み合わせ問題": "combination"
+  },
+  "knowledge_aliases": {
+    "AST": ["AST", "GOT", "アスパラギン酸アミノトランスフェラーゼ"],
+    "HbA1c": ["HbA1c", "ヘモグロビンA1c", "グリコヘモグロビン"]
+  },
+  "claim_selectors": {
+    "AST": {
+      "測定原理": {"claim_keys": ["ast.measurement.340nm"]},
+      "測定法": {"claim_keys": ["ast.ifcc", "ast.jscc"]},
+      "解釈注意": {"claim_keys": ["ast.interpretation.hemolysis"]},
+      "定義": {"claim_keys": ["ast.definition.aminotransferase_enzyme"]}
+    },
+    "HbA1c": {
+      "測定原理": {"claim_keys": ["hba1c.measurement.principle"]},
+      "測定法": {"claim_keys": ["hba1c.measurement.hplc"]},
+      "解釈注意": {"claim_keys": ["hba1c.interpretation.shortened_rbc_lifespan"]},
+      "定義": {"claim_keys": ["hba1c.definition.glycated_hemoglobin"]}
+    }
+  },
+  "importance_profile": {
+    "profile_id": "frequency-recency-pattern-v1",
+    "profile_version": "1.0",
+    "formula_type": "frequency_recency_pattern_v1",
+    "base_score": 10,
+    "appearance_weight": 15,
+    "appearance_cap": 4,
+    "recency_window_years": 2,
+    "recency_bonus": 20,
+    "pattern_weights": {
+      "standalone_knowledge": 5,
+      "differential": 8,
+      "image": 10,
+      "calculation": 10,
+      "elimination": 5,
+      "combination": 8
+    },
+    "maximum_score": 100
+  },
+  "image_mapping": {
+    "section_codes": {
+      "morning": "AM",
+      "afternoon": "PM",
+      "unspecified": "XX"
+    },
+    "filename_template": "{session_number}-{section_code}-{question_number:02d}",
+    "extensions": [".png", ".jpg", ".jpeg", ".webp", ".svg"]
+  }
+}

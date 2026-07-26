@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_35fcf22a05685928",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "アスパラギン酸アミノトランスフェラーゼ",
+    "english_name": "Aspartate aminotransferase",
+    "aliases": [
+      "AST",
+      "GOT",
+      "グルタミン酸オキサロ酢酸トランスアミナーゼ"
+    ]
+  },
+  "classification": {
+    "term_type": "test_item",
+    "primary_exam_domain": "clinical_chemistry",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_fdfe7540abbdf7ad",
+        "statement": "ASTは、アスパラギン酸とα-ケトグルタル酸のアミノ基転移を触媒するアミノトランスフェラーゼである。"
+      },
+      {
+        "claim_id": "clm_0f1fd1cd1099b548",
+        "statement": "ASTは肝臓、心筋、骨格筋、赤血球などに分布する。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_8a70fde843691e69",
+        "statement": "組織細胞の障害により細胞内ASTが血中へ逸脱し、血清AST活性が上昇する。"
+      },
+      {
+        "claim_id": "clm_fc562319aabb0d69",
+        "statement": "AST反応には補酵素としてピリドキサールリン酸が関与する。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_aefa758e9a74ec61",
+        "statement": "ASTには細胞質型とミトコンドリア型のアイソザイムが存在する。"
+      },
+      {
+        "claim_id": "clm_224cb4b71ad0f13f",
+        "statement": "ASTはALTと比べて肝臓以外の組織にも広く分布するため、肝細胞障害に対する臓器特異性は低い。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "test_item_v0.3",
+    "test_item": {
+      "purposes": [
+        {
+          "claim_id": "clm_d1f542bff46d1074",
+          "statement": "AST活性測定は、肝細胞障害、心筋障害および骨格筋障害に伴う逸脱酵素の評価に用いられる。"
+        }
+      ],
+      "specimens": [
+        {
+          "claim_id": "clm_32aa0770c480355a",
+          "specimen": "血清または血漿",
+          "container_or_anticoagulant": "",
+          "handling": "溶血を避ける。",
+          "stability": ""
+        }
+      ],
+      "measurement_methods": [
+        {
+          "claim_id": "clm_e3c9fabf18b57f85",
+          "method_name": "JSCC標準化対応法",
+          "standardizing_body": "日本臨床化学会（JSCC）",
+          "factual_description": "ASTが触媒するアミノ基転移反応と、生成したオキサロ酢酸を用いる指示反応を組み合わせて酵素活性を測定する方法である。"
+        },
+        {
+          "claim_id": "clm_33caf94cf02021fc",
+          "method_name": "IFCC法",
+          "standardizing_body": "国際臨床化学連合（IFCC）",
+          "factual_description": "ピリドキサールリン酸存在下でAST活性を測定する国際標準化法である。"
+        }
+      ],
+      "measurement_principles": [
+        {
+          "claim_id": "clm_2fd88aeb5806991f",
+          "related_method_claim_ids": [
+            "clm_e3c9fabf18b57f85"
+          ],
+          "measured_quantity": "血清または血漿中のAST酵素活性",
+          "reaction_sequence": "ASTによりL-アスパラギン酸とα-ケトグルタル酸からオキサロ酢酸とL-グルタミン酸を生成し、オキサロ酢酸をリンゴ酸デヒドロゲナーゼ反応で還元する際にNADHを消費する。",
+          "detection_signal": "NADHの吸光度減少速度を測定する。",
+          "wavelength_or_endpoint": "340 nmにおける吸光度減少速度"
+        },
+        {
+          "claim_id": "clm_709bab99a39639dc",
+          "related_method_claim_ids": [
+            "clm_33caf94cf02021fc"
+          ],
+          "measured_quantity": "血清または血漿中のAST酵素活性",
+          "reaction_sequence": "ピリドキサールリン酸存在下で、ASTによりL-アスパラギン酸とα-ケトグルタル酸からオキサロ酢酸とL-グルタミン酸を生成し、オキサロ酢酸をリンゴ酸デヒドロゲナーゼ反応で還元する際にNADHを消費する。",
+          "detection_signal": "NADHの吸光度減少速度を測定する。",
+          "wavelength_or_endpoint": "340 nmにおける吸光度減少速度"
+        }
+      ],
+      "reference_ranges": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [
+            {
+              "claim_id": "clm_81a28170c3ffe0af",
+              "state_name": "肝細胞障害",
+              "related_knowledge_id": null,
+              "factual_relation": "肝細胞からのAST逸脱により血中AST活性が上昇する。"
+            },
+            {
+              "claim_id": "clm_8573f472726b5c00",
+              "state_name": "心筋細胞障害",
+              "related_knowledge_id": null,
+              "factual_relation": "心筋細胞からのAST逸脱により血中AST活性が上昇する。"
+            },
+            {
+              "claim_id": "clm_9c236d8cc7626770",
+              "state_name": "骨格筋障害",
+              "related_knowledge_id": null,
+              "factual_relation": "骨格筋細胞からのAST逸脱により血中AST活性が上昇する。"
+            },
+            {
+              "claim_id": "clm_85b021ad6c45c3ef",
+              "state_name": "溶血",
+              "related_knowledge_id": null,
+              "factual_relation": "赤血球中のASTが検体中へ放出され、測定値が上昇する。"
+            }
+          ],
+          "representative_diseases": [
+            {
+              "claim_id": "clm_da444f7f41fa0feb",
+              "disease_name": "急性肝炎",
+              "disease_knowledge_id": null,
+              "factual_relation": "肝細胞障害によりASTが上昇する。"
+            },
+            {
+              "claim_id": "clm_793b4a868c08981b",
+              "disease_name": "肝硬変",
+              "disease_knowledge_id": null,
+              "factual_relation": "肝細胞障害によりASTが上昇する。"
+            },
+            {
+              "claim_id": "clm_e572b8cbe1a0154e",
+              "disease_name": "心筋梗塞",
+              "disease_knowledge_id": null,
+              "factual_relation": "心筋細胞障害によりASTが上昇する。"
+            },
+            {
+              "claim_id": "clm_cc05e8ae28af0fb9",
+              "disease_name": "横紋筋融解症",
+              "disease_knowledge_id": null,
+              "factual_relation": "骨格筋障害によりASTが上昇する。"
+            }
+          ],
+          "interpretive_notes": [
+            {
+              "claim_id": "clm_5d4f175599e15ecc",
+              "statement": "AST高値は肝障害に特異的ではなく、心筋および骨格筋の障害でも認められる。"
+            }
+          ]
+        },
+        "low": {
+          "pathophysiologic_states": [],
+          "representative_diseases": [],
+          "interpretive_notes": [
+            {
+              "claim_id": "clm_8ea0afa1db8c4bb9",
+              "statement": "AST低値は一般に臨床的意義が乏しい。"
+            }
+          ]
+        }
+      },
+      "related_test_combinations": [
+        {
+          "claim_id": "clm_156b3ae86d868ed7",
+          "related_test_names": [
+            "ALT"
+          ],
+          "related_knowledge_ids": [],
+          "factual_interpretation": "ASTとALTを併せて測定することで、肝細胞障害の評価に用いられる。"
+        },
+        {
+          "claim_id": "clm_6e5c08215eb59a33",
+          "related_test_names": [
+            "CK"
+          ],
+          "related_knowledge_ids": [],
+          "factual_interpretation": "AST高値にCK高値を伴う場合、骨格筋または心筋の障害を示唆する。"
+        },
+        {
+          "claim_id": "clm_0d2d5a3251b9ef3c",
+          "related_test_names": [
+            "LD"
+          ],
+          "related_knowledge_ids": [],
+          "factual_interpretation": "ASTとLDはともに肝細胞障害、心筋障害および溶血の影響を受けうる。"
+        }
+      ],
+      "interpretation_cautions": [
+        {
+          "claim_id": "clm_82387a5774881f5b",
+          "statement": "溶血検体では赤血球由来ASTの影響により見かけ上高値となることがある。"
+        },
+        {
+          "claim_id": "clm_5c901278925cd37e",
+          "statement": "AST活性は測定法により異なり、JSCC標準化対応法とIFCC法の測定値は同一とは限らない。"
+        },
+        {
+          "claim_id": "clm_5b8798a15a412249",
+          "statement": "ビタミンB6欠乏では、ピリドキサールリン酸を補充しない測定法でAST活性が低く測定されることがある。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

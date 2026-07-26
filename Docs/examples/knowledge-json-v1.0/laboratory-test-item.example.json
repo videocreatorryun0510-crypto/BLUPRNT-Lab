@@ -1,0 +1,216 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000013",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "フェリチン",
+    "english_name": "Ferritin",
+    "aliases": [
+      "血清フェリチン",
+      "FER"
+    ]
+  },
+  "classification": {
+    "term_type": "laboratory_test_item",
+    "primary_exam_domain": "clinical_chemistry",
+    "related_exam_domains": [
+      "hematology",
+      "immunology"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_ferritin_definition",
+        "assertion": "フェリチンは、アポフェリチンに三価鉄が結合して形成される水溶性の鉄貯蔵タンパク質である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "laboratory_test_item_v1.0",
+    "laboratory_test_item": {
+      "overview": [
+        {
+          "claim_id": "clm_ferritin_overview",
+          "assertion": "血清または血漿中のフェリチンは体内の貯蔵鉄を評価する指標であるが、炎症などでも上昇するため臨床背景と併せて解釈する。"
+        }
+      ],
+      "measured_targets": [
+        {
+          "claim_id": "clm_ferritin_target",
+          "analyte_name": "フェリチン濃度",
+          "typical_specimens": [
+            "血清",
+            "血漿"
+          ],
+          "assertion": "代表的なフェリチン検査は、血清または血漿中のフェリチン濃度を測定する。"
+        }
+      ],
+      "clinical_significance": [
+        {
+          "claim_id": "clm_ferritin_significance_iron_store",
+          "significance_name": "貯蔵鉄の評価",
+          "assertion": "血清フェリチンは体内の貯蔵鉄量を反映し、鉄欠乏の評価に用いられる。"
+        },
+        {
+          "claim_id": "clm_ferritin_significance_inflammation",
+          "significance_name": "炎症を考慮した解釈",
+          "assertion": "フェリチンは炎症に伴って上昇し得るため、鉄代謝を評価する際は炎症の有無を考慮する。"
+        }
+      ],
+      "high_conditions": [
+        {
+          "claim_id": "clm_ferritin_high_iron_overload",
+          "condition_name": "鉄過剰",
+          "assertion": "輸血後鉄過剰など、体内の鉄が過剰となる病態では血清フェリチンが高値となり得る。"
+        },
+        {
+          "claim_id": "clm_ferritin_high_inflammation",
+          "condition_name": "炎症",
+          "assertion": "炎症反応に伴って血清フェリチンは高値となり得る。"
+        },
+        {
+          "claim_id": "clm_ferritin_high_macrophage_activation",
+          "condition_name": "マクロファージ活性化を伴う病態",
+          "assertion": "血球貪食症候群や成人Still病などでは血清フェリチンが著しく上昇することがある。"
+        }
+      ],
+      "low_conditions": [
+        {
+          "claim_id": "clm_ferritin_low_iron_deficiency",
+          "condition_name": "鉄欠乏",
+          "assertion": "体内の貯蔵鉄が減少する鉄欠乏では血清フェリチンが低値となる。"
+        }
+      ],
+      "measurement_methods": [
+        {
+          "claim_id": "clm_ferritin_method_ltia",
+          "method_name": "ラテックス凝集比濁法",
+          "method_family": "免疫測定法",
+          "assertion": "ラテックス凝集比濁法はフェリチン濃度の定量に用いられる代表的な測定法の一つである。"
+        },
+        {
+          "claim_id": "clm_ferritin_method_cleia",
+          "method_name": "化学発光酵素免疫測定法",
+          "method_family": "免疫測定法",
+          "assertion": "化学発光酵素免疫測定法は血清または血漿中フェリチンの定量に用いられる代表的な測定法の一つである。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_ferritin_jamt_2026",
+      "source_priority_rank": 2,
+      "title": "測定範囲を拡大した『イアトロ フェリチン』の性能評価",
+      "issuing_organization": "一般社団法人 日本臨床衛生検査技師会",
+      "edition": null,
+      "publication_year": 2026,
+      "url": "https://www.jstage.jst.go.jp/article/jamt/75/1/75_25-19/_article/-char/ja/",
+      "doi": "10.14932/jamt.25-19",
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "抄録・はじめに",
+      "pages": "95-101",
+      "supported_claim_ids": [
+        "clm_ferritin_definition",
+        "clm_ferritin_overview",
+        "clm_ferritin_significance_iron_store",
+        "clm_ferritin_significance_inflammation",
+        "clm_ferritin_high_iron_overload",
+        "clm_ferritin_high_inflammation",
+        "clm_ferritin_high_macrophage_activation",
+        "clm_ferritin_low_iron_deficiency"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_ferritin_jslm_2024",
+      "source_priority_rank": 3,
+      "title": "臨床検査のガイドライン JSLM 2024：検査データの読み方と考え方",
+      "issuing_organization": "一般社団法人 日本臨床検査医学会",
+      "edition": "2024年版",
+      "publication_year": 2024,
+      "url": "https://www.jslm.org/books/guideline/2024/GL2024_05.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "鉄欠乏性貧血における血清フェリチン濃度の診断特性",
+      "pages": "29",
+      "supported_claim_ids": [
+        "clm_ferritin_significance_iron_store",
+        "clm_ferritin_low_iron_deficiency"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_ferritin_pmda_ltia",
+      "source_priority_rank": 1,
+      "title": "LT オートワコー フェリチン 電子添文",
+      "issuing_organization": "独立行政法人 医薬品医療機器総合機構",
+      "edition": "2020年4月改訂 第4版",
+      "publication_year": 2020,
+      "url": "https://www.info.pmda.go.jp/downfiles/ivd/PDF/890027_27A2X00125000083_A_01_06.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "使用目的・測定原理",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_ferritin_target",
+        "clm_ferritin_method_ltia"
+      ],
+      "evidence_role": "supporting"
+    },
+    {
+      "source_id": "src_ferritin_pmda_cleia",
+      "source_priority_rank": 1,
+      "title": "フェリチン測定試薬 化学発光酵素免疫測定法 電子添文",
+      "issuing_organization": "独立行政法人 医薬品医療機器総合機構",
+      "edition": "2017年12月改訂 第6版",
+      "publication_year": 2017,
+      "url": "https://www.info.pmda.go.jp/downfiles/ivd/PDF/670773_21600AMZ00502000_A_01_05.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "使用目的・測定原理",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_ferritin_target",
+        "clm_ferritin_method_cleia"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

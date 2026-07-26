@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_gram_stain_vslice",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "Gram染色",
+    "english_name": "Gram stain",
+    "aliases": ["グラム染色"]
+  },
+  "classification": {
+    "term_type": "test_item",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_40000001",
+        "assertion": "Gram染色は細菌を細胞壁の性状に基づいてGram陽性とGram陰性に分類する鑑別染色法である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "test_item_v1.0",
+    "test_item": {
+      "biological_basis": [
+        {
+          "claim_id": "clm_40000003",
+          "assertion": "Gram反応は細菌細胞壁の構造的性状と関係する。"
+        }
+      ],
+      "analyte_characteristics": [
+        {
+          "claim_id": "clm_40000016",
+          "assertion": "Gram陽性菌は紫色に観察される。"
+        },
+        {
+          "claim_id": "clm_40000017",
+          "assertion": "Gram陰性菌は赤色から赤桃色に観察される。"
+        }
+      ],
+      "purposes": [
+        {
+          "claim_id": "clm_40000002",
+          "assertion": "Gram染色は細菌のGram反応、形態および配列の観察に用いる。"
+        }
+      ],
+      "specimens": [
+        {
+          "claim_id": "clm_40000004",
+          "specimen": "細菌を含む塗抹標本",
+          "container_or_anticoagulant": null,
+          "handling": "薄く均一に塗抹する。",
+          "stability": null
+        }
+      ],
+      "measurement_methods": [
+        {
+          "claim_id": "clm_40000012",
+          "method_name": "工程1 一次染色",
+          "method_family": "Gram染色工程",
+          "assertion": "固定した塗抹標本をクリスタルバイオレットで染色する。"
+        },
+        {
+          "claim_id": "clm_40000013",
+          "method_name": "工程2 媒染",
+          "method_family": "Gram染色工程",
+          "assertion": "ヨウ素液で媒染する。"
+        },
+        {
+          "claim_id": "clm_40000014",
+          "method_name": "工程3 脱色",
+          "method_family": "Gram染色工程",
+          "assertion": "脱色液を用いて適切に脱色する。"
+        },
+        {
+          "claim_id": "clm_40000015",
+          "method_name": "工程4 対比染色",
+          "method_family": "Gram染色工程",
+          "assertion": "脱色後に対比染色を行う。"
+        }
+      ],
+      "measurement_principles": [
+        {
+          "claim_id": "clm_40000006",
+          "related_method_claim_ids": ["clm_40000012", "clm_40000013"],
+          "measured_quantity": "色素・ヨウ素複合体の形成",
+          "reaction_sequence": "クリスタルバイオレットとヨウ素が色素・ヨウ素複合体を形成する。",
+          "detection_signal": "一次染色色素の保持",
+          "wavelength_or_endpoint": null,
+          "assertion": "クリスタルバイオレットとヨウ素により色素・ヨウ素複合体が形成される。"
+        },
+        {
+          "claim_id": "clm_40000007",
+          "related_method_claim_ids": ["clm_40000014", "clm_40000015"],
+          "measured_quantity": "脱色後の色素保持性",
+          "reaction_sequence": "細胞壁構造の違いにより色素・ヨウ素複合体の保持性が異なる。",
+          "detection_signal": "紫色または赤色から赤桃色",
+          "wavelength_or_endpoint": "顕微鏡観察",
+          "assertion": "細胞壁構造の違いにより脱色後の色素保持性が異なる。"
+        }
+      ],
+      "standardization_and_traceability": [],
+      "reporting_systems": [],
+      "reference_ranges": [],
+      "clinical_decision_limits": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [],
+          "representative_diseases": [],
+          "interpretive_notes": []
+        },
+        "low": {
+          "pathophysiologic_states": [],
+          "representative_diseases": [],
+          "interpretive_notes": []
+        }
+      },
+      "related_test_combinations": [],
+      "analytical_interferences": [],
+      "interpretation_cautions": [
+        {
+          "claim_id": "clm_40000020",
+          "assertion": "過脱色はGram陽性菌を陰性様に見せる原因となる。"
+        },
+        {
+          "claim_id": "clm_40000021",
+          "assertion": "脱色不足はGram陰性菌を陽性様に見せる原因となる。"
+        },
+        {
+          "claim_id": "clm_40000022",
+          "assertion": "抗酸菌は通常のGram染色では染色されにくい。"
+        },
+        {
+          "claim_id": "clm_40000023",
+          "assertion": "細胞壁を持たないマイコプラズマはGram染色による分類に適さない。"
+        }
+      ],
+      "time_course": [],
+      "isoenzymes": []
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "note": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "training_video": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "national_exam": {"priority_claim_ids": [], "priority_exam_metadata": []}
+  }
+}

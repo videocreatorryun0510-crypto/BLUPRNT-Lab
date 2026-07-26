@@ -1,0 +1,27 @@
+{
+  "profile_id": "source_bundle.iron_deficiency_anemia.v1",
+  "profile_version": "1.0",
+  "knowledge_id": "knw_10000012",
+  "summary_claim_key": "disease.iron_deficiency_anemia.overview",
+  "learning_objective": "鉄欠乏性貧血の病態と代表的な検査所見、鑑別の要点を説明できる。",
+  "target_audience": "臨床検査技師国家試験の受験者",
+  "key_claim_keys": [
+    "disease.iron_deficiency_anemia.pathophysiology.impaired_hemoglobin_synthesis",
+    "disease.iron_deficiency_anemia.laboratory.ferritin.low",
+    "disease.iron_deficiency_anemia.laboratory.tibc.high",
+    "disease.iron_deficiency_anemia.differential.anemia_of_inflammation"
+  ],
+  "diagram_requests": [
+    {
+      "request_id": "diagram.iron_deficiency_anemia.erythropoiesis",
+      "diagram_type": "diagram.disease_mechanism",
+      "title": "鉄欠乏による赤血球形成低下",
+      "learning_goal": "貯蔵鉄の減少からヘモグロビン合成低下、小球性低色素性貧血へ至る流れを理解する。",
+      "source_claim_keys": [
+        "disease.iron_deficiency_anemia.pathophysiology.iron_store_depletion",
+        "disease.iron_deficiency_anemia.pathophysiology.impaired_hemoglobin_synthesis",
+        "disease.iron_deficiency_anemia.laboratory.cbc.microcytic_hypochromic"
+      ]
+    }
+  ]
+}

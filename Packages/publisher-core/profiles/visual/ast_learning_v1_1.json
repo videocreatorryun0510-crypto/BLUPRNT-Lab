@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "visual.ast_learning",
+  "version": "1.1.0",
+  "name": "AST Visual Grammar対応図解候補",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "visuals": [
+    {
+      "visual_id": "visual.reaction_diagram",
+      "visual_type": "diagram.reaction",
+      "claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+      "priority": 100,
+      "display_size": "large",
+      "representation": "svg",
+      "caption": "AST測定の反応と検出信号",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.grammar_renderer",
+        "preferred_provider_ids": [],
+        "structured_prompt": null
+      },
+      "is_required": true
+    },
+    {
+      "visual_id": "visual.comparison_table",
+      "visual_type": "table.comparison",
+      "claim_keys": ["ast.combination.alt"],
+      "priority": 90,
+      "display_size": "full_width",
+      "representation": "svg",
+      "caption": "ASTと関連検査の比較",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.grammar_renderer",
+        "preferred_provider_ids": [],
+        "structured_prompt": null
+      },
+      "is_required": true
+    },
+    {
+      "visual_id": "visual.disease_mechanism",
+      "visual_type": "diagram.disease_mechanism",
+      "claim_keys": ["ast.is_leakage_enzyme"],
+      "priority": 85,
+      "display_size": "large",
+      "representation": "svg",
+      "caption": "細胞障害から血中AST測定までの関係",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.grammar_renderer",
+        "preferred_provider_ids": [],
+        "structured_prompt": null
+      },
+      "is_required": false
+    }
+  ]
+}

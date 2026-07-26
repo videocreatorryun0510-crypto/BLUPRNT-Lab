@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000008",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "グラム染色用脱色液",
+    "english_name": "Gram stain decolorizer",
+    "aliases": ["脱色液", "アルコールまたはアセトン系脱色液"]
+  },
+  "classification": {
+    "term_type": "reagent",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_reagent_decolorizer_definition",
+        "assertion": "グラム染色用脱色液は、アルコール、アセトン、またはその混合液を用いて色素・ヨウ素複合体の保持差を生じさせる試薬である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "reagent_v1.0",
+    "reagent": {
+      "reagent_kind": "decolorizer",
+      "purposes": [
+        {
+          "claim_id": "clm_reagent_decolorizer_purpose",
+          "use_case": "Gram染色の脱色",
+          "assertion": "脱色液はGram陽性菌とGram陰性菌における色素・ヨウ素複合体の保持差を明らかにするために用いる。"
+        }
+      ],
+      "targets": [
+        {
+          "claim_id": "clm_reagent_decolorizer_target",
+          "target_name": "媒染後の細菌塗抹標本",
+          "target_kind": "mordanted_smear_specimen",
+          "assertion": "脱色液はクリスタルバイオレットとヨウ素液による処理後の塗抹標本へ適用する。"
+        }
+      ],
+      "usage_steps": [
+        {
+          "claim_id": "clm_reagent_decolorizer_usage",
+          "usage_phase": "decolorization",
+          "application": "媒染後の塗抹標本へ脱色液を作用させ、規定された終点または時間で直ちに洗浄する。",
+          "conditions": "脱色液の組成、作用時間、終点は製品添付文書または施設の標準作業書に従う。",
+          "assertion": "Gram染色では媒染後、対比染色前の脱色工程で脱色液を使用する。"
+        }
+      ],
+      "cautions": [
+        {
+          "claim_id": "clm_reagent_decolorizer_caution",
+          "assertion": "過脱色と脱色不足はいずれもGram反応の誤判定につながるため、作用時間と終点を管理し、安全データシートに従って取り扱う。"
+        }
+      ],
+      "storage_conditions": [
+        {
+          "claim_id": "clm_reagent_decolorizer_storage",
+          "temperature": null,
+          "conditions": "密栓、温度、火気管理、有効期限は製品の安全データシート、添付文書および施設手順に従う。",
+          "assertion": "グラム染色用脱色液は組成と製品ごとに指定された保管・安全条件で管理する。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_reagent_decolorizer_cdc_gram",
+      "source_priority_rank": 3,
+      "title": "Core Microbiology Skills: How to Perform a Gram Stain",
+      "issuing_organization": "Centers for Disease Control and Prevention",
+      "edition": null,
+      "publication_year": 2023,
+      "url": "https://reach.cdc.gov/sites/default/files/video-transcripts/How%20to%20Perform%20a%20Gram%20Stain.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "Gram stain reagents and procedure",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_reagent_decolorizer_definition",
+        "clm_reagent_decolorizer_purpose",
+        "clm_reagent_decolorizer_target",
+        "clm_reagent_decolorizer_usage",
+        "clm_reagent_decolorizer_caution",
+        "clm_reagent_decolorizer_storage"
+      ],
+      "evidence_role": "primary"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "note": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "training_video": {"priority_claim_ids": [], "priority_exam_metadata": []},
+    "national_exam": {"priority_claim_ids": [], "priority_exam_metadata": []}
+  }
+}

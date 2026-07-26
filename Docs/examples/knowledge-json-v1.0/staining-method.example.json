@@ -1,0 +1,344 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000004",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "Gram染色",
+    "english_name": "Gram stain",
+    "aliases": [
+      "グラム染色"
+    ]
+  },
+  "classification": {
+    "term_type": "staining_method",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_40000001",
+        "assertion": "Gram染色は細菌を細胞壁の性状に基づいてGram陽性とGram陰性に分類する鑑別染色法である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "staining_method_v1.0",
+    "staining_method": {
+      "purposes": [
+        {
+          "claim_id": "clm_40000002",
+          "use_case": "細菌のGram反応、形態、配列の観察",
+          "assertion": "Gram染色は細菌のGram反応、形態および配列の観察に用いる。"
+        }
+      ],
+      "target_structures": [
+        {
+          "claim_id": "clm_40000003",
+          "target_name": "細菌細胞壁",
+          "target_kind": "cell_wall",
+          "assertion": "Gram反応は細菌細胞壁の構造的性状と関係する。"
+        }
+      ],
+      "applicable_specimens": [
+        {
+          "claim_id": "clm_40000004",
+          "specimen": "細菌を含む塗抹標本",
+          "preparation": "薄く均一に塗抹する。",
+          "assertion": "Gram染色は細菌を含む塗抹標本に適用する。"
+        }
+      ],
+      "fixation_requirements": [
+        {
+          "claim_id": "clm_40000005",
+          "fixative_or_method": "熱固定または適切な固定法",
+          "conditions": "使用する標準作業書に従う。",
+          "assertion": "染色前に塗抹標本を適切に固定する。"
+        }
+      ],
+      "staining_principles": [
+        {
+          "claim_id": "clm_40000006",
+          "mechanism": "クリスタルバイオレットとヨウ素が色素・ヨウ素複合体を形成する。",
+          "affected_target": "細菌細胞",
+          "resulting_effect": "一次染色色素が細胞内に保持される。",
+          "assertion": "クリスタルバイオレットとヨウ素により色素・ヨウ素複合体が形成される。"
+        },
+        {
+          "claim_id": "clm_40000007",
+          "mechanism": "脱色に対する色素・ヨウ素複合体の保持性が細胞壁構造により異なる。",
+          "affected_target": "Gram陽性菌とGram陰性菌",
+          "resulting_effect": "Gram陽性菌は紫色を保持し、Gram陰性菌は対比染色で赤色系に観察される。",
+          "assertion": "細胞壁構造の違いにより脱色後の色素保持性が異なる。"
+        }
+      ],
+      "reagents": [
+        {
+          "claim_id": "clm_40000008",
+          "reagent_name": "クリスタルバイオレット",
+          "reagent_role": "primary_stain",
+          "assertion": "クリスタルバイオレットは一次染色液として用いる。"
+        },
+        {
+          "claim_id": "clm_40000009",
+          "reagent_name": "ヨウ素液",
+          "reagent_role": "mordant",
+          "assertion": "ヨウ素液は媒染剤として用いる。"
+        },
+        {
+          "claim_id": "clm_40000010",
+          "reagent_name": "アルコールまたはアセトン系脱色液",
+          "reagent_role": "decolorizer",
+          "assertion": "アルコールまたはアセトン系脱色液を脱色に用いる。"
+        },
+        {
+          "claim_id": "clm_40000011",
+          "reagent_name": "サフラニンなどの対比染色液",
+          "reagent_role": "counterstain",
+          "assertion": "サフラニンなどを対比染色に用いる。"
+        }
+      ],
+      "procedure_steps": [
+        {
+          "claim_id": "clm_40000012",
+          "step_order": 1,
+          "action": "一次染色を行う。",
+          "reagent_claim_ids": [
+            "clm_40000008"
+          ],
+          "duration": null,
+          "conditions": "時間は採用する標準法に従う。",
+          "assertion": "固定した塗抹標本をクリスタルバイオレットで染色する。"
+        },
+        {
+          "claim_id": "clm_40000013",
+          "step_order": 2,
+          "action": "媒染を行う。",
+          "reagent_claim_ids": [
+            "clm_40000009"
+          ],
+          "duration": null,
+          "conditions": "時間は採用する標準法に従う。",
+          "assertion": "ヨウ素液で媒染する。"
+        },
+        {
+          "claim_id": "clm_40000014",
+          "step_order": 3,
+          "action": "脱色を行う。",
+          "reagent_claim_ids": [
+            "clm_40000010"
+          ],
+          "duration": null,
+          "conditions": "過脱色と脱色不足を避ける。",
+          "assertion": "脱色液を用いて適切に脱色する。"
+        },
+        {
+          "claim_id": "clm_40000015",
+          "step_order": 4,
+          "action": "対比染色を行う。",
+          "reagent_claim_ids": [
+            "clm_40000011"
+          ],
+          "duration": null,
+          "conditions": "時間は採用する標準法に従う。",
+          "assertion": "脱色後に対比染色を行う。"
+        }
+      ],
+      "result_interpretations": [
+        {
+          "claim_id": "clm_40000016",
+          "target_name": "Gram陽性菌",
+          "observed_color_or_pattern": "紫色",
+          "interpretation": "色素・ヨウ素複合体を保持している。",
+          "assertion": "Gram陽性菌は紫色に観察される。"
+        },
+        {
+          "claim_id": "clm_40000017",
+          "target_name": "Gram陰性菌",
+          "observed_color_or_pattern": "赤色から赤桃色",
+          "interpretation": "脱色後に対比染色されている。",
+          "assertion": "Gram陰性菌は赤色から赤桃色に観察される。"
+        }
+      ],
+      "quality_controls": [
+        {
+          "claim_id": "clm_40000018",
+          "control_material": "既知のGram陽性菌",
+          "expected_result": "紫色",
+          "assertion": "既知のGram陽性菌は対照で紫色を示す。"
+        },
+        {
+          "claim_id": "clm_40000019",
+          "control_material": "既知のGram陰性菌",
+          "expected_result": "赤色から赤桃色",
+          "assertion": "既知のGram陰性菌は対照で赤色から赤桃色を示す。"
+        }
+      ],
+      "error_causes": [
+        {
+          "claim_id": "clm_40000020",
+          "error_type": "over_decolorization",
+          "cause": "脱色が過剰である。",
+          "observed_effect": "Gram陽性菌が陰性様に見えることがある。",
+          "assertion": "過脱色はGram陽性菌を陰性様に見せる原因となる。"
+        },
+        {
+          "claim_id": "clm_40000021",
+          "error_type": "under_decolorization",
+          "cause": "脱色が不十分である。",
+          "observed_effect": "Gram陰性菌が陽性様に見えることがある。",
+          "assertion": "脱色不足はGram陰性菌を陽性様に見せる原因となる。"
+        }
+      ],
+      "limitations": [
+        {
+          "claim_id": "clm_40000022",
+          "scope_or_target": "抗酸菌",
+          "limitation": "通常のGram染色では染色性が不十分である。",
+          "assertion": "抗酸菌は通常のGram染色では染色されにくい。"
+        },
+        {
+          "claim_id": "clm_40000023",
+          "scope_or_target": "マイコプラズマ",
+          "limitation": "細胞壁を持たないためGram染色による分類に適さない。",
+          "assertion": "細胞壁を持たないマイコプラズマはGram染色による分類に適さない。"
+        }
+      ],
+      "safety_considerations": [],
+      "related_methods": [
+        {
+          "claim_id": "clm_40000024",
+          "method_name": "抗酸菌染色",
+          "method_knowledge_id": null,
+          "relation_type": "alternative_for_specific_target",
+          "assertion": "抗酸菌の観察には抗酸菌染色を用いる。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_gram_asm_protocol",
+      "source_priority_rank": 3,
+      "title": "Gram Stain Protocols",
+      "issuing_organization": "American Society for Microbiology",
+      "edition": null,
+      "publication_year": null,
+      "url": "https://asm.org/protocols/gram-stain-protocols",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-18",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_40000001",
+        "clm_40000002",
+        "clm_40000003",
+        "clm_40000004",
+        "clm_40000005",
+        "clm_40000006",
+        "clm_40000007",
+        "clm_40000008",
+        "clm_40000009",
+        "clm_40000010",
+        "clm_40000011",
+        "clm_40000012",
+        "clm_40000013",
+        "clm_40000014",
+        "clm_40000015",
+        "clm_40000016",
+        "clm_40000017",
+        "clm_40000020",
+        "clm_40000021"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_gram_jcm_qc",
+      "source_priority_rank": 3,
+      "title": "Automated Gram Staining: a Comparison of Two Instruments and Manual Staining",
+      "issuing_organization": "American Society for Microbiology",
+      "edition": null,
+      "publication_year": 2020,
+      "url": "https://journals.asm.org/doi/10.1128/jcm.01914-20",
+      "doi": "10.1128/jcm.01914-20",
+      "pmid": null,
+      "accessed_at": "2026-07-18",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_40000018",
+        "clm_40000019"
+      ],
+      "evidence_role": "supporting"
+    },
+    {
+      "source_id": "src_gram_ncbi_limits",
+      "source_priority_rank": 6,
+      "title": "Gram Staining",
+      "issuing_organization": "National Center for Biotechnology Information",
+      "edition": null,
+      "publication_year": null,
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK562156/",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-18",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_40000022",
+        "clm_40000023"
+      ],
+      "evidence_role": "supporting"
+    },
+    {
+      "source_id": "src_acidfast_asm_protocol",
+      "source_priority_rank": 3,
+      "title": "Acid-Fast Stain Protocols",
+      "issuing_organization": "American Society for Microbiology",
+      "edition": null,
+      "publication_year": null,
+      "url": "https://asm.org/asm/media/protocol-images/acid-fast-stain-protocols.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-18",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_40000024"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.1",
+  "profile_id": "visual_grammar.gram_stain_learning",
+  "version": "1.0.0",
+  "name": "Gram染色 共通図解文法 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "taxonomy_ref": {
+    "profile_id": "diagram_taxonomy.medical",
+    "version": "1.0.0"
+  },
+  "illustration_library_hook": {
+    "contract_version": "1.0",
+    "resolver_capability_id": "illustration.resolve_by_id",
+    "supported_asset_namespaces": [
+      "cell",
+      "sample",
+      "device",
+      "icon",
+      "bacteria",
+      "laboratory_test"
+    ],
+    "default_missing_asset_policy": "use_basic_shape",
+    "store_assets_in_knowledge": false
+  },
+  "rules": [
+    {
+      "grammar_rule_id": "grammar.gram_stain.workflow",
+      "diagram_type": "laboratory_workflow",
+      "visual_types": ["diagram.laboratory_workflow"],
+      "taxonomy_ids": ["taxonomy.workflow.staining"],
+      "composition": {
+        "pattern": "left_to_right",
+        "max_primary_tracks": 1,
+        "allow_branching": false
+      },
+      "nodes": [
+        {"node_role": "workflow.sample", "node_type": "sample", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "workflow.primary_stain", "node_type": "process", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "workflow.mordant", "node_type": "process", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "workflow.decolorization", "node_type": "process", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "workflow.counterstain", "node_type": "process", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "workflow.result", "node_type": "result", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true}
+      ],
+      "connectors": [
+        {"connector_role": "workflow.sample_to_primary", "connector_type": "arrow", "from_node_role": "workflow.sample", "to_node_role": "workflow.primary_stain", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "workflow.primary_to_mordant", "connector_type": "arrow", "from_node_role": "workflow.primary_stain", "to_node_role": "workflow.mordant", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "workflow.mordant_to_decolorization", "connector_type": "arrow", "from_node_role": "workflow.mordant", "to_node_role": "workflow.decolorization", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "workflow.decolorization_to_counterstain", "connector_type": "arrow", "from_node_role": "workflow.decolorization", "to_node_role": "workflow.counterstain", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "workflow.counterstain_to_result", "connector_type": "arrow", "from_node_role": "workflow.counterstain", "to_node_role": "workflow.result", "is_required": true, "claim_binding_required": true}
+      ],
+      "label_rule": {
+        "position": "bottom",
+        "numbering": "step_numbered",
+        "allow_supplement": true,
+        "claim_reference_required": true
+      },
+      "highlights": [
+        {"highlight_id": "highlight.gram_stain.decolorization", "semantic": "warning", "source": "education_profile", "target_node_roles": ["workflow.decolorization"], "is_required": true},
+        {"highlight_id": "highlight.gram_stain.exam", "semantic": "exam_frequent", "source": "exam_metadata", "target_node_roles": ["workflow.primary_stain", "workflow.mordant", "workflow.decolorization", "workflow.counterstain"], "is_required": false}
+      ],
+      "density": {
+        "level": "standard",
+        "maximum_nodes": 6,
+        "maximum_connectors": 5,
+        "maximum_highlights": 2
+      },
+      "illustration_slots": [
+        {"slot_id": "illustration.gram_stain.sample", "node_role": "workflow.sample", "accepted_asset_namespaces": ["sample"], "preferred_asset_ids": ["sample.smear"], "is_required": false, "missing_asset_policy": "use_basic_shape"},
+        {"slot_id": "illustration.gram_stain.result", "node_role": "workflow.result", "accepted_asset_namespaces": ["bacteria"], "preferred_asset_ids": [], "is_required": false, "missing_asset_policy": "use_basic_shape"}
+      ]
+    },
+    {
+      "grammar_rule_id": "grammar.gram_stain.comparison",
+      "diagram_type": "comparison_table",
+      "visual_types": ["table.gram_reaction_comparison"],
+      "taxonomy_ids": ["taxonomy.comparison"],
+      "composition": {
+        "pattern": "comparison_two_column",
+        "max_primary_tracks": 2,
+        "allow_branching": false
+      },
+      "nodes": [
+        {"node_role": "comparison.gram_positive", "node_type": "cell", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "comparison.gram_negative", "node_type": "cell", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "comparison.axis", "node_type": "result", "minimum_count": 1, "maximum_count": 2, "is_required": true, "claim_binding_required": true}
+      ],
+      "connectors": [
+        {"connector_role": "comparison.gram_group", "connector_type": "group_box", "from_node_role": "comparison.gram_positive", "to_node_role": "comparison.gram_negative", "is_required": true, "claim_binding_required": true}
+      ],
+      "label_rule": {
+        "position": "top",
+        "numbering": "none",
+        "allow_supplement": true,
+        "claim_reference_required": true
+      },
+      "highlights": [
+        {"highlight_id": "highlight.gram_positive", "semantic": "positive", "source": "knowledge_claim", "target_node_roles": ["comparison.gram_positive"], "is_required": true},
+        {"highlight_id": "highlight.gram_negative", "semantic": "negative", "source": "knowledge_claim", "target_node_roles": ["comparison.gram_negative"], "is_required": true}
+      ],
+      "density": {
+        "level": "compact",
+        "maximum_nodes": 4,
+        "maximum_connectors": 1,
+        "maximum_highlights": 2
+      },
+      "illustration_slots": [
+        {"slot_id": "illustration.gram_positive", "node_role": "comparison.gram_positive", "accepted_asset_namespaces": ["bacteria"], "preferred_asset_ids": [], "is_required": false, "missing_asset_policy": "use_basic_shape"},
+        {"slot_id": "illustration.gram_negative", "node_role": "comparison.gram_negative", "accepted_asset_namespaces": ["bacteria"], "preferred_asset_ids": [], "is_required": false, "missing_asset_policy": "use_basic_shape"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_5dd3462b8b3cc1d0",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "ヘモグロビンA1c",
+    "english_name": "Hemoglobin A1c",
+    "aliases": [
+      "HbA1c",
+      "糖化ヘモグロビンA1c",
+      "グリコヘモグロビンA1c"
+    ]
+  },
+  "classification": {
+    "term_type": "test_item",
+    "primary_exam_domain": "clinical_chemistry",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_1b5cb18674afbc10",
+        "statement": "HbA1cは、ヘモグロビンAのβ鎖N末端バリンがグルコースにより非酵素的に糖化された分画である。"
+      },
+      {
+        "claim_id": "clm_eed3c3b9f758158a",
+        "statement": "HbA1cは、赤血球寿命に相当する期間の平均的な血糖状態を反映する指標である。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_d15b6b1efdc147ac",
+        "statement": "HbA1cは、グルコースとヘモグロビンのアミノ基との非酵素的反応に続くアマドリ転位によって生成する。"
+      },
+      {
+        "claim_id": "clm_11d15dd1f1d5fa08",
+        "statement": "HbA1cの値は、血糖値だけでなく赤血球の寿命および赤血球動態の影響を受ける。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_6203253464c1d9c5",
+        "statement": "HbA1cは通常、全ヘモグロビンに対するHbA1cの割合として報告される。"
+      },
+      {
+        "claim_id": "clm_1a17ffafe255f893",
+        "statement": "HbA1cの標準化には国際臨床化学連合（IFCC）の参照測定系が用いられる。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "test_item_v0.3",
+    "test_item": {
+      "purposes": [
+        {
+          "claim_id": "clm_af7683a8e2ca7b18",
+          "statement": "HbA1cは、慢性的な高血糖状態の評価に用いられる。"
+        },
+        {
+          "claim_id": "clm_d2ec7453b1f474b6",
+          "statement": "HbA1cは、糖尿病患者における血糖管理状態の評価に用いられる。"
+        }
+      ],
+      "specimens": [
+        {
+          "claim_id": "clm_480e21a07a2d1487",
+          "specimen": "全血",
+          "container_or_anticoagulant": "EDTA加採血管などの抗凝固処理した全血",
+          "handling": "採血後は全血として取り扱う。",
+          "stability": ""
+        }
+      ],
+      "measurement_methods": [
+        {
+          "claim_id": "clm_d71fe9ab00c4ef56",
+          "method_name": "HPLC法",
+          "standardizing_body": "IFCC",
+          "factual_description": "陽イオン交換HPLCなどによりヘモグロビン分画を分離し、HbA1c分画を定量する方法である。"
+        },
+        {
+          "claim_id": "clm_b839b42ae2e71cfd",
+          "method_name": "免疫測定法",
+          "standardizing_body": "IFCC",
+          "factual_description": "糖化されたヘモグロビンβ鎖N末端に対する抗体を用いてHbA1cを測定する方法である。"
+        },
+        {
+          "claim_id": "clm_c71dc9d7e772c42c",
+          "method_name": "酵素法",
+          "standardizing_body": "IFCC",
+          "factual_description": "HbA1c由来の糖化N末端を酵素反応により測定する方法である。"
+        }
+      ],
+      "measurement_principles": [
+        {
+          "claim_id": "clm_875aeb7a2c13492b",
+          "related_method_claim_ids": [
+            "clm_d71fe9ab00c4ef56"
+          ],
+          "measured_quantity": "全ヘモグロビンに対するHbA1c分画の割合",
+          "reaction_sequence": "溶血した全血中のヘモグロビン分画をクロマトグラフィーで分離し、HbA1c分画を定量する。",
+          "detection_signal": "分離されたヘモグロビン分画の吸光信号",
+          "wavelength_or_endpoint": ""
+        },
+        {
+          "claim_id": "clm_f6903643b9889764",
+          "related_method_claim_ids": [
+            "clm_b839b42ae2e71cfd"
+          ],
+          "measured_quantity": "糖化ヘモグロビンβ鎖N末端を有するヘモグロビン量",
+          "reaction_sequence": "糖化ヘモグロビンβ鎖N末端に対する抗体反応を利用してHbA1cを測定し、全ヘモグロビン量との比として算出する。",
+          "detection_signal": "免疫学的反応信号",
+          "wavelength_or_endpoint": ""
+        },
+        {
+          "claim_id": "clm_9fdf817df24c7f54",
+          "related_method_claim_ids": [
+            "clm_c71dc9d7e772c42c"
+          ],
+          "measured_quantity": "HbA1c由来の糖化β鎖N末端",
+          "reaction_sequence": "プロテアーゼ処理後、HbA1c由来の糖化N末端を酵素反応で測定し、全ヘモグロビン量との比として算出する。",
+          "detection_signal": "酵素反応に伴う吸光度変化",
+          "wavelength_or_endpoint": ""
+        }
+      ],
+      "reference_ranges": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [
+            {
+              "claim_id": "clm_43abb64a49fa6e21",
+              "state_name": "慢性的な高血糖",
+              "related_knowledge_id": null,
+              "factual_relation": "赤血球が循環する期間に高血糖へ曝露されるとHbA1cは上昇する。"
+            }
+          ],
+          "representative_diseases": [
+            {
+              "claim_id": "clm_d71d0bc0a570c165",
+              "disease_name": "糖尿病",
+              "disease_knowledge_id": null,
+              "factual_relation": "持続的な高血糖によりHbA1cが高値となりうる。"
+            }
+          ],
+          "interpretive_notes": [
+            {
+              "claim_id": "clm_7972807ae2659bf7",
+              "statement": "HbA1c高値は、測定時点の血糖値ではなく、一定期間の平均的な血糖状態を反映する。"
+            }
+          ]
+        },
+        "low": {
+          "pathophysiologic_states": [
+            {
+              "claim_id": "clm_8cc5512163591bc6",
+              "state_name": "赤血球寿命短縮",
+              "related_knowledge_id": null,
+              "factual_relation": "赤血球の循環期間が短縮すると糖化の時間が短くなり、HbA1cは低値となりうる。"
+            }
+          ],
+          "representative_diseases": [
+            {
+              "claim_id": "clm_466bd6492bc0e68e",
+              "disease_name": "溶血性貧血",
+              "disease_knowledge_id": null,
+              "factual_relation": "溶血による赤血球寿命短縮のためHbA1cが低値となりうる。"
+            }
+          ],
+          "interpretive_notes": [
+            {
+              "claim_id": "clm_291109ae8bb4fb20",
+              "statement": "HbA1c低値は、血糖が低い場合のほか、赤血球寿命の短縮によっても認められる。"
+            }
+          ]
+        }
+      },
+      "related_test_combinations": [
+        {
+          "claim_id": "clm_9c3276ad19633d82",
+          "related_test_names": [
+            "血糖",
+            "グリコアルブミン"
+          ],
+          "related_knowledge_ids": [],
+          "factual_interpretation": "HbA1c、血糖およびグリコアルブミンの乖離は、血糖変動、評価する期間の違い、または赤血球寿命の影響を示すことがある。"
+        }
+      ],
+      "interpretation_cautions": [
+        {
+          "claim_id": "clm_d5e8c01826bf6e5d",
+          "statement": "溶血、出血、輸血、赤血球造血の変化など、赤血球寿命または赤血球集団を変化させる状態ではHbA1cが実際の血糖状態を正確に反映しないことがある。"
+        },
+        {
+          "claim_id": "clm_3b51dcd4adbf06a1",
+          "statement": "ヘモグロビン異常症は、HbA1cの測定値に影響することがあり、その影響は測定法によって異なる。"
+        },
+        {
+          "claim_id": "clm_d25d7c0664ab0e11",
+          "statement": "鉄欠乏状態ではHbA1cが高値となることがある。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "layout.note_article",
+  "version": "1.0.0",
+  "name": "note記事 標準構図",
+  "status": "active",
+  "supported_outputs": ["note"],
+  "regions": [
+    {"region_id": "region.lead", "region_role": "role.lead", "order": 1, "parent_region_id": null},
+    {"region_id": "region.article_body", "region_role": "role.article_body", "order": 2, "parent_region_id": null},
+    {"region_id": "region.deep_dive", "region_role": "role.deep_dive", "order": 3, "parent_region_id": null},
+    {"region_id": "region.visual_summary", "region_role": "role.visual_summary", "order": 4, "parent_region_id": null}
+  ],
+  "placements": [
+    {"placement_id": "placement.introduction", "item_kind": "content", "item_id": "section.introduction", "region_id": "region.lead", "order": 1, "is_optional": false},
+    {"placement_id": "placement.body", "item_kind": "content", "item_id": "section.body", "region_id": "region.article_body", "order": 1, "is_optional": false},
+    {"placement_id": "placement.reaction", "item_kind": "visual", "item_id": "visual.reaction_diagram", "region_id": "region.article_body", "order": 2, "is_optional": false},
+    {"placement_id": "placement.deep_dive", "item_kind": "content", "item_id": "section.deep_dive", "region_id": "region.deep_dive", "order": 1, "is_optional": false},
+    {"placement_id": "placement.comparison_visual", "item_kind": "visual", "item_id": "visual.comparison_table", "region_id": "region.deep_dive", "order": 2, "is_optional": false},
+    {"placement_id": "placement.organ_distribution", "item_kind": "visual", "item_id": "visual.organ_distribution", "region_id": "region.visual_summary", "order": 1, "is_optional": true},
+    {"placement_id": "placement.flowchart", "item_kind": "visual", "item_id": "visual.flowchart", "region_id": "region.visual_summary", "order": 2, "is_optional": true}
+  ]
+}
+

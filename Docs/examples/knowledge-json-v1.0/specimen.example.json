@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000005",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "塗抹標本",
+    "english_name": "Smear specimen",
+    "aliases": [
+      "スメア標本"
+    ]
+  },
+  "classification": {
+    "term_type": "specimen",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": [
+      "hematology",
+      "pathology_cytology"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_50000001",
+        "assertion": "塗抹標本は、検体または培養材料をスライドガラス上へ薄く広げ、乾燥および必要な固定を行った顕微鏡観察用標本である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "specimen_v1.0",
+    "specimen": {
+      "specimen_kind": "smear_specimen",
+      "overview": [
+        {
+          "claim_id": "clm_50000002",
+          "assertion": "塗抹標本では、染色後に検体中の細胞や微生物の形態および染色性を顕微鏡で観察する。"
+        }
+      ],
+      "uses": [
+        {
+          "claim_id": "clm_50000003",
+          "use_case": "染色後の顕微鏡観察",
+          "assertion": "塗抹標本はGram染色などの染色を行い、微生物の形態と染色性を観察するために用いる。"
+        }
+      ],
+      "collection_methods": [
+        {
+          "claim_id": "clm_50000004",
+          "source_material": "臨床検体または培養材料",
+          "collection_or_preparation_method": "対象材料をスライドガラス上へ薄く均一に塗布し、空気中で十分に自然乾燥させる。",
+          "container_or_device": "清浄なスライドガラス",
+          "assertion": "塗抹標本は対象材料をスライドガラス上へ薄く均一に塗布して作製する。"
+        }
+      ],
+      "storage_conditions": [
+        {
+          "claim_id": "clm_50000005",
+          "temperature": null,
+          "maximum_duration": "作製後は採用する標準作業書に従い速やかに処理する。",
+          "conditions": "十分に乾燥させ、対象材料と染色法に適した固定条件を満たして取り扱う。",
+          "assertion": "塗抹標本の保存と取扱いは、対象材料、固定法および染色法ごとの標準作業書に従う。"
+        }
+      ],
+      "cautions": [
+        {
+          "claim_id": "clm_50000006",
+          "assertion": "固定条件は対象病原体と染色法により異なり、固定操作だけを病原体不活化の保証として扱ってはならない。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_smear_niid_manual",
+      "source_priority_rank": 1,
+      "title": "ペストの病原体検査・診断マニュアル",
+      "issuing_organization": "国立感染症研究所",
+      "edition": "2011年版",
+      "publication_year": 2011,
+      "url": "https://www.niid.go.jp/niid/images/lab-manual/plague_2011.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "V. 検査方法 1）菌の形態学的検査",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_50000001",
+        "clm_50000002",
+        "clm_50000003",
+        "clm_50000004",
+        "clm_50000005",
+        "clm_50000006"
+      ],
+      "evidence_role": "primary"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

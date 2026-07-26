@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "visual.gram_stain_learning",
+  "version": "1.0.0",
+  "name": "Gram染色 国家試験図解候補 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "visuals": [
+    {
+      "visual_id": "visual.reaction_diagram",
+      "visual_type": "diagram.laboratory_workflow",
+      "claim_keys": [
+        "gram.stain.procedure.step1_primary_stain",
+        "gram.stain.procedure.step2_mordant",
+        "gram.stain.procedure.step3_decolorization",
+        "gram.stain.procedure.step4_counterstain",
+        "gram.stain.principle.differential_retention"
+      ],
+      "priority": 100,
+      "display_size": "large",
+      "representation": "svg",
+      "caption": "Gram染色の4工程",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.grammar_renderer",
+        "preferred_provider_ids": [],
+        "structured_prompt": null
+      },
+      "is_required": true
+    },
+    {
+      "visual_id": "visual.comparison_table",
+      "visual_type": "table.gram_reaction_comparison",
+      "claim_keys": [
+        "gram.stain.result.gram_positive_purple",
+        "gram.stain.result.gram_negative_red"
+      ],
+      "priority": 95,
+      "display_size": "full_width",
+      "representation": "svg",
+      "caption": "Gram陽性菌とGram陰性菌の染色結果",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.grammar_renderer",
+        "preferred_provider_ids": [],
+        "structured_prompt": null
+      },
+      "is_required": true
+    }
+  ]
+}

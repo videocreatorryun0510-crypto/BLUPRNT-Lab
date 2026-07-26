@@ -1,0 +1,143 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "education.national_exam",
+  "version": "1.0.0",
+  "name": "国家試験対策 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "learning_purposes": [
+    "national_exam_preparation",
+    "review",
+    "conceptual_understanding"
+  ],
+  "level_policy": {
+    "difficulty_level": "standard",
+    "max_claims_per_section": 5,
+    "max_items_per_education_block": 8,
+    "include_optional_content": true,
+    "include_optional_education_blocks": true,
+    "include_optional_visuals": true
+  },
+  "claim_ordering": "exam_priority_then_education",
+  "learning_sequence": [
+    {"step_id": "learning.definition", "target_kind": "content_role", "target_key": "role.definition", "order": 1, "is_required": true},
+    {"step_id": "learning.frequent", "target_kind": "education_block", "target_key": "education.frequent_points", "order": 2, "is_required": true},
+    {"step_id": "learning.reaction", "target_kind": "visual_type", "target_key": "diagram.reaction", "order": 3, "is_required": true},
+    {"step_id": "learning.comparison_visual", "target_kind": "visual_type", "target_key": "table.comparison", "order": 4, "is_required": true},
+    {"step_id": "learning.comparison_block", "target_kind": "education_block", "target_key": "education.related_comparison", "order": 5, "is_required": true},
+    {"step_id": "learning.comparison", "target_kind": "content_role", "target_key": "role.comparison", "order": 6, "is_required": true},
+    {"step_id": "learning.method", "target_kind": "content_role", "target_key": "role.measurement_method", "order": 7, "is_required": true},
+    {"step_id": "learning.principle", "target_kind": "content_role", "target_key": "role.measurement_principle", "order": 8, "is_required": true},
+    {"step_id": "learning.cautions", "target_kind": "content_role", "target_key": "role.cautions", "order": 9, "is_required": false},
+    {"step_id": "learning.trick", "target_kind": "education_block", "target_key": "education.trick_points", "order": 10, "is_required": false},
+    {"step_id": "learning.errors", "target_kind": "education_block", "target_key": "education.common_errors", "order": 11, "is_required": false},
+    {"step_id": "learning.memory", "target_kind": "education_block", "target_key": "education.memory_aid", "order": 12, "is_required": false},
+    {"step_id": "learning.history", "target_kind": "education_block", "target_key": "education.exam_history", "order": 13, "is_required": true},
+    {"step_id": "learning.ranking", "target_kind": "education_block", "target_key": "education.priority_claim_ranking", "order": 14, "is_required": true},
+    {"step_id": "learning.flowchart", "target_kind": "visual_type", "target_key": "diagram.flowchart", "order": 15, "is_required": false},
+    {"step_id": "learning.organ", "target_kind": "visual_type", "target_key": "diagram.organ_distribution", "order": 16, "is_required": false}
+  ],
+  "exam_emphasis": {
+    "is_enabled": true,
+    "frequent_min_appearances": 2,
+    "show_frequency": true,
+    "show_importance": true,
+    "bands": [
+      {"band_id": "exam_priority.highest", "minimum_score": 80, "emphasis_level": 5, "label": "最重要"},
+      {"band_id": "exam_priority.frequent", "minimum_score": 60, "emphasis_level": 4, "label": "頻出"},
+      {"band_id": "exam_priority.important", "minimum_score": 40, "emphasis_level": 3, "label": "重要"},
+      {"band_id": "exam_priority.supplementary", "minimum_score": 0, "emphasis_level": 2, "label": "補足"}
+    ]
+  },
+  "comparison_policy": {
+    "is_required": true,
+    "content_roles": ["role.comparison"],
+    "visual_types": ["table.comparison"],
+    "show_related_tests": true
+  },
+  "visual_priority": [
+    {"visual_type": "diagram.reaction", "rank": 1, "is_required": true},
+    {"visual_type": "table.comparison", "rank": 2, "is_required": true},
+    {"visual_type": "diagram.flowchart", "rank": 3, "is_required": false},
+    {"visual_type": "diagram.organ_distribution", "rank": 4, "is_required": false}
+  ],
+  "education_blocks": [
+    {
+      "block_id": "education.frequent_points",
+      "block_type": "frequent_points",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["priority_claims", "frequency", "importance"],
+      "order": 2,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.related_comparison",
+      "block_type": "related_comparison",
+      "input_sources": ["knowledge_claims", "exam_metadata"],
+      "content_roles": ["role.comparison"],
+      "exam_fields": ["related_terms"],
+      "order": 5,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.trick_points",
+      "block_type": "trick_points",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["common_errors"],
+      "order": 10,
+      "is_required": false,
+      "max_items": 5,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.common_errors",
+      "block_type": "common_errors",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["common_errors"],
+      "order": 11,
+      "is_required": false,
+      "max_items": 5,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.memory_aid",
+      "block_type": "memory_aid",
+      "input_sources": ["knowledge_claims", "publisher_generated"],
+      "content_roles": ["role.definition", "role.measurement_method", "role.measurement_principle"],
+      "exam_fields": [],
+      "order": 12,
+      "is_required": false,
+      "max_items": 3,
+      "requires_generation": true
+    },
+    {
+      "block_id": "education.exam_history",
+      "block_type": "exam_history",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["history", "frequency"],
+      "order": 13,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    },
+    {
+      "block_id": "education.priority_claim_ranking",
+      "block_type": "priority_claim_ranking",
+      "input_sources": ["exam_metadata"],
+      "content_roles": [],
+      "exam_fields": ["priority_claims", "importance"],
+      "order": 14,
+      "is_required": true,
+      "max_items": 8,
+      "requires_generation": false
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "layout.national_exam",
+  "version": "1.0.0",
+  "name": "NationalExam 標準構図",
+  "status": "active",
+  "supported_outputs": ["national_exam"],
+  "regions": [
+    {"region_id": "region.question", "region_role": "role.question", "order": 1, "parent_region_id": null},
+    {"region_id": "region.supporting_visual", "region_role": "role.supporting_visual", "order": 2, "parent_region_id": null},
+    {"region_id": "region.answer_logic", "region_role": "role.answer_logic", "order": 3, "parent_region_id": null}
+  ],
+  "placements": [
+    {"placement_id": "placement.question_core", "item_kind": "content", "item_id": "section.question_core", "region_id": "region.question", "order": 1, "is_optional": false},
+    {"placement_id": "placement.question_patterns", "item_kind": "content", "item_id": "section.question_patterns", "region_id": "region.question", "order": 2, "is_optional": false},
+    {"placement_id": "placement.reaction", "item_kind": "visual", "item_id": "visual.reaction_diagram", "region_id": "region.supporting_visual", "order": 1, "is_optional": false},
+    {"placement_id": "placement.comparison_visual", "item_kind": "visual", "item_id": "visual.comparison_table", "region_id": "region.supporting_visual", "order": 2, "is_optional": false},
+    {"placement_id": "placement.common_errors", "item_kind": "content", "item_id": "section.common_errors", "region_id": "region.answer_logic", "order": 1, "is_optional": true},
+    {"placement_id": "placement.flowchart", "item_kind": "visual", "item_id": "visual.flowchart", "region_id": "region.answer_logic", "order": 2, "is_optional": true},
+    {"placement_id": "placement.organ_distribution", "item_kind": "visual", "item_id": "visual.organ_distribution", "region_id": "region.answer_logic", "order": 3, "is_optional": true}
+  ]
+}
+

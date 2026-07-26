@@ -1,0 +1,210 @@
+{
+  "AST": {
+    "term": {"input": "AST", "canonical_name": "アスパラギン酸アミノトランスフェラーゼ", "english_name": "Aspartate aminotransferase", "aliases": ["GOT"]},
+    "classification": {"term_type": "test_item", "primary_exam_domain": "clinical_chemistry", "related_exam_domains": ["hematology"], "rationale": "血清酵素として測定する臨床化学検査項目", "confidence": 0.99},
+    "template_id": "test_item_v0.2",
+    "quick_summary": "肝・心筋・骨格筋などに分布する酵素。ALTより肝特異性が低く、溶血でも高値になり得る。",
+    "exam_essentials": [
+      {"point": "アミノ基転移反応を触媒する", "why_it_matters": "基質と生成物、補酵素が問われる"},
+      {"point": "補酵素はピリドキサールリン酸", "why_it_matters": "ビタミンB6との対応が頻出"},
+      {"point": "ALTより肝特異性が低い", "why_it_matters": "臓器分布の比較が問われる"},
+      {"point": "溶血で偽高値になり得る", "why_it_matters": "検体品質の判断に必要"}
+    ],
+    "visual_hooks": [
+      {"title": "ASTとALTの対比", "relation": "AST＝多臓器、ALT＝比較的肝優位"},
+      {"title": "反応式", "relation": "アスパラギン酸＋2-オキソグルタル酸→オキサロ酢酸＋グルタミン酸"}
+    ],
+    "study_content": {
+      "definition": "アミノ酸代謝に関わる細胞内酵素で、血清活性を臓器障害の指標として測定する。",
+      "mechanism_or_principle": "アスパラギン酸のアミノ基を2-オキソグルタル酸へ移す反応を触媒する。",
+      "specimen_or_target": "主に血清または血漿。赤血球内にも存在するため溶血の影響を受ける。",
+      "key_findings": ["肝・心筋・骨格筋などに分布", "補酵素はピリドキサールリン酸", "ALTと組み合わせて評価"],
+      "related_terms": ["ALT", "LD", "溶血", "ビタミンB6"],
+      "exam_pitfalls": ["ASTを肝特異的酵素と断定しない", "溶血検体の高値を見落とさない"]
+    },
+    "test_item_content": {
+      "purpose": ["肝・心筋・骨格筋などの細胞障害を評価する", "ALTなどと組み合わせて障害臓器を推定する"],
+      "specimens": [
+        {"specimen": "血清または血漿", "anticoagulant_or_container": "使用可能な抗凝固剤は採用測定法の添付文書で確認", "handling_and_stability": "赤血球にもASTが含まれるため、溶血を避けて速やかに分離する。", "exam_focus": "溶血で偽高値となり得る"}
+      ],
+      "measurement_methods": [
+        {"method_name": "JSCC標準化対応法", "standardizing_body": "JSCC", "method_summary": "国内で用いられてきた標準化対応法。反応条件とIFCC法との差は正式資料で確認する。", "exam_focus": "JSCC法とIFCC法の相違を区別する"},
+        {"method_name": "IFCC標準測定法", "standardizing_body": "IFCC", "method_summary": "国際的な標準測定体系に基づく酵素活性測定法。補酵素添加などの条件確認が必要。", "exam_focus": "国際標準化と測定値差を理解する"}
+      ],
+      "measurement_principle": {
+        "measured_quantity": "単位時間当たりのAST酵素活性",
+        "reaction_sequence": "AST反応で生じるオキサロ酢酸を共役酵素反応へ導き、NADHの変化として追跡する。",
+        "detection_signal": "NADHの吸光度減少を反応速度として測定する。",
+        "wavelength_or_endpoint": "340 nm付近の吸光度変化"
+      },
+      "reference_ranges": [
+        {"population": "成人", "specimen": "血清", "display_value": "採用測定法・施設の基準範囲を確認", "unit": "U/L", "conditions": "JSCC法とIFCC法を区別する", "verification_status": "requires_source_check", "source_note": "正式版では採用法の添付文書または標準化資料を確認"}
+      ],
+      "high_conditions": [
+        {"condition": "急性肝細胞障害", "expected_change": "high", "reason": "肝細胞から細胞内ASTが逸脱する。"},
+        {"condition": "心筋障害", "expected_change": "high", "reason": "心筋細胞に含まれるASTが血中へ逸脱する。"},
+        {"condition": "骨格筋障害", "expected_change": "high", "reason": "骨格筋細胞の障害でASTが逸脱する。"},
+        {"condition": "溶血検体", "expected_change": "high", "reason": "赤血球由来ASTが混入し偽高値となり得る。"}
+      ],
+      "low_conditions": [
+        {"condition": "ビタミンB6不足", "expected_change": "low", "reason": "アミノ基転移酵素の補酵素不足により活性が低くなる可能性がある。"}
+      ],
+      "low_value_note": "AST低値は高値ほど診断的意義が大きくない。測定法と栄養状態を含めて解釈する。",
+      "related_test_combinations": [
+        {"tests": ["AST", "ALT"], "interpretation": "両者の分布と上昇パターンから肝障害と肝外障害を考える。", "exam_focus": "ALTのほうが比較的肝特異性が高い"},
+        {"tests": ["AST", "LD"], "interpretation": "組織障害や溶血の可能性を他の逸脱酵素と合わせて考える。", "exam_focus": "溶血では両者が影響を受け得る"},
+        {"tests": ["AST", "ALP"], "interpretation": "肝細胞障害型と胆汁うっ滞型の検査パターンを比較する。", "exam_focus": "逸脱酵素と胆道系酵素を区別する"}
+      ],
+      "interpretation_cautions": ["溶血による偽高値", "AST単独では障害臓器を特定できない", "測定法変更時の基準範囲・換算関係", "激しい運動や筋障害の影響"],
+      "frequent_exam_points": ["ASTの旧称はGOT", "補酵素はピリドキサールリン酸", "ASTはALTより臓器特異性が低い", "共役反応でNADHの吸光度変化を測定", "溶血で偽高値", "JSCC法とIFCC法の区別", "ASTとALTの組合せ解釈"],
+      "comparison_tests": [
+        {"test_name": "ALT", "comparison_axis": "臓器分布", "key_difference": "ALTはASTより比較的肝特異性が高い。"},
+        {"test_name": "LD", "comparison_axis": "反応と組織分布", "key_difference": "両者とも逸脱酵素だが、触媒反応とアイソザイムの扱いが異なる。"},
+        {"test_name": "ALP", "comparison_axis": "病態パターン", "key_difference": "ASTは主に細胞障害、ALPは胆汁うっ滞などでの上昇を重視する。"}
+      ],
+      "exam_keywords": ["GOT", "アミノ基転移酵素", "ピリドキサールリン酸", "JSCC法", "IFCC法", "NADH", "340 nm", "溶血", "逸脱酵素", "AST/ALT比"]
+    },
+    "warnings": [
+      {"code": "test_fixture", "message": "画面と構造を確認する固定テストデータ。医学監修前。"},
+      {"code": "needs_source_check", "message": "測定法、反応条件、基準範囲は正式資料で確認が必要。"}
+    ]
+  },
+  "HbA1c": {
+    "term": {"input": "HbA1c", "canonical_name": "ヘモグロビンA1c", "english_name": "Hemoglobin A1c", "aliases": ["糖化ヘモグロビン"]},
+    "classification": {"term_type": "test_item", "primary_exam_domain": "clinical_chemistry", "related_exam_domains": ["hematology"], "rationale": "中長期の血糖状態をみる臨床化学検査項目", "confidence": 0.99},
+    "template_id": "test_item_v0.2",
+    "quick_summary": "ヘモグロビンの非酵素的糖化を測定し、過去1〜2か月程度の平均血糖を反映する。赤血球寿命の影響に注意。",
+    "exam_essentials": [
+      {"point": "過去1〜2か月程度の平均血糖を反映", "why_it_matters": "随時血糖との時間軸の違いが問われる"},
+      {"point": "非酵素的糖化で生じる", "why_it_matters": "糖化と糖鎖付加の区別が必要"},
+      {"point": "赤血球寿命の影響を受ける", "why_it_matters": "溶血や輸血時の解釈が問われる"}
+    ],
+    "visual_hooks": [
+      {"title": "時間軸の比較", "relation": "血糖＝現在、HbA1c＝過去1〜2か月"},
+      {"title": "生成の流れ", "relation": "持続する血糖上昇→ヘモグロビン糖化→HbA1c上昇"}
+    ],
+    "study_content": {
+      "definition": "ヘモグロビンAの糖化分画で、慢性的な血糖状態の評価に用いる。",
+      "mechanism_or_principle": "血中グルコースがヘモグロビンへ非酵素的に結合し、赤血球の生存期間中に蓄積する。",
+      "specimen_or_target": "抗凝固全血中の赤血球ヘモグロビンを測定対象とする。",
+      "key_findings": ["短時間の食事影響を受けにくい", "赤血球寿命短縮で低めになり得る", "輸血後は解釈に注意"],
+      "related_terms": ["血糖", "グリコアルブミン", "溶血性貧血", "輸血"],
+      "exam_pitfalls": ["直前の食事だけを反映する検査ではない", "貧血や輸血の影響を無視しない"]
+    },
+    "test_item_content": {
+      "purpose": ["中長期の血糖状態を評価する", "糖尿病の診断補助と血糖管理評価に用いる"],
+      "specimens": [
+        {"specimen": "抗凝固全血", "anticoagulant_or_container": "EDTA加全血など採用法で指定された容器", "handling_and_stability": "赤血球を含む全血を用い、保存条件は採用測定法で確認する。", "exam_focus": "血清ではなく全血を用いる"}
+      ],
+      "measurement_methods": [
+        {"method_name": "HPLC法", "standardizing_body": "NGSP・IFCC標準化体系", "method_summary": "ヘモグロビン分画を分離してHbA1cを定量する。異常ヘモグロビンの影響確認が必要。", "exam_focus": "分離パターンと干渉を理解する"},
+        {"method_name": "免疫法", "standardizing_body": "NGSP・IFCC標準化体系", "method_summary": "HbA1cの糖化部位を抗体で認識して測定する。", "exam_focus": "HPLC法との原理差を比較する"},
+        {"method_name": "酵素法", "standardizing_body": "NGSP・IFCC標準化体系", "method_summary": "糖化アミノ酸を酵素反応で検出して定量する。", "exam_focus": "測定対象と反応原理を区別する"}
+      ],
+      "measurement_principle": {"measured_quantity": "総ヘモグロビンに対するHbA1cの割合", "reaction_sequence": "ヘモグロビンの糖化分画を分離、免疫反応、または酵素反応で検出する。", "detection_signal": "採用法により吸光度、クロマトグラム、酵素反応信号を用いる。", "wavelength_or_endpoint": "測定法により異なる"},
+      "reference_ranges": [
+        {"population": "成人", "specimen": "抗凝固全血", "display_value": "採用法と標準化体系の基準範囲を確認", "unit": "%", "conditions": "NGSP値とIFCC値を区別する", "verification_status": "requires_source_check", "source_note": "正式版では国内の標準化資料と採用法の添付文書を確認"}
+      ],
+      "high_conditions": [
+        {"condition": "持続する高血糖", "expected_change": "high", "reason": "赤血球寿命中にヘモグロビンの糖化が進む。"},
+        {"condition": "鉄欠乏など赤血球寿命が延長する状態", "expected_change": "high", "reason": "糖化を受ける期間が長くなり相対的に高値となる可能性がある。"}
+      ],
+      "low_conditions": [
+        {"condition": "溶血性貧血", "expected_change": "low", "reason": "赤血球寿命短縮により糖化期間が短くなる。"},
+        {"condition": "大量出血後・輸血後", "expected_change": "low", "reason": "赤血球集団が変化し平均血糖との対応が崩れる。"}
+      ],
+      "low_value_note": "低値は血糖低下だけでなく、赤血球寿命短縮や輸血の影響を考える。",
+      "related_test_combinations": [
+        {"tests": ["HbA1c", "血糖"], "interpretation": "現在の血糖と中長期指標を合わせ、乖離の有無を確認する。", "exam_focus": "時間軸の違い"},
+        {"tests": ["HbA1c", "グリコアルブミン"], "interpretation": "赤血球寿命の影響が疑われる場合に異なる期間・蛋白の指標と比較する。", "exam_focus": "反映期間と影響因子を比較する"}
+      ],
+      "interpretation_cautions": ["赤血球寿命短縮で低値", "輸血後は解釈困難", "異常ヘモグロビンによる測定法依存の干渉", "NGSP値とIFCC値の混同", "急激な血糖変化は直ちに一致しない"],
+      "frequent_exam_points": ["非酵素的糖化", "過去1〜2か月程度を反映", "抗凝固全血を使用", "赤血球寿命の影響", "HPLC法と免疫法の比較", "NGSP値とIFCC値", "血糖との乖離"],
+      "comparison_tests": [
+        {"test_name": "血糖", "comparison_axis": "反映期間", "key_difference": "血糖は採血時点、HbA1cは中長期の状態を反映する。"},
+        {"test_name": "グリコアルブミン", "comparison_axis": "対象蛋白と反映期間", "key_difference": "グリコアルブミンはアルブミン代謝、HbA1cは赤血球寿命の影響を受ける。"}
+      ],
+      "exam_keywords": ["糖化ヘモグロビン", "非酵素的糖化", "HPLC", "免疫法", "酵素法", "NGSP", "IFCC", "赤血球寿命", "溶血性貧血", "輸血"]
+    },
+    "warnings": [
+      {"code": "test_fixture", "message": "画面と構造を確認する固定テストデータ。医学監修前。"},
+      {"code": "needs_source_check", "message": "測定法、標準化体系、基準範囲は正式資料で確認が必要。"}
+    ]
+  },
+  "巨赤芽球性貧血": {
+    "term": {"input": "巨赤芽球性貧血", "canonical_name": "巨赤芽球性貧血", "english_name": "Megaloblastic anemia", "aliases": []},
+    "classification": {"term_type": "disease", "primary_exam_domain": "hematology", "related_exam_domains": ["clinical_chemistry"], "rationale": "造血障害と血球形態を扱う血液学の疾患", "confidence": 0.99},
+    "template_id": "generic_v0.1",
+    "quick_summary": "ビタミンB12または葉酸不足などでDNA合成が障害される大球性貧血。過分葉好中球と無効造血が要点。",
+    "exam_essentials": [
+      {"point": "DNA合成障害で核成熟が遅れる", "why_it_matters": "巨赤芽球形成の本質"},
+      {"point": "大球性貧血と過分葉好中球", "why_it_matters": "末梢血像の代表所見"},
+      {"point": "ビタミンB12または葉酸欠乏が代表原因", "why_it_matters": "原因鑑別が頻出"},
+      {"point": "無効造血でLD・間接ビリルビンが上昇し得る", "why_it_matters": "検査値の組合せが問われる"}
+    ],
+    "visual_hooks": [
+      {"title": "原因から所見", "relation": "B12・葉酸不足→DNA合成障害→核成熟遅延→巨赤芽球"},
+      {"title": "末梢血像", "relation": "大卵円形赤血球＋過分葉好中球"}
+    ],
+    "study_content": {
+      "definition": "DNA合成障害により核と細胞質の成熟が不均衡となる大球性貧血。",
+      "mechanism_or_principle": "造血細胞の核成熟が障害され、骨髄内で細胞が壊れる無効造血を生じる。",
+      "specimen_or_target": "末梢血の血算・血液像、骨髄像、血清ビタミンB12・葉酸などを評価する。",
+      "key_findings": ["MCV上昇", "大卵円形赤血球", "過分葉好中球", "LD上昇", "網赤血球は増えにくい"],
+      "related_terms": ["悪性貧血", "ビタミンB12", "葉酸", "無効造血"],
+      "exam_pitfalls": ["大球性貧血がすべて巨赤芽球性とは限らない", "B12欠乏と葉酸欠乏の共通点・相違点を混同しない"]
+    },
+    "test_item_content": null,
+    "warnings": [{"code": "test_fixture", "message": "画面と構造を確認する固定テストデータ。医学監修前。"}]
+  },
+  "Gram染色": {
+    "term": {"input": "Gram染色", "canonical_name": "Gram染色", "english_name": "Gram stain", "aliases": ["グラム染色"]},
+    "classification": {"term_type": "staining_method", "primary_exam_domain": "microbiology", "related_exam_domains": [], "rationale": "細菌を細胞壁構造の違いで染め分ける微生物学的染色法", "confidence": 0.99},
+    "template_id": "generic_v0.1",
+    "quick_summary": "細菌を細胞壁構造の違いで紫色のGram陽性菌と赤色のGram陰性菌に染め分ける。脱色操作が判定の鍵。",
+    "exam_essentials": [
+      {"point": "陽性菌は紫、陰性菌は赤", "why_it_matters": "色と分類の対応が基本"},
+      {"point": "基本順序は一次染色→媒染→脱色→対比染色", "why_it_matters": "試薬順序が頻出"},
+      {"point": "脱色条件が結果を左右する", "why_it_matters": "過脱色・脱色不足の誤判定を理解する"}
+    ],
+    "visual_hooks": [
+      {"title": "4段階の手順", "relation": "クリスタル紫→ヨウ素→脱色→対比染色"},
+      {"title": "色の対比", "relation": "Gram陽性＝紫、Gram陰性＝赤"}
+    ],
+    "study_content": {
+      "definition": "細菌の細胞壁構造の差を利用する鑑別染色法。",
+      "mechanism_or_principle": "陽性菌では色素・ヨウ素複合体が厚いペプチドグリカン層に保持され、陰性菌は脱色後に対比染色される。",
+      "specimen_or_target": "培養菌または臨床材料から作製・固定した塗抹標本中の細菌。",
+      "key_findings": ["Gram陽性菌は紫色", "Gram陰性菌は赤色", "菌形と配列も同時に観察", "標本の厚さが染色性へ影響"],
+      "related_terms": ["クリスタル紫", "ヨウ素液", "脱色", "サフラニン"],
+      "exam_pitfalls": ["脱色の順序を入れ替えない", "古い培養菌や厚い塗抹による不定染色に注意"]
+    },
+    "test_item_content": null,
+    "warnings": [{"code": "test_fixture", "message": "画面と構造を確認する固定テストデータ。医学監修前。"}]
+  },
+  "蟯虫": {
+    "term": {"input": "蟯虫", "canonical_name": "蟯虫", "english_name": "Enterobius vermicularis", "aliases": ["ギョウチュウ"]},
+    "classification": {"term_type": "parasite", "primary_exam_domain": "microbiology", "related_exam_domains": ["public_health"], "rationale": "人体寄生性線虫とその検査法を扱う寄生虫学用語", "confidence": 0.99},
+    "template_id": "generic_v0.1",
+    "quick_summary": "夜間に雌が肛門周囲へ産卵する線虫。早朝・入浴排便前の肛囲検査が重要で、糞便検査だけでは見逃しやすい。",
+    "exam_essentials": [
+      {"point": "雌は夜間に肛門周囲へ産卵", "why_it_matters": "症状と検査時刻につながる"},
+      {"point": "肛囲の粘着テープ法で虫卵を検出", "why_it_matters": "検査法の組合せが頻出"},
+      {"point": "早朝・入浴排便前に採取", "why_it_matters": "採取条件が検出率を左右する"}
+    ],
+    "visual_hooks": [
+      {"title": "検査タイミング", "relation": "夜間産卵→早朝・入浴排便前に肛囲採取"},
+      {"title": "虫卵の形", "relation": "左右非対称で一側が扁平な形を手掛かりにする"}
+    ],
+    "study_content": {
+      "definition": "ヒトの盲腸付近に寄生し、肛門周囲へ産卵する線虫。",
+      "mechanism_or_principle": "夜間に移動した雌成虫が肛門周囲へ虫卵を付着させ、掻痒や手指を介して感染環が続く。",
+      "specimen_or_target": "起床直後、入浴・排便前に肛門周囲から粘着テープなどで虫卵を採取する。",
+      "key_findings": ["肛門周囲の掻痒", "肛囲検査", "早朝採取", "左右非対称の虫卵"],
+      "related_terms": ["粘着テープ法", "線虫", "接触感染"],
+      "exam_pitfalls": ["糞便検査を第一選択としない", "採取を入浴・排便後に行わない"]
+    },
+    "test_item_content": null,
+    "warnings": [{"code": "test_fixture", "message": "画面と構造を確認する固定テストデータ。医学監修前。"}]
+  }
+}

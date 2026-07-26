@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "content.gram_stain_national_exam_pdf",
+  "version": "1.0.0",
+  "name": "Gram染色 国家試験PDF医学的事実 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf"],
+  "sections": [
+    {
+      "section_id": "section.definition",
+      "content_role": "role.definition",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["gram.stain.definition.differential_stain"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 100,
+      "is_required": true,
+      "max_items": 3
+    },
+    {
+      "section_id": "section.measurement_method",
+      "content_role": "role.staining_workflow",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": ["category_content.staining_method.procedure_steps"],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 95,
+      "is_required": true,
+      "max_items": 6
+    },
+    {
+      "section_id": "section.measurement_principle",
+      "content_role": "role.staining_principle",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": ["category_content.staining_method.staining_principles"],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 95,
+      "is_required": true,
+      "max_items": 4
+    },
+    {
+      "section_id": "section.comparison",
+      "content_role": "role.comparison",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": [
+          "gram.stain.result.gram_positive_purple",
+          "gram.stain.result.gram_negative_red"
+        ],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 90,
+      "is_required": true,
+      "max_items": 4
+    },
+    {
+      "section_id": "section.cautions",
+      "content_role": "role.cautions",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": [
+          "category_content.staining_method.error_causes",
+          "category_content.staining_method.limitations"
+        ],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 80,
+      "is_required": false,
+      "max_items": 6
+    }
+  ]
+}

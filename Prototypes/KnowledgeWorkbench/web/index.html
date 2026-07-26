@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Knowledge Workbench | BLUPRNT Lab</title>
+    <link rel="stylesheet" href="/static/styles.css?v=approval-gate-5.14" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.14</p>
+          <h1>Knowledge Workbench</h1>
+          <p class="lead">Source Bundleを生成し、承認済みKnowledgeだけを外部利用へ。</p>
+        </div>
+        <div class="status-stack">
+          <span id="providerBadge" class="badge neutral">接続確認中</span>
+          <span class="badge warning">医学監修前</span>
+        </div>
+      </header>
+
+      <section class="input-panel" aria-labelledby="input-title">
+        <div class="panel-copy">
+          <p class="step">STEP 01</p>
+          <h2 id="input-title">医療用語を1つ入力</h2>
+          <p>AST・HbA1cは従来のAI生成、染色法・検体・試薬・生体構造・疾患・臨床検査項目は正式Category編集画面から登録します。</p>
+        </div>
+        <form id="generateForm">
+          <label for="term">医療用語</label>
+          <div class="input-row">
+            <input id="term" name="term" maxlength="80" autocomplete="off" placeholder="例：AST" required />
+            <button id="submitButton" type="submit">
+              <span class="button-label">JSONを生成</span>
+              <span class="button-loading" hidden>生成中…</span>
+            </button>
+          </div>
+          <div class="examples" aria-label="テスト用テーマ">
+            <span>テスト：</span>
+            <button type="button" data-term="AST">AST</button>
+            <button type="button" data-term="HbA1c">HbA1c</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="knowledge-editor" aria-labelledby="knowledge-editor-title">
+        <div class="panel-copy">
+          <p class="step">PRODUCTION CATEGORY · STAINING / SPECIMEN / REAGENT / STRUCTURE / DISEASE / LAB TEST</p>
+          <h2 id="knowledge-editor-title">正式Knowledgeを登録・編集</h2>
+          <p>
+            下書きを読み込み、内容と出典を確認してRegistryへ保存します。
+            保存後は同じknowledge_idとclaim_keyで版管理されます。
+          </p>
+        </div>
+        <div class="knowledge-editor-controls">
+          <div class="editor-actions">
+            <button id="loadGramStarterButton" class="secondary-action" type="button">
+              Gram染色を開く
+            </button>
+            <button id="loadAcidFastStarterButton" class="secondary-action" type="button">
+              抗酸菌染色を開く
+            </button>
+            <button id="loadSpecimenStarterButton" class="secondary-action" type="button">
+              塗抹標本を開く
+            </button>
+            <label class="visually-hidden" for="reagentStarterSelect">Reagent下書き</label>
+            <select id="reagentStarterSelect" aria-label="開くReagentを選択">
+              <option value="crystal-violet">クリスタルバイオレット</option>
+              <option value="gram-iodine">グラム染色用ヨウ素液</option>
+              <option value="gram-decolorizer">グラム染色用脱色液</option>
+              <option value="gram-safranin">グラム染色用サフラニン対比染色液</option>
+            </select>
+            <button id="loadReagentStarterButton" class="secondary-action" type="button">
+              選択した試薬を開く
+            </button>
+            <button
+              id="loadBiologicalStructureStarterButton"
+              class="secondary-action"
+              type="button"
+            >
+              細菌細胞壁を開く
+            </button>
+            <button id="loadDiseaseStarterButton" class="secondary-action" type="button">
+              鉄欠乏性貧血を開く
+            </button>
+            <button
+              id="loadLaboratoryTestItemStarterButton"
+              class="secondary-action"
+              type="button"
+            >
+              フェリチンを開く
+            </button>
+            <button id="saveKnowledgeButton" class="primary-action" type="button" disabled>
+              Registryへ保存
+            </button>
+            <button
+              id="generateSourceBundleButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Source Bundle生成
+            </button>
+          </div>
+          <div id="knowledgeApprovalSummary" class="knowledge-approval-summary" hidden>
+            <div>
+              <span>Approval State</span>
+              <strong id="knowledgeApprovalState">--</strong>
+            </div>
+            <div>
+              <span>Review Version</span>
+              <strong id="knowledgeReviewVersion">--</strong>
+            </div>
+            <div>
+              <span>外部AI送信</span>
+              <strong id="knowledgeExternalAiRule">--</strong>
+            </div>
+          </div>
+          <label for="knowledgeEditorActor">操作者</label>
+          <input id="knowledgeEditorActor" maxlength="120" value="product_owner" />
+          <label for="knowledgeEditorComment">変更理由</label>
+          <input id="knowledgeEditorComment" maxlength="1000" value="正式Category登録・更新" />
+          <label for="knowledgeJsonEditor">Knowledge JSON Version 1.0</label>
+          <textarea id="knowledgeJsonEditor" rows="18" spellcheck="false" placeholder="下書きを開くとJSONが表示されます"></textarea>
+          <p id="knowledgeEditorMessage" class="control-note" role="status"></p>
+          <div id="resolutionReportPanel" class="resolution-report-summary" hidden>
+            <strong>今回のResolution Report</strong>
+            <span id="resolutionReportText"></span>
+          </div>
+          <section id="sourceBundlePanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">SOURCE BUNDLE JSON 1.0</p>
+                <h3>Presentation Engineへの受け渡しデータ</h3>
+              </div>
+              <button id="copySourceBundleButton" class="copy-button" type="button">
+                JSONをコピー
+              </button>
+            </div>
+            <p id="sourceBundleMessage" class="source-bundle-message"></p>
+            <div class="approval-gate-summary" aria-label="Approval Gate判定">
+              <div>
+                <span>Approval State</span>
+                <strong id="sourceBundleApprovalState">--</strong>
+              </div>
+              <div>
+                <span>公開可否</span>
+                <strong id="sourceBundleCanPublish">--</strong>
+              </div>
+              <div>
+                <span>外部AI送信</span>
+                <strong id="sourceBundleCanSend">--</strong>
+              </div>
+            </div>
+            <p id="sourceBundleGateReason" class="source-bundle-gate-reason"></p>
+            <pre id="sourceBundleOutput"></pre>
+          </section>
+        </div>
+      </section>
+
+      <section class="relation-vocabulary-panel" aria-labelledby="disease-vocabulary-title">
+        <div class="vocabulary-heading">
+          <div>
+            <p class="step">PHASE 5.12 · DISEASE RELATION VOCABULARY</p>
+            <h2 id="disease-vocabulary-title">疾患を安全につなぐ共通Vocabulary</h2>
+            <p>
+              Relationはまだ作成しません。意味・方向・利用Categoryを先に固定し、
+              将来の接続で同じRelation Typeを再利用します。
+            </p>
+          </div>
+          <span id="diseaseVocabularyBadge" class="badge neutral">読込中</span>
+        </div>
+        <div id="diseaseVocabularyList" class="relation-vocabulary-list" aria-live="polite"></div>
+      </section>
+
+      <section class="import-panel" aria-labelledby="import-title">
+        <div class="panel-copy">
+          <p class="step">PHASE 2.8 · VALIDATION → PREVIEW → IMPORT</p>
+          <h2 id="import-title">国家試験CSVを安全に取り込む</h2>
+          <p>
+            CSVをいったん共通形式へ整えてから、Knowledge JSONのIDとclaimへ関連付けます。
+            画像本体はJSONへ入れず、ExamImagesフォルダのファイルを参照します。
+          </p>
+        </div>
+        <div class="import-controls">
+          <label for="csvFile">CSVファイル</label>
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+          <div class="import-actions">
+            <button id="previewCsvButton" class="primary-action" type="button">
+              選択したCSVをPreview
+            </button>
+            <button id="samplePreviewButton" class="secondary-action" type="button">
+              サンプルをPreview
+            </button>
+            <button id="commitImportButton" class="danger-action" type="button" disabled>
+              Preview内容をImport
+            </button>
+          </div>
+          <p class="control-note">
+            Previewでは本物のRegistryを書き換えません。内容を確認後、Importボタンを押した時だけ反映します。
+          </p>
+        </div>
+      </section>
+
+      <div id="importErrorPanel" class="error-panel" role="alert" hidden>
+        <strong>CSVを確認できませんでした</strong>
+        <p id="importErrorMessage"></p>
+      </div>
+
+      <section id="importReportPanel" class="import-report" hidden aria-live="polite">
+        <div class="import-report-heading">
+          <div>
+            <p class="step">IMPORT PREVIEW</p>
+            <h2>取込前のValidationとPreview</h2>
+          </div>
+          <span id="importStatusBadge" class="badge neutral">確認中</span>
+        </div>
+
+        <div class="import-metrics">
+          <div><span>共通形式へ変換</span><strong id="normalizedCount">0件</strong></div>
+          <div><span>Knowledgeへ関連付け</span><strong id="mappedCount">0件</strong></div>
+          <div><span>Exam Metadata</span><strong id="metadataCount">0件</strong></div>
+          <div><span>画像関連付け</span><strong id="imageMappedCount">0件</strong></div>
+          <div><span>画像Warning</span><strong id="imageWarningCount">0件</strong></div>
+        </div>
+
+        <div class="preview-metrics" aria-label="Import Preview集計">
+          <div><span>新規Knowledge</span><strong id="previewNewKnowledge">0件</strong></div>
+          <div><span>更新Knowledge</span><strong id="previewUpdatedKnowledge">0件</strong></div>
+          <div><span>Unknown用語</span><strong id="previewUnknownTerms">0件</strong></div>
+          <div><span>Mapping不能</span><strong id="previewMappingFailures">0件</strong></div>
+          <div><span>画像不足</span><strong id="previewMissingImages">0件</strong></div>
+          <div><span>Claim未対応</span><strong id="previewUnsupportedClaims">0件</strong></div>
+        </div>
+
+        <div class="import-report-grid">
+          <article class="report-card">
+            <h3>CSV Validation</h3>
+            <dl class="validation-list">
+              <div><dt>必須列不足</dt><dd id="missingColumns"></dd></div>
+              <div><dt>Mapping不能</dt><dd id="unmappedFields"></dd></div>
+              <div><dt>未使用列</dt><dd id="unusedColumns"></dd></div>
+              <div><dt>Unknown列</dt><dd id="unknownColumns"></dd></div>
+              <div><dt>重複列</dt><dd id="duplicateColumns"></dd></div>
+            </dl>
+          </article>
+          <article class="report-card">
+            <h3>knowledge_id Mapping</h3>
+            <ul id="knowledgeMappingList" class="report-list"></ul>
+          </article>
+          <article class="report-card wide">
+            <h3>前回Importとの差分</h3>
+            <div class="diff-metrics">
+              <div><span>追加</span><strong id="addedRows">0件</strong></div>
+              <div><span>削除</span><strong id="removedRows">0件</strong></div>
+              <div><span>変更なし</span><strong id="unchangedRows">0件</strong></div>
+            </div>
+            <p class="diff-note">Workbench再起動後の最初のImportは、全件が「追加」と表示されます。</p>
+          </article>
+          <article class="report-card wide">
+            <h3>Importメッセージ</h3>
+            <ul id="importIssueList" class="report-list issues"></ul>
+          </article>
+          <article class="report-card wide">
+            <h3>Preview詳細</h3>
+            <ul id="previewDetailList" class="report-list issues"></ul>
+          </article>
+          <article class="report-card wide">
+            <h3>生成されたExam Metadata</h3>
+            <div id="importedMetadataList" class="metadata-card-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="registry-browser" aria-labelledby="registry-browser-title">
+        <div>
+          <p class="step">PHASE 2.8 · REGISTRY OPERATIONS</p>
+          <h2 id="registry-browser-title">Registryを閲覧・運用する</h2>
+          <p>Knowledgeを選ぶと、未承認Claim、統合候補、承認状態、履歴を確認できます。</p>
+        </div>
+        <div class="registry-browser-controls">
+          <label for="registryKnowledgeSelect">Knowledge</label>
+          <select id="registryKnowledgeSelect"></select>
+          <button id="loadRegistryButton" class="primary-action" type="button">表示</button>
+          <button id="refreshRegistryButton" class="secondary-action" type="button">一覧更新</button>
+        </div>
+      </section>
+
+      <section id="registryPanel" class="registry-panel" hidden aria-labelledby="registryTitle">
+        <div class="registry-heading">
+          <div>
+            <p class="step">PHASE 2.8 · APPROVAL & CLAIM MERGE</p>
+            <h2 id="registryTitle">Knowledge Registry</h2>
+          </div>
+          <div class="status-stack">
+            <span id="registryValidationBadge" class="badge neutral">検証中</span>
+            <span id="registryStatusBadge" class="badge neutral">draft</span>
+          </div>
+        </div>
+        <div class="registry-metrics">
+          <div><span>Knowledge Version</span><strong id="registryKnowledgeVersion">--</strong></div>
+          <div><span>Claim Dictionary</span><strong id="registryClaimCount">--</strong></div>
+          <div><span>History</span><strong id="registryHistoryCount">--</strong></div>
+          <div><span>Approval</span><strong id="registryApprovalStatus">--</strong></div>
+          <div><span>未承認Claim</span><strong id="registryUnapprovedCount">--</strong></div>
+          <div><span>Merge転送</span><strong id="registryMergeCount">--</strong></div>
+        </div>
+        <p class="registry-aliases">
+          <strong>aliases</strong>
+          <span id="registryAliases"></span>
+        </p>
+
+        <section class="knowledge-relation-panel" aria-labelledby="knowledge-relation-title">
+          <div class="relation-heading">
+            <div>
+              <p class="step">KNOWLEDGE NETWORK SUMMARY</p>
+              <h3 id="knowledge-relation-title">関連Knowledge</h3>
+            </div>
+            <span id="relationValidationBadge" class="badge neutral">Relation未読込</span>
+          </div>
+          <p class="relation-description">
+            Knowledge本文とは別に、根拠Claimを保ったまま他のKnowledge候補へ接続します。
+            未登録の対象は推測せず「未解決」と表示します。Knowledge保存時は索引に該当する未解決Relationだけを再評価します。
+          </p>
+          <div class="relation-metrics">
+            <div><span>Relation</span><strong id="relationCount">--</strong></div>
+            <div><span>解決済み</span><strong id="resolvedRelationCount">--</strong></div>
+            <div><span>未解決</span><strong id="unresolvedRelationCount">--</strong></div>
+            <div><span>Network Completeness</span><strong id="networkCompleteness">--</strong></div>
+            <div><span>履歴</span><strong id="relationHistoryCount">--</strong></div>
+          </div>
+          <div id="knowledgeRelationList" class="knowledge-relation-list"></div>
+        </section>
+
+        <div id="registryOperationMessage" class="operation-message" role="status" hidden></div>
+
+        <section class="registry-operation-panel" aria-labelledby="approval-operation-title">
+          <div>
+            <p class="step">HUMAN APPROVAL</p>
+            <h3 id="approval-operation-title">承認操作</h3>
+          </div>
+          <div class="operation-fields">
+            <label for="registryActor">操作者</label>
+            <input id="registryActor" maxlength="120" placeholder="例：コンテンツオーナー" />
+            <label for="registryComment">コメント</label>
+            <textarea id="registryComment" maxlength="1000" rows="3" placeholder="確認内容や判断理由を記録します"></textarea>
+          </div>
+          <div class="approval-actions">
+            <label for="claimTargetStatus">選択Claimの次の状態</label>
+            <select id="claimTargetStatus">
+              <option value="owner_review">owner_review</option>
+              <option value="medical_review">medical_review</option>
+              <option value="approved">approved</option>
+              <option value="deprecated">deprecated</option>
+              <option value="draft">draftへ戻す</option>
+            </select>
+            <button id="changeClaimStatusButton" class="primary-action" type="button">選択Claimを変更</button>
+          </div>
+          <div class="approval-actions knowledge-approval-actions">
+            <label for="knowledgeTargetStatus">Knowledgeの次の状態</label>
+            <select id="knowledgeTargetStatus">
+              <option value="owner_review">owner_review</option>
+              <option value="medical_review">medical_review</option>
+              <option value="approved">approved</option>
+              <option value="deprecated">deprecated</option>
+              <option value="draft">draftへ戻す</option>
+            </select>
+            <button id="changeKnowledgeStatusButton" class="secondary-action" type="button">Knowledgeを変更</button>
+          </div>
+        </section>
+
+        <section class="registry-operation-panel merge-panel" aria-labelledby="claim-merge-title">
+          <div>
+            <p class="step">MANUAL CLAIM MERGE</p>
+            <h3 id="claim-merge-title">Claim統合</h3>
+            <p>統合先を1件、統合元を1件以上選択します。統合先claim_idは変更しません。</p>
+          </div>
+          <div class="merge-selection-summary">
+            <span>統合先</span><code id="mergeTargetSummary">未選択</code>
+            <span>統合元</span><code id="mergeSourceSummary">未選択</code>
+          </div>
+          <button id="mergeClaimsButton" class="danger-action" type="button">選択したClaimを統合</button>
+          <h4>同じ意味と思われる候補</h4>
+          <div id="mergeCandidateList" class="merge-candidate-list"></div>
+        </section>
+
+        <details open>
+          <summary>未承認Claim・Claim Dictionary</summary>
+          <div id="claimDictionary" class="claim-dictionary"></div>
+        </details>
+        <details open>
+          <summary>統合転送（旧claim_id → 現行claim_id）</summary>
+          <ul id="registryMergeRedirectList" class="registry-history"></ul>
+        </details>
+        <details open>
+          <summary>Version・Claim・承認・統合履歴</summary>
+          <ul id="registryHistoryList" class="registry-history"></ul>
+        </details>
+      </section>
+
+      <section class="backup-panel" aria-labelledby="backup-title">
+        <div>
+          <p class="step">SQLITE GENERATION BACKUP</p>
+          <h2 id="backup-title">Registry Backup / Restore</h2>
+          <p>Restore前には現在のRegistryも安全Backupとして自動保存します。</p>
+        </div>
+        <div class="backup-controls">
+          <button id="createBackupButton" class="primary-action" type="button">Backupを作成</button>
+          <select id="backupSelect" aria-label="Registry Backup"></select>
+          <button id="restoreBackupButton" class="danger-action" type="button">選択したBackupへRestore</button>
+        </div>
+        <p id="backupMessage" class="control-note" role="status"></p>
+      </section>
+
+      <div id="errorPanel" class="error-panel" role="alert" hidden>
+        <strong>生成できませんでした</strong>
+        <p id="errorMessage"></p>
+      </div>
+
+      <section id="resultPanel" class="result-grid" hidden aria-live="polite">
+        <article class="summary-panel">
+          <div class="result-heading">
+            <div>
+              <p class="step">STEP 02 · MEDICAL FACTS</p>
+              <h2 id="canonicalName"></h2>
+              <code id="knowledgeId" class="record-id"></code>
+            </div>
+            <div class="classification-chips">
+              <span id="classification" class="category-chip"></span>
+              <span id="examDomain" class="domain-chip"></span>
+            </div>
+          </div>
+          <div class="fact-grid">
+            <section class="fact-group">
+              <h3>定義</h3>
+              <div id="definitions" class="claim-list"></div>
+            </section>
+            <section class="fact-group">
+              <h3 id="biologicalBasisTitle">生物学的基盤</h3>
+              <div id="biologicalBasis" class="claim-list"></div>
+            </section>
+            <section class="fact-group">
+              <h3 id="analyteCharacteristicsTitle">検査対象の特徴</h3>
+              <div id="analyteCharacteristics" class="claim-list"></div>
+            </section>
+          </div>
+
+          <div class="metadata-strip" aria-label="Version 1.0の管理領域">
+            <div><span>国家試験データ</span><strong id="examMetadataStatus"></strong></div>
+            <div><span>出典</span><strong id="evidenceStatus"></strong></div>
+            <div><span>Publisher優先指定</span><strong id="publisherStatus"></strong></div>
+          </div>
+
+          <div class="completeness-grid">
+            <section class="completeness-panel" aria-labelledby="knowledgeCompletenessTitle">
+              <div class="completeness-heading">
+                <div>
+                  <p class="step">Knowledge Completeness</p>
+                  <h3 id="knowledgeCompletenessTitle">医学知識の情報充足度</h3>
+                </div>
+                <strong id="knowledgeCompletenessScore">--%</strong>
+              </div>
+              <div
+                id="knowledgeCompletenessBar"
+                class="completeness-track"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span></span>
+              </div>
+              <p id="knowledgeCompletenessLevel" class="completeness-level"></p>
+              <h3>Knowledge改善候補</h3>
+              <ul id="knowledgeImprovementList" class="improvement-list"></ul>
+            </section>
+
+            <section class="completeness-panel exam" aria-labelledby="examCompletenessTitle">
+              <div class="completeness-heading">
+                <div>
+                  <p class="step">Exam Completeness</p>
+                  <h3 id="examCompletenessTitle">国家試験情報の充足度</h3>
+                </div>
+                <strong id="examCompletenessScore">--%</strong>
+              </div>
+              <div
+                id="examCompletenessBar"
+                class="completeness-track"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span></span>
+              </div>
+              <p id="examCompletenessLevel" class="completeness-level"></p>
+              <h3>Exam改善候補</h3>
+              <ul id="examImprovementList" class="improvement-list"></ul>
+            </section>
+          </div>
+
+          <section class="exam-metadata-panel" aria-labelledby="examMetadataTitle">
+            <div class="template-heading exam-heading">
+              <div>
+                <p class="step">EXAM METADATA 1.0</p>
+                <h3 id="examMetadataTitle">国家試験情報</h3>
+              </div>
+              <span id="examDataBadge" class="badge warning">ダミーデータ</span>
+            </div>
+            <div class="exam-metrics">
+              <div><span>importance_score</span><strong id="examImportanceScore">--</strong></div>
+              <div><span>出題回数</span><strong id="examAppearanceCount">--</strong></div>
+              <div><span>初出年度</span><strong id="examFirstYear">--</strong></div>
+              <div><span>最新出題年度</span><strong id="examLatestYear">--</strong></div>
+            </div>
+            <h4>国家試験重要claim</h4>
+            <ul id="priorityClaimList" class="exam-list"></ul>
+            <h4>出題履歴</h4>
+            <ul id="examHistoryList" class="exam-list history"></ul>
+          </section>
+
+          <section id="testItemPanel" class="test-item-panel" hidden>
+            <div class="template-heading">
+              <p id="categoryTemplateLabel" class="step">CATEGORY TEMPLATE</p>
+              <h3 id="categoryTemplateTitle">医学的事実テンプレート 1.0</h3>
+            </div>
+            <div id="testItemSections" class="test-item-sections"></div>
+          </section>
+        </article>
+
+        <article class="json-panel">
+          <div class="json-toolbar">
+            <div>
+              <p class="step">STEP 03 · KNOWLEDGE JSON 1.0 + EXAM METADATA 1.0</p>
+              <h2>構造データ</h2>
+            </div>
+            <div class="toolbar-actions">
+              <span id="validationBadge" class="badge success">Schema OK × 2</span>
+              <button id="copyButton" class="copy-button" type="button">コピー</button>
+            </div>
+          </div>
+          <pre id="jsonOutput"></pre>
+        </article>
+      </section>
+
+      <footer>
+        <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
+      </footer>
+    </main>
+    <script src="/static/app.js?v=approval-gate-5.14" defer></script>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "diagram_intent.ast_learning",
+  "version": "1.1.0",
+  "name": "AST医学図解Intent Claim Mapping Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "intents": [
+    {
+      "intent_id": "intent.ast.measurement_principle",
+      "intent_type": "measurement_principle",
+      "visual_types": ["diagram.reaction"],
+      "compatible_grammar_rule_ids": ["grammar.ast.reaction"],
+      "educational_goals": ["understand_principle", "understand_sequence", "understand_exam_points"],
+      "concepts": [
+        {"concept_id": "concept.measurement.sample", "concept_type": "sample", "requirement": "required"},
+        {"concept_id": "concept.measurement.analyte", "concept_type": "analyte", "requirement": "required"},
+        {"concept_id": "concept.measurement.reagent", "concept_type": "reagent", "requirement": "required"},
+        {"concept_id": "concept.measurement.reaction", "concept_type": "reaction", "requirement": "required"},
+        {"concept_id": "concept.measurement.detection", "concept_type": "detection", "requirement": "required"},
+        {"concept_id": "concept.measurement.result", "concept_type": "result", "requirement": "required"}
+      ],
+      "semantic_sequences": [{
+        "sequence_id": "sequence.measurement.core",
+        "kind": "linear",
+        "steps": [
+          {"step_id": "sequence.measurement.sample", "concept_id": "concept.measurement.sample", "order": 1, "relation_to_next": "precedes"},
+          {"step_id": "sequence.measurement.reaction", "concept_id": "concept.measurement.reaction", "order": 2, "relation_to_next": "detected_by"},
+          {"step_id": "sequence.measurement.detection", "concept_id": "concept.measurement.detection", "order": 3, "relation_to_next": "produces"},
+          {"step_id": "sequence.measurement.result", "concept_id": "concept.measurement.result", "order": 4, "relation_to_next": null}
+        ]
+      }],
+      "claim_mapping_strategy": {
+        "strategy_id": "mapping.ast.measurement_principle.v1_1",
+        "matching_order": ["claim_key_prefix", "exam_priority"],
+        "concept_rules": [
+          {"concept_id": "concept.measurement.sample", "source_claim_key_prefixes": ["ast.specimen"], "minimum_claims": 1, "maximum_claims": 3, "approved_only": true},
+          {"concept_id": "concept.measurement.analyte", "source_claim_key_prefixes": ["ast.definition"], "minimum_claims": 1, "maximum_claims": 3, "approved_only": true},
+          {"concept_id": "concept.measurement.reagent", "source_claim_key_prefixes": ["ast.reagent"], "minimum_claims": 1, "maximum_claims": 3, "approved_only": true},
+          {"concept_id": "concept.measurement.reaction", "source_claim_key_prefixes": ["ast.measurement"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.measurement.detection", "source_claim_key_prefixes": ["ast.measurement"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.measurement.result", "source_claim_key_prefixes": ["ast.measurement"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true}
+        ],
+        "allow_claim_reuse": true,
+        "missing_required_concept_policy": "report_and_block_blueprint"
+      },
+      "illustration_requirements": [
+        {"concept_id": "concept.measurement.sample", "category": "sample", "is_required": false},
+        {"concept_id": "concept.measurement.sample", "category": "tube", "is_required": false},
+        {"concept_id": "concept.measurement.analyte", "category": "molecule", "is_required": false},
+        {"concept_id": "concept.measurement.reagent", "category": "molecule", "is_required": false},
+        {"concept_id": "concept.measurement.detection", "category": "instrument", "is_required": false}
+      ]
+    },
+    {
+      "intent_id": "intent.ast.comparison",
+      "intent_type": "comparison",
+      "visual_types": ["table.comparison"],
+      "compatible_grammar_rule_ids": ["grammar.ast.comparison"],
+      "educational_goals": ["compare_concepts", "understand_exam_points"],
+      "concepts": [
+        {"concept_id": "concept.comparison.subject", "concept_type": "subject", "requirement": "required"},
+        {"concept_id": "concept.comparison.comparator", "concept_type": "comparator", "requirement": "required"},
+        {"concept_id": "concept.comparison.axis", "concept_type": "comparison_axis", "requirement": "required"},
+        {"concept_id": "concept.comparison.interpretation", "concept_type": "interpretation", "requirement": "required"}
+      ],
+      "semantic_sequences": [{
+        "sequence_id": "sequence.comparison.core",
+        "kind": "comparison",
+        "steps": [
+          {"step_id": "sequence.comparison.subject", "concept_id": "concept.comparison.subject", "order": 1, "relation_to_next": "compared_with"},
+          {"step_id": "sequence.comparison.comparator", "concept_id": "concept.comparison.comparator", "order": 2, "relation_to_next": "associated_with"},
+          {"step_id": "sequence.comparison.axis", "concept_id": "concept.comparison.axis", "order": 3, "relation_to_next": "leads_to"},
+          {"step_id": "sequence.comparison.interpretation", "concept_id": "concept.comparison.interpretation", "order": 4, "relation_to_next": null}
+        ]
+      }],
+      "claim_mapping_strategy": {
+        "strategy_id": "mapping.ast.comparison.v1_1",
+        "matching_order": ["claim_key_prefix", "exam_priority"],
+        "concept_rules": [
+          {"concept_id": "concept.comparison.subject", "source_claim_key_prefixes": ["ast.definition"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.comparison.comparator", "source_claim_key_prefixes": ["ast.combination"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.comparison.axis", "source_claim_key_prefixes": ["ast.combination"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.comparison.interpretation", "source_claim_key_prefixes": ["ast.combination"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true}
+        ],
+        "allow_claim_reuse": true,
+        "missing_required_concept_policy": "report_and_block_blueprint"
+      },
+      "illustration_requirements": [
+        {"concept_id": "concept.comparison.subject", "category": "icon", "is_required": false},
+        {"concept_id": "concept.comparison.comparator", "category": "icon", "is_required": false}
+      ]
+    },
+    {
+      "intent_id": "intent.ast.disease_mechanism",
+      "intent_type": "disease_mechanism",
+      "visual_types": ["diagram.disease_mechanism"],
+      "compatible_grammar_rule_ids": ["grammar.ast.disease_mechanism"],
+      "educational_goals": ["understand_pathophysiology", "understand_sequence", "understand_exam_points"],
+      "concepts": [
+        {"concept_id": "concept.mechanism.cause", "concept_type": "cause", "requirement": "required"},
+        {"concept_id": "concept.mechanism.tissue", "concept_type": "tissue", "requirement": "required"},
+        {"concept_id": "concept.mechanism.damage", "concept_type": "damage", "requirement": "required"},
+        {"concept_id": "concept.mechanism.biomarker", "concept_type": "biomarker", "requirement": "required"}
+      ],
+      "semantic_sequences": [{
+        "sequence_id": "sequence.mechanism.core",
+        "kind": "linear",
+        "steps": [
+          {"step_id": "sequence.mechanism.cause", "concept_id": "concept.mechanism.cause", "order": 1, "relation_to_next": "associated_with"},
+          {"step_id": "sequence.mechanism.tissue", "concept_id": "concept.mechanism.tissue", "order": 2, "relation_to_next": "leads_to"},
+          {"step_id": "sequence.mechanism.damage", "concept_id": "concept.mechanism.damage", "order": 3, "relation_to_next": "produces"},
+          {"step_id": "sequence.mechanism.biomarker", "concept_id": "concept.mechanism.biomarker", "order": 4, "relation_to_next": null}
+        ]
+      }],
+      "claim_mapping_strategy": {
+        "strategy_id": "mapping.ast.disease_mechanism.v1_1",
+        "matching_order": ["claim_key_prefix", "exam_priority"],
+        "concept_rules": [
+          {"concept_id": "concept.mechanism.cause", "source_claim_key_prefixes": ["ast.cause"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.mechanism.tissue", "source_claim_key_prefixes": ["ast.tissue"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.mechanism.damage", "source_claim_key_prefixes": ["ast.is_leakage_enzyme"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true},
+          {"concept_id": "concept.mechanism.biomarker", "source_claim_key_prefixes": ["ast.definition", "ast.is_leakage_enzyme"], "minimum_claims": 1, "maximum_claims": 5, "approved_only": true}
+        ],
+        "allow_claim_reuse": true,
+        "missing_required_concept_policy": "report_and_block_blueprint"
+      },
+      "illustration_requirements": [
+        {"concept_id": "concept.mechanism.tissue", "category": "organ", "is_required": false},
+        {"concept_id": "concept.mechanism.damage", "category": "cell", "is_required": false},
+        {"concept_id": "concept.mechanism.biomarker", "category": "molecule", "is_required": false}
+      ]
+    }
+  ]
+}

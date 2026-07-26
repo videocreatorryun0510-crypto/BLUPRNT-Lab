@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_25d55ff38c3d9f56",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "巨赤芽球性貧血",
+    "english_name": "Megaloblastic anemia",
+    "aliases": []
+  },
+  "classification": {
+    "term_type": "disease",
+    "primary_exam_domain": "hematology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_1af0fd63ca92f703",
+        "statement": "巨赤芽球性貧血は、DNA合成障害により骨髄に巨赤芽球が出現し、無効造血を伴う貧血である。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_05635c43c070a99f",
+        "statement": "ビタミンB12または葉酸の欠乏は、DNA合成に必要な葉酸代謝を障害する。"
+      },
+      {
+        "claim_id": "clm_b79ce344234307a6",
+        "statement": "DNA合成障害により核の成熟が細胞質の成熟より遅れる核・細胞質成熟乖離が生じる。"
+      },
+      {
+        "claim_id": "clm_4439aa21ce1f0c22",
+        "statement": "無効造血により骨髄内で赤血球系細胞が崩壊し、間接ビリルビンおよび乳酸脱水素酵素が上昇することがある。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_1eacc921235b9dc3",
+        "statement": "末梢血では大球性貧血を示し、平均赤血球容積が増加する。"
+      },
+      {
+        "claim_id": "clm_dac4e0afc8b8eec0",
+        "statement": "末梢血塗抹標本では大赤血球および過分葉好中球がみられる。"
+      },
+      {
+        "claim_id": "clm_4580e9078be1be1c",
+        "statement": "骨髄では巨赤芽球性変化を示す赤芽球系細胞がみられる。"
+      },
+      {
+        "claim_id": "clm_b6333b64f63c60f3",
+        "statement": "ビタミンB12欠乏では、貧血に加えて神経障害を伴うことがある。"
+      },
+      {
+        "claim_id": "clm_44a21b96da78b4e3",
+        "statement": "葉酸欠乏による巨赤芽球性貧血では、通常、ビタミンB12欠乏にみられる神経障害は生じない。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "generic_facts_v0.3"
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

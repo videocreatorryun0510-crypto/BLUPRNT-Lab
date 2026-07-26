@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_9818c392540156bd",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "蟯虫",
+    "english_name": "Enterobius vermicularis",
+    "aliases": [
+      "蟯虫症の病原体",
+      "pinworm",
+      "seatworm"
+    ]
+  },
+  "classification": {
+    "term_type": "parasite",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": [
+      "public_health"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_364b924ddf25c73c",
+        "statement": "蟯虫は線虫類に属するヒト寄生虫であり、学名はEnterobius vermicularisである。"
+      },
+      {
+        "claim_id": "clm_d2aa5a5802df27b8",
+        "statement": "蟯虫は主に盲腸、虫垂および結腸に寄生する。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_bb5ffa7579b5374d",
+        "statement": "雌成虫は夜間に肛門周囲へ移動して虫卵を産み付ける。"
+      },
+      {
+        "claim_id": "clm_3147a4c6092ba9fe",
+        "statement": "肛門周囲に産み付けられた虫卵は短時間で感染性を有するようになる。"
+      },
+      {
+        "claim_id": "clm_dace10f1e5b1bd23",
+        "statement": "感染は主として感染性虫卵の経口摂取により成立する。"
+      },
+      {
+        "claim_id": "clm_4cdac1ec1176aa73",
+        "statement": "肛門周囲の掻痒による手指の汚染を介して、自家感染およびヒトからヒトへの感染が起こる。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_4d20e8536105d63d",
+        "statement": "蟯虫症では夜間の肛門周囲掻痒が代表的な症状である。"
+      },
+      {
+        "claim_id": "clm_23c0dec6f3dfbf75",
+        "statement": "蟯虫の検査には、早朝の排便前および洗浄前に肛門周囲から虫卵を採取するセロハンテープ法が用いられる。"
+      },
+      {
+        "claim_id": "clm_c912c4e0ee37b3f2",
+        "statement": "蟯虫卵は一側が扁平で、他側が膨隆した非対称の形態を示す。"
+      },
+      {
+        "claim_id": "clm_12a79d7988fc155a",
+        "statement": "便中虫卵検査は、雌成虫が肛門周囲に産卵するため、蟯虫の検出には適さないことがある。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "generic_facts_v0.3"
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

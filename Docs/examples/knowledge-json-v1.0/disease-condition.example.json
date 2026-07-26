@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000001",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "巨赤芽球性貧血",
+    "english_name": "megaloblastic anemia",
+    "aliases": []
+  },
+  "classification": {
+    "term_type": "disease_condition",
+    "primary_exam_domain": "hematology",
+    "related_exam_domains": [
+      "clinical_chemistry"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_10000001",
+        "assertion": "巨赤芽球性貧血は、DNA合成障害による核成熟遅延と無効造血を特徴とする貧血である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "disease_condition_v1.0",
+    "disease_condition": {
+      "condition_kind": "disease",
+      "etiologies": [
+        {
+          "claim_id": "clm_10000002",
+          "cause_name": "ビタミンB12欠乏",
+          "cause_kind": "nutritional_or_absorption_disorder",
+          "related_knowledge_id": null,
+          "assertion": "ビタミンB12欠乏は巨赤芽球性貧血の原因となる。"
+        },
+        {
+          "claim_id": "clm_10000003",
+          "cause_name": "葉酸欠乏",
+          "cause_kind": "nutritional_or_metabolic_disorder",
+          "related_knowledge_id": null,
+          "assertion": "葉酸欠乏は巨赤芽球性貧血の原因となる。"
+        }
+      ],
+      "risk_factors": [
+        {
+          "claim_id": "clm_10000004",
+          "factor_name": "胃切除後",
+          "related_knowledge_id": null,
+          "assertion": "胃切除後はビタミンB12吸収障害を介して欠乏を生じることがある。"
+        }
+      ],
+      "pathophysiology": [
+        {
+          "claim_id": "clm_10000005",
+          "process_name": "DNA合成障害",
+          "upstream_claim_ids": [
+            "clm_10000002",
+            "clm_10000003"
+          ],
+          "assertion": "ビタミンB12または葉酸の欠乏はDNA合成を障害する。"
+        },
+        {
+          "claim_id": "clm_10000006",
+          "process_name": "核・細胞質成熟乖離",
+          "upstream_claim_ids": [
+            "clm_10000005"
+          ],
+          "assertion": "DNA合成障害により核の成熟が細胞質の成熟より遅れる。"
+        },
+        {
+          "claim_id": "clm_10000007",
+          "process_name": "無効造血",
+          "upstream_claim_ids": [
+            "clm_10000005"
+          ],
+          "assertion": "骨髄内で異常な造血細胞が崩壊し、無効造血を生じる。"
+        }
+      ],
+      "clinical_findings": [
+        {
+          "claim_id": "clm_10000008",
+          "finding_kind": "symptom",
+          "finding_name": "貧血症状",
+          "assertion": "貧血に伴い倦怠感などを認めることがある。"
+        }
+      ],
+      "laboratory_findings": [
+        {
+          "claim_id": "clm_10000009",
+          "test_name": "平均赤血球容積",
+          "test_knowledge_id": null,
+          "direction_or_result": "high",
+          "specimen": "末梢血",
+          "conditions": null,
+          "assertion": "平均赤血球容積は高値を示す。"
+        },
+        {
+          "claim_id": "clm_10000010",
+          "test_name": "乳酸脱水素酵素",
+          "test_knowledge_id": null,
+          "direction_or_result": "high",
+          "specimen": "血清",
+          "conditions": "無効造血を伴う場合",
+          "assertion": "無効造血により乳酸脱水素酵素が高値を示すことがある。"
+        }
+      ],
+      "morphologic_findings": [
+        {
+          "claim_id": "clm_10000011",
+          "specimen": "末梢血塗抹標本",
+          "observation_method": "光学顕微鏡",
+          "feature_name": "過分葉好中球",
+          "assertion": "末梢血塗抹標本で過分葉好中球を認めることがある。"
+        },
+        {
+          "claim_id": "clm_10000012",
+          "specimen": "骨髄",
+          "observation_method": "骨髄塗抹標本",
+          "feature_name": "巨赤芽球性変化",
+          "assertion": "骨髄で巨赤芽球性変化を認める。"
+        }
+      ],
+      "diagnostic_tests": [
+        {
+          "claim_id": "clm_10000013",
+          "test_name": "血清ビタミンB12",
+          "test_knowledge_id": null,
+          "diagnostic_role": "etiology_assessment",
+          "expected_result": "ビタミンB12欠乏では低値となる。",
+          "assertion": "血清ビタミンB12測定は原因評価に用いられる。"
+        }
+      ],
+      "differential_diagnoses": [
+        {
+          "claim_id": "clm_10000014",
+          "compared_condition_name": "骨髄異形成症候群",
+          "compared_knowledge_id": null,
+          "distinguishing_feature": "ビタミンB12・葉酸欠乏の有無と骨髄所見を含めて鑑別する。",
+          "assertion": "骨髄異形成症候群は大球性貧血の鑑別対象となる。"
+        }
+      ],
+      "complications": [
+        {
+          "claim_id": "clm_10000015",
+          "related_condition_name": "神経障害",
+          "related_knowledge_id": null,
+          "relation_type": "may_accompany",
+          "assertion": "ビタミンB12欠乏では神経障害を伴うことがある。"
+        }
+      ],
+      "associated_conditions": [
+        {
+          "claim_id": "clm_10000016",
+          "related_condition_name": "悪性貧血",
+          "related_knowledge_id": null,
+          "relation_type": "possible_underlying_cause",
+          "assertion": "悪性貧血はビタミンB12欠乏を介して巨赤芽球性貧血の原因となる。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

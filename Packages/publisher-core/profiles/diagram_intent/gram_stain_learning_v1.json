@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.1",
+  "profile_id": "diagram_intent.gram_stain_learning",
+  "version": "1.0.0",
+  "name": "Gram染色 医学図解Intent Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "taxonomy_ref": {
+    "profile_id": "diagram_taxonomy.medical",
+    "version": "1.0.0"
+  },
+  "intents": [
+    {
+      "intent_id": "intent.gram_stain.workflow",
+      "taxonomy_id": "taxonomy.workflow.staining.gram",
+      "visual_types": ["diagram.laboratory_workflow"],
+      "compatible_grammar_rule_ids": ["grammar.gram_stain.workflow"],
+      "educational_goals": ["understand_sequence", "understand_principle", "understand_exam_points"],
+      "concepts": [
+        {"concept_id": "concept.gram_stain.sample", "concept_type": "sample", "requirement": "required"},
+        {"concept_id": "concept.gram_stain.reagent", "concept_type": "reagent", "requirement": "required"},
+        {"concept_id": "concept.gram_stain.principle", "concept_type": "reaction", "requirement": "required"},
+        {"concept_id": "concept.gram_stain.workflow_step", "concept_type": "workflow_step", "requirement": "required"},
+        {"concept_id": "concept.gram_stain.result", "concept_type": "result", "requirement": "required"}
+      ],
+      "semantic_sequences": [
+        {
+          "sequence_id": "sequence.gram_stain.workflow",
+          "kind": "linear",
+          "steps": [
+            {"step_id": "sequence.gram_stain.sample", "concept_id": "concept.gram_stain.sample", "order": 1, "relation_to_next": "flows_to"},
+            {"step_id": "sequence.gram_stain.workflow_step", "concept_id": "concept.gram_stain.workflow_step", "order": 2, "relation_to_next": "produces"},
+            {"step_id": "sequence.gram_stain.result", "concept_id": "concept.gram_stain.result", "order": 3, "relation_to_next": null}
+          ]
+        }
+      ],
+      "claim_mapping_strategy": {
+        "strategy_id": "mapping.gram_stain.workflow.v1",
+        "matching_order": ["claim_key_prefix", "field_path_prefix", "exam_priority"],
+        "concept_rules": [
+          {"concept_id": "concept.gram_stain.sample", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.specimen"], "minimum_claims": 1, "maximum_claims": 2, "approved_only": true},
+          {"concept_id": "concept.gram_stain.reagent", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.reagent"], "minimum_claims": 4, "maximum_claims": 6, "approved_only": true},
+          {"concept_id": "concept.gram_stain.principle", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.principle"], "minimum_claims": 2, "maximum_claims": 4, "approved_only": true},
+          {"concept_id": "concept.gram_stain.workflow_step", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.procedure"], "minimum_claims": 4, "maximum_claims": 6, "approved_only": true},
+          {"concept_id": "concept.gram_stain.result", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.result"], "minimum_claims": 2, "maximum_claims": 4, "approved_only": true}
+        ],
+        "allow_claim_reuse": true,
+        "missing_required_concept_policy": "report_and_block_blueprint"
+      },
+      "illustration_requirements": [
+        {"concept_id": "concept.gram_stain.sample", "category": "sample", "is_required": false},
+        {"concept_id": "concept.gram_stain.reagent", "category": "molecule", "is_required": false},
+        {"concept_id": "concept.gram_stain.result", "category": "microorganism", "is_required": false}
+      ]
+    },
+    {
+      "intent_id": "intent.gram_stain.comparison",
+      "taxonomy_id": "taxonomy.comparison",
+      "visual_types": ["table.gram_reaction_comparison"],
+      "compatible_grammar_rule_ids": ["grammar.gram_stain.comparison"],
+      "educational_goals": ["compare_concepts", "understand_exam_points"],
+      "concepts": [
+        {"concept_id": "concept.gram_comparison.subject", "concept_type": "subject", "requirement": "required"},
+        {"concept_id": "concept.gram_comparison.comparator", "concept_type": "comparator", "requirement": "required"},
+        {"concept_id": "concept.gram_comparison.axis", "concept_type": "comparison_axis", "requirement": "required"},
+        {"concept_id": "concept.gram_comparison.interpretation", "concept_type": "interpretation", "requirement": "required"}
+      ],
+      "semantic_sequences": [
+        {
+          "sequence_id": "sequence.gram_comparison.core",
+          "kind": "comparison",
+          "steps": [
+            {"step_id": "sequence.gram_comparison.subject", "concept_id": "concept.gram_comparison.subject", "order": 1, "relation_to_next": "compared_with"},
+            {"step_id": "sequence.gram_comparison.comparator", "concept_id": "concept.gram_comparison.comparator", "order": 2, "relation_to_next": "associated_with"},
+            {"step_id": "sequence.gram_comparison.axis", "concept_id": "concept.gram_comparison.axis", "order": 3, "relation_to_next": "leads_to"},
+            {"step_id": "sequence.gram_comparison.interpretation", "concept_id": "concept.gram_comparison.interpretation", "order": 4, "relation_to_next": null}
+          ]
+        }
+      ],
+      "claim_mapping_strategy": {
+        "strategy_id": "mapping.gram_stain.comparison.v1",
+        "matching_order": ["claim_key_prefix", "exam_priority"],
+        "concept_rules": [
+          {"concept_id": "concept.gram_comparison.subject", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.result.gram_positive"], "minimum_claims": 1, "maximum_claims": 1, "approved_only": true},
+          {"concept_id": "concept.gram_comparison.comparator", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.result.gram_negative"], "minimum_claims": 1, "maximum_claims": 1, "approved_only": true},
+          {"concept_id": "concept.gram_comparison.axis", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.result"], "minimum_claims": 2, "maximum_claims": 2, "approved_only": true},
+          {"concept_id": "concept.gram_comparison.interpretation", "source_field_path_prefixes": [], "source_claim_key_prefixes": ["gram.stain.result"], "minimum_claims": 2, "maximum_claims": 2, "approved_only": true}
+        ],
+        "allow_claim_reuse": true,
+        "missing_required_concept_policy": "report_and_block_blueprint"
+      },
+      "illustration_requirements": [
+        {"concept_id": "concept.gram_comparison.subject", "category": "microorganism", "is_required": false},
+        {"concept_id": "concept.gram_comparison.comparator", "category": "microorganism", "is_required": false}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluprnt-source-bundle-publisher"
+version = "1.0.0"
+description = "Read-only Knowledge to Source Bundle JSON Publisher for BLUPRNT Lab"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "bluprnt-knowledge-contracts>=1.0,<2",
+  "pydantic>=2.11,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+  "ruff>=0.12,<1",
+  "mypy>=1.16,<3",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+source_bundle_publisher = ["py.typed"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src",
+  "../../Packages/knowledge-contracts/src",
+  "../../Prototypes/KnowledgeWorkbench/src",
+]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["source_bundle_publisher"]

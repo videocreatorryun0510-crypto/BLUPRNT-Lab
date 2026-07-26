@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "theme.bluprnt_exam",
+  "version": "1.0.0",
+  "name": "BLUPRNT 国家試験シリーズ",
+  "status": "active",
+  "colors": [
+    {"token": "color.background", "value": "#F6F8FB"},
+    {"token": "color.surface", "value": "#FFFFFF"},
+    {"token": "color.primary", "value": "#16324F"},
+    {"token": "color.accent", "value": "#00A6A6"},
+    {"token": "color.warning", "value": "#D97706"},
+    {"token": "color.text", "value": "#17212B"}
+  ],
+  "fonts": [
+    {"role": "font.heading", "family": "Noto Sans JP", "fallback_families": ["sans-serif"], "weight": 700},
+    {"role": "font.body", "family": "Noto Sans JP", "fallback_families": ["sans-serif"], "weight": 400},
+    {"role": "font.caption", "family": "Noto Sans JP", "fallback_families": ["sans-serif"], "weight": 500}
+  ],
+  "spacing": [
+    {"token": "space.xs", "value_rem": 0.25},
+    {"token": "space.sm", "value_rem": 0.5},
+    {"token": "space.md", "value_rem": 1.0},
+    {"token": "space.lg", "value_rem": 1.5},
+    {"token": "space.xl", "value_rem": 2.0}
+  ],
+  "icon_set_id": "icons.bluprnt_line",
+  "border_style_id": "border.rounded_subtle",
+  "heading_style_id": "heading.exam_standard",
+  "caption_style_id": "caption.medical_figure",
+  "telop_style_id": "telop.exam_standard",
+  "character": {
+    "is_enabled": false,
+    "asset_family_id": null,
+    "position_token": null
+  },
+  "component_styles": [
+    {"component": "heading", "variant": "primary", "token_refs": ["color.primary", "font.heading", "space.md"]},
+    {"component": "callout", "variant": "exam_point", "token_refs": ["color.accent", "border.rounded_subtle", "space.md"]},
+    {"component": "caption", "variant": "standard", "token_refs": ["color.text", "font.caption", "space.sm"]}
+  ]
+}
+

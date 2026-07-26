@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "template_id": "template.gram_stain_national_exam_pdf",
+  "version": "1.0.0",
+  "template_family": "family.national_exam_pdf",
+  "name": "Gram染色 国家試験PDF Vertical Slice Version 1",
+  "status": "active",
+  "output_kind": "pdf",
+  "series_id": "series.clinical_exam_core",
+  "content_profile_ref": {
+    "profile_id": "content.gram_stain_national_exam_pdf",
+    "version": "1.0.0"
+  },
+  "education_profile_ref": {
+    "profile_id": "education.gram_stain_national_exam",
+    "version": "1.0.0"
+  },
+  "visual_profile_ref": {
+    "profile_id": "visual.gram_stain_learning",
+    "version": "1.0.0"
+  },
+  "visual_grammar_profile_ref": {
+    "profile_id": "visual_grammar.gram_stain_learning",
+    "version": "1.0.0"
+  },
+  "diagram_intent_profile_ref": {
+    "profile_id": "diagram_intent.gram_stain_learning",
+    "version": "1.0.0"
+  },
+  "diagram_taxonomy_ref": {
+    "profile_id": "diagram_taxonomy.medical",
+    "version": "1.0.0"
+  },
+  "layout_profile_ref": {
+    "profile_id": "layout.national_exam_pdf",
+    "version": "1.1.0"
+  },
+  "theme_ref": {
+    "profile_id": "theme.bluprnt_exam",
+    "version": "1.0.0"
+  },
+  "design_system_ref": {
+    "profile_id": "design_system.clinical_exam",
+    "version": "1.1.0"
+  },
+  "media_profile_ref": null
+}

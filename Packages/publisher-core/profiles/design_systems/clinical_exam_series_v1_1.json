@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "design_system.clinical_exam",
+  "version": "1.1.0",
+  "series_id": "series.clinical_exam_core",
+  "name": "臨床検査技師国家試験シリーズ Education対応",
+  "status": "active",
+  "theme_ref": {"profile_id": "theme.bluprnt_exam", "version": "1.0.0"},
+  "consistency_mode": "strict",
+  "composition_rules": [
+    {
+      "output_kind": "pdf",
+      "layout_ref": {"profile_id": "layout.national_exam_pdf", "version": "1.1.0"},
+      "required_component_variants": ["heading.primary", "callout.exam_point", "caption.standard"]
+    },
+    {
+      "output_kind": "note",
+      "layout_ref": {"profile_id": "layout.note_article", "version": "1.0.0"},
+      "required_component_variants": ["heading.primary", "callout.exam_point", "caption.standard"]
+    },
+    {
+      "output_kind": "training_video",
+      "layout_ref": {"profile_id": "layout.training_video", "version": "1.0.0"},
+      "required_component_variants": ["heading.primary", "callout.exam_point", "caption.standard"]
+    },
+    {
+      "output_kind": "national_exam",
+      "layout_ref": {"profile_id": "layout.national_exam", "version": "1.0.0"},
+      "required_component_variants": ["heading.primary", "callout.exam_point", "caption.standard"]
+    }
+  ]
+}

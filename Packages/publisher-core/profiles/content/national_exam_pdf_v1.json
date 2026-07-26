@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "content.national_exam_pdf",
+  "version": "1.0.0",
+  "name": "国家試験PDF 標準掲載内容",
+  "status": "active",
+  "supported_outputs": ["pdf"],
+  "sections": [
+    {
+      "section_id": "section.definition",
+      "content_role": "role.definition",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.definition.aminotransferase_enzyme"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 100,
+      "is_required": true,
+      "max_items": 3
+    },
+    {
+      "section_id": "section.measurement_method",
+      "content_role": "role.measurement_method",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.jscc"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 95,
+      "is_required": true,
+      "max_items": 5
+    },
+    {
+      "section_id": "section.measurement_principle",
+      "content_role": "role.measurement_principle",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.measurement.340nm"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 95,
+      "is_required": true,
+      "max_items": 5
+    },
+    {
+      "section_id": "section.exam_points",
+      "content_role": "role.exam_points",
+      "source": "exam_metadata",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": [],
+        "exam_fields": ["priority_claims", "frequency"],
+        "registry_fields": []
+      },
+      "priority": 90,
+      "is_required": true,
+      "max_items": 10
+    },
+    {
+      "section_id": "section.comparison",
+      "content_role": "role.comparison",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.combination.alt"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 85,
+      "is_required": true,
+      "max_items": 5
+    },
+    {
+      "section_id": "section.cautions",
+      "content_role": "role.cautions",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": ["category_content.test_item.interpretation_cautions"],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 70,
+      "is_required": false,
+      "max_items": 5
+    }
+  ]
+}
+

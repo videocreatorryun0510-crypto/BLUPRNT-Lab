@@ -1,0 +1,147 @@
+{
+  "assessment_version": "1.0",
+  "assessment_id": "asm_10000001",
+  "knowledge_id": "knw_19999999",
+  "content_revision": 1,
+  "profile_id": "completeness.microorganism",
+  "profile_version": "1.0",
+  "evaluated_at": "2026-07-16T12:00:00+09:00",
+  "evaluation_engine_version": "1.0",
+  "schema_validation": {
+    "status": "ok",
+    "schema_version": "1.0",
+    "errors": []
+  },
+  "completeness": {
+    "score": 48,
+    "level": "critically_incomplete",
+    "score_breakdown": {
+      "category_content_points": 38,
+      "evidence_points": 6,
+      "exam_metadata_points": 4,
+      "total": 48
+    },
+    "requirement_results": [
+      {
+        "requirement_id": "microorganism.identification_tests",
+        "json_path": "/category_content/microorganism/identification_tests",
+        "label": "同定試験",
+        "severity": "critical_required",
+        "weight": 12,
+        "earned_points": 0,
+        "status": "missing",
+        "minimum_count": 1,
+        "target_count": 2,
+        "actual_valid_count": 0
+      },
+      {
+        "requirement_id": "microorganism.culture_media",
+        "json_path": "/category_content/microorganism/culture_media",
+        "label": "培地",
+        "severity": "required",
+        "weight": 5,
+        "earned_points": 0,
+        "status": "missing",
+        "minimum_count": 1,
+        "target_count": 2,
+        "actual_valid_count": 0
+      },
+      {
+        "requirement_id": "microorganism.toxins",
+        "json_path": "/category_content/microorganism/toxins",
+        "label": "毒素",
+        "severity": "conditional_required",
+        "weight": 4,
+        "earned_points": 0,
+        "status": "missing",
+        "minimum_count": 1,
+        "target_count": 1,
+        "actual_valid_count": 0
+      },
+      {
+        "requirement_id": "microorganism.antimicrobial_resistance",
+        "json_path": "/category_content/microorganism/antimicrobial_resistance",
+        "label": "薬剤耐性",
+        "severity": "conditional_required",
+        "weight": 5,
+        "earned_points": 0,
+        "status": "missing",
+        "minimum_count": 1,
+        "target_count": 1,
+        "actual_valid_count": 0
+      }
+    ],
+    "missing_required": [
+      {
+        "requirement_id": "microorganism.identification_tests",
+        "label": "同定試験不足",
+        "severity": "critical_required"
+      },
+      {
+        "requirement_id": "microorganism.culture_media",
+        "label": "培地不足",
+        "severity": "required"
+      },
+      {
+        "requirement_id": "microorganism.toxins",
+        "label": "毒素不足",
+        "severity": "conditional_required"
+      },
+      {
+        "requirement_id": "microorganism.antimicrobial_resistance",
+        "label": "耐性機構不足",
+        "severity": "conditional_required"
+      }
+    ],
+    "missing_recommended": [
+      {
+        "requirement_id": "microorganism.infection_control",
+        "label": "感染対策不足",
+        "severity": "recommended_optional"
+      }
+    ],
+    "not_applicable": [],
+    "evidence_gaps": [
+      {
+        "claim_id": "clm_29999991",
+        "label": "代表疾患claimに主根拠がない"
+      }
+    ],
+    "exam_metadata_gaps": [
+      {
+        "field": "priority_claim_ids",
+        "label": "国家試験優先claim未設定"
+      }
+    ],
+    "improvement_actions": [
+      {
+        "priority": "critical",
+        "requirement_id": "microorganism.identification_tests",
+        "label": "同定試験を追加する",
+        "action": "承認済み資料から代表的な同定試験、期待結果、解釈を確認してclaim化する。",
+        "suggested_owner": "medical_reviewer"
+      },
+      {
+        "priority": "high",
+        "requirement_id": "microorganism.culture_media",
+        "label": "培地情報を追加する",
+        "action": "培地名、培養条件、集落所見を別claimとして登録する。",
+        "suggested_owner": "ai_with_approved_evidence"
+      },
+      {
+        "priority": "high",
+        "requirement_id": "microorganism.antimicrobial_resistance",
+        "label": "耐性機構を確認する",
+        "action": "主要耐性の適用有無を医学監修者が判断し、適用する場合は根拠付きで登録する。",
+        "suggested_owner": "medical_reviewer"
+      },
+      {
+        "priority": "medium",
+        "requirement_id": "exam_metadata.priority_claim_ids",
+        "label": "国家試験上の優先claimを設定する",
+        "action": "出題基準と過去問分析結果から既存claimの優先度を設定する。",
+        "suggested_owner": "product_owner"
+      }
+    ]
+  }
+}

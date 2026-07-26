@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "visual_grammar.ast_learning",
+  "version": "1.0.0",
+  "name": "AST共通図解文法 Version 1",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "illustration_library_hook": {
+    "contract_version": "1.0",
+    "resolver_capability_id": "illustration.resolve_by_id",
+    "supported_asset_namespaces": [
+      "organ",
+      "cell",
+      "molecule",
+      "enzyme",
+      "sample",
+      "device",
+      "icon",
+      "bacteria",
+      "parasite",
+      "laboratory_test"
+    ],
+    "default_missing_asset_policy": "use_basic_shape",
+    "store_assets_in_knowledge": false
+  },
+  "rules": [
+    {
+      "grammar_rule_id": "grammar.ast.reaction",
+      "diagram_type": "reaction_diagram",
+      "visual_types": ["diagram.reaction"],
+      "composition": {
+        "pattern": "left_to_right",
+        "max_primary_tracks": 1,
+        "allow_branching": false
+      },
+      "nodes": [
+        {"node_role": "reaction.input", "node_type": "molecule", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "reaction.enzyme", "node_type": "enzyme", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "reaction.detection", "node_type": "process", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "reaction.result", "node_type": "result", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true}
+      ],
+      "connectors": [
+        {"connector_role": "reaction.input_to_enzyme", "connector_type": "arrow", "from_node_role": "reaction.input", "to_node_role": "reaction.enzyme", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "reaction.enzyme_to_detection", "connector_type": "arrow", "from_node_role": "reaction.enzyme", "to_node_role": "reaction.detection", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "reaction.detection_to_result", "connector_type": "arrow", "from_node_role": "reaction.detection", "to_node_role": "reaction.result", "is_required": true, "claim_binding_required": true}
+      ],
+      "label_rule": {
+        "position": "bottom",
+        "numbering": "none",
+        "allow_supplement": true,
+        "claim_reference_required": true
+      },
+      "highlights": [
+        {"highlight_id": "highlight.reaction.exam", "semantic": "exam_frequent", "source": "exam_metadata", "target_node_roles": ["reaction.enzyme", "reaction.detection"], "is_required": false},
+        {"highlight_id": "highlight.reaction.important", "semantic": "important", "source": "education_profile", "target_node_roles": ["reaction.result"], "is_required": true}
+      ],
+      "density": {
+        "level": "standard",
+        "maximum_nodes": 6,
+        "maximum_connectors": 5,
+        "maximum_highlights": 2
+      },
+      "illustration_slots": [
+        {"slot_id": "illustration.reaction.enzyme", "node_role": "reaction.enzyme", "accepted_asset_namespaces": ["enzyme"], "preferred_asset_ids": ["enzyme.ast"], "is_required": false, "missing_asset_policy": "use_basic_shape"},
+        {"slot_id": "illustration.reaction.molecule", "node_role": "reaction.input", "accepted_asset_namespaces": ["molecule"], "preferred_asset_ids": [], "is_required": false, "missing_asset_policy": "label_only"}
+      ]
+    },
+    {
+      "grammar_rule_id": "grammar.ast.comparison",
+      "diagram_type": "comparison_table",
+      "visual_types": ["table.comparison"],
+      "composition": {
+        "pattern": "comparison_two_column",
+        "max_primary_tracks": 2,
+        "allow_branching": false
+      },
+      "nodes": [
+        {"node_role": "comparison.ast", "node_type": "laboratory_test", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "comparison.related_test", "node_type": "laboratory_test", "minimum_count": 1, "maximum_count": 2, "is_required": true, "claim_binding_required": true},
+        {"node_role": "comparison.axis", "node_type": "result", "minimum_count": 1, "maximum_count": 3, "is_required": true, "claim_binding_required": true}
+      ],
+      "connectors": [
+        {"connector_role": "comparison.group", "connector_type": "group_box", "from_node_role": "comparison.ast", "to_node_role": "comparison.related_test", "is_required": true, "claim_binding_required": true}
+      ],
+      "label_rule": {
+        "position": "top",
+        "numbering": "none",
+        "allow_supplement": true,
+        "claim_reference_required": true
+      },
+      "highlights": [
+        {"highlight_id": "highlight.comparison.important", "semantic": "important", "source": "education_profile", "target_node_roles": ["comparison.axis"], "is_required": true},
+        {"highlight_id": "highlight.comparison.exam", "semantic": "exam_frequent", "source": "exam_metadata", "target_node_roles": ["comparison.ast", "comparison.related_test"], "is_required": false}
+      ],
+      "density": {
+        "level": "standard",
+        "maximum_nodes": 6,
+        "maximum_connectors": 2,
+        "maximum_highlights": 2
+      },
+      "illustration_slots": [
+        {"slot_id": "illustration.comparison.ast", "node_role": "comparison.ast", "accepted_asset_namespaces": ["laboratory_test"], "preferred_asset_ids": ["laboratory_test.ast"], "is_required": false, "missing_asset_policy": "label_only"},
+        {"slot_id": "illustration.comparison.related", "node_role": "comparison.related_test", "accepted_asset_namespaces": ["laboratory_test"], "preferred_asset_ids": [], "is_required": false, "missing_asset_policy": "label_only"}
+      ]
+    },
+    {
+      "grammar_rule_id": "grammar.ast.disease_mechanism",
+      "diagram_type": "disease_mechanism",
+      "visual_types": ["diagram.disease_mechanism"],
+      "composition": {
+        "pattern": "stepped",
+        "max_primary_tracks": 1,
+        "allow_branching": false
+      },
+      "nodes": [
+        {"node_role": "mechanism.cell_damage", "node_type": "cell", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "mechanism.enzyme_release", "node_type": "enzyme", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "mechanism.blood_sample", "node_type": "sample", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true},
+        {"node_role": "mechanism.laboratory_test", "node_type": "laboratory_test", "minimum_count": 1, "maximum_count": 1, "is_required": true, "claim_binding_required": true}
+      ],
+      "connectors": [
+        {"connector_role": "mechanism.damage_to_release", "connector_type": "arrow", "from_node_role": "mechanism.cell_damage", "to_node_role": "mechanism.enzyme_release", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "mechanism.release_to_sample", "connector_type": "arrow", "from_node_role": "mechanism.enzyme_release", "to_node_role": "mechanism.blood_sample", "is_required": true, "claim_binding_required": true},
+        {"connector_role": "mechanism.sample_to_test", "connector_type": "arrow", "from_node_role": "mechanism.blood_sample", "to_node_role": "mechanism.laboratory_test", "is_required": true, "claim_binding_required": true}
+      ],
+      "label_rule": {
+        "position": "bottom",
+        "numbering": "step_numbered",
+        "allow_supplement": true,
+        "claim_reference_required": true
+      },
+      "highlights": [
+        {"highlight_id": "highlight.mechanism.exam", "semantic": "exam_frequent", "source": "exam_metadata", "target_node_roles": ["mechanism.cell_damage", "mechanism.enzyme_release"], "is_required": false},
+        {"highlight_id": "highlight.mechanism.warning", "semantic": "warning", "source": "education_profile", "target_node_roles": ["mechanism.laboratory_test"], "is_required": false}
+      ],
+      "density": {
+        "level": "standard",
+        "maximum_nodes": 5,
+        "maximum_connectors": 4,
+        "maximum_highlights": 2
+      },
+      "illustration_slots": [
+        {"slot_id": "illustration.mechanism.cell", "node_role": "mechanism.cell_damage", "accepted_asset_namespaces": ["cell"], "preferred_asset_ids": ["cell.generic"], "is_required": false, "missing_asset_policy": "use_basic_shape"},
+        {"slot_id": "illustration.mechanism.enzyme", "node_role": "mechanism.enzyme_release", "accepted_asset_namespaces": ["enzyme"], "preferred_asset_ids": ["enzyme.ast"], "is_required": false, "missing_asset_policy": "use_basic_shape"},
+        {"slot_id": "illustration.mechanism.sample", "node_role": "mechanism.blood_sample", "accepted_asset_namespaces": ["sample"], "preferred_asset_ids": ["sample.blood"], "is_required": false, "missing_asset_policy": "use_basic_shape"}
+      ]
+    }
+  ]
+}

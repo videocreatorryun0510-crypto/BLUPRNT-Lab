@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_244d2ae83be5e666",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "黄色ブドウ球菌",
+    "english_name": "Staphylococcus aureus",
+    "aliases": [
+      "黄色ブドウ球菌",
+      "S. aureus"
+    ]
+  },
+  "classification": {
+    "term_type": "microorganism",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": [
+      "immunology"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_0a7045d77bfb78ee",
+        "statement": "黄色ブドウ球菌は、ブドウ房状に配列するグラム陽性球菌である。"
+      },
+      {
+        "claim_id": "clm_29c47b5d3fa7b152",
+        "statement": "黄色ブドウ球菌は、ヒトの鼻腔や皮膚に定着しうる常在菌である。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_c56ebb9eb071fc6f",
+        "statement": "黄色ブドウ球菌はカタラーゼを産生する。"
+      },
+      {
+        "claim_id": "clm_d88b3409fc91836e",
+        "statement": "黄色ブドウ球菌はコアグラーゼを産生する。"
+      },
+      {
+        "claim_id": "clm_26028472505edc6a",
+        "statement": "黄色ブドウ球菌はβラクタマーゼを産生する菌株がある。"
+      },
+      {
+        "claim_id": "clm_b8af22d0d50c7815",
+        "statement": "一部の黄色ブドウ球菌はメチシリン耐性を獲得し、MRSAと呼ばれる。"
+      },
+      {
+        "claim_id": "clm_bb3b41897979963e",
+        "statement": "エンテロトキシン産生株は、食品中で産生された毒素により食中毒を起こす。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_287cf568eab3c294",
+        "statement": "黄色ブドウ球菌は通性嫌気性菌である。"
+      },
+      {
+        "claim_id": "clm_5469a7cd3eb9547e",
+        "statement": "黄色ブドウ球菌はマンニットを分解する。"
+      },
+      {
+        "claim_id": "clm_47b18416da1cf25e",
+        "statement": "黄色ブドウ球菌は血液寒天培地でβ溶血を示すことがある。"
+      },
+      {
+        "claim_id": "clm_924a10122714fefb",
+        "statement": "黄色ブドウ球菌は卵黄加マンニット食塩培地でマンニット分解による培地の黄色化を示す。"
+      },
+      {
+        "claim_id": "clm_07feed00cbb464bb",
+        "statement": "メチシリン耐性黄色ブドウ球菌はmecA遺伝子により産生されるPBP2aを介してβラクタム系抗菌薬に耐性を示す。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "generic_facts_v0.3"
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

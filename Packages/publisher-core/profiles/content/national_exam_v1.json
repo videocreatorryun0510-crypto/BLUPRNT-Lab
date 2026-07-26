@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "content.national_exam",
+  "version": "1.0.0",
+  "name": "NationalExam 標準掲載内容",
+  "status": "active",
+  "supported_outputs": ["national_exam"],
+  "sections": [
+    {
+      "section_id": "section.question_core",
+      "content_role": "role.question_core",
+      "source": "knowledge_claims",
+      "selector": {
+        "claim_keys": ["ast.definition.aminotransferase_enzyme", "ast.measurement.340nm"],
+        "field_path_prefixes": [],
+        "exam_fields": [],
+        "registry_fields": []
+      },
+      "priority": 100,
+      "is_required": true,
+      "max_items": 10
+    },
+    {
+      "section_id": "section.question_patterns",
+      "content_role": "role.question_patterns",
+      "source": "exam_metadata",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": [],
+        "exam_fields": ["question_patterns", "priority_claims"],
+        "registry_fields": []
+      },
+      "priority": 95,
+      "is_required": true,
+      "max_items": 20
+    },
+    {
+      "section_id": "section.common_errors",
+      "content_role": "role.common_errors",
+      "source": "exam_metadata",
+      "selector": {
+        "claim_keys": [],
+        "field_path_prefixes": [],
+        "exam_fields": ["common_errors"],
+        "registry_fields": []
+      },
+      "priority": 70,
+      "is_required": false,
+      "max_items": 10
+    }
+  ]
+}
+

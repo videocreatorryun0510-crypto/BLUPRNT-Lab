@@ -1,0 +1,26 @@
+{
+  "profile_id": "source_bundle.ferritin.v1",
+  "profile_version": "1.0",
+  "knowledge_id": "knw_10000013",
+  "summary_claim_key": "labtest.ferritin.overview",
+  "learning_objective": "フェリチンの測定対象、臨床的意義、高値・低値となる代表的病態を説明できる。",
+  "target_audience": "臨床検査技師国家試験の受験者",
+  "key_claim_keys": [
+    "labtest.ferritin.clinical_significance.iron_store",
+    "labtest.ferritin.low.iron_deficiency",
+    "labtest.ferritin.clinical_significance.inflammation_interpretation"
+  ],
+  "diagram_requests": [
+    {
+      "request_id": "diagram.ferritin.iron_metabolism_overview",
+      "diagram_type": "diagram.metabolic_overview",
+      "title": "鉄代謝の概略図",
+      "learning_goal": "フェリチンと貯蔵鉄、鉄欠乏、炎症時の解釈の関係を理解する。",
+      "source_claim_keys": [
+        "labtest.ferritin.clinical_significance.iron_store",
+        "labtest.ferritin.low.iron_deficiency",
+        "labtest.ferritin.clinical_significance.inflammation_interpretation"
+      ]
+    }
+  ]
+}

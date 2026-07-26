@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "visual.ast_learning",
+  "version": "1.0.0",
+  "name": "AST 学習図解構成",
+  "status": "active",
+  "supported_outputs": ["pdf", "note", "training_video", "national_exam"],
+  "visuals": [
+    {
+      "visual_id": "visual.reaction_diagram",
+      "visual_type": "diagram.reaction",
+      "claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+      "priority": 100,
+      "display_size": "large",
+      "representation": "svg",
+      "caption": "AST測定の反応と検出信号",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.medical_reaction_diagram",
+        "preferred_provider_ids": ["provider.svg_generator"],
+        "structured_prompt": {
+          "prompt_schema_version": "1.0",
+          "educational_goal": "測定法と測定原理の関係を短時間で確認できる図にする。",
+          "subject": "AST測定反応",
+          "must_show_claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+          "composition_elements": ["element.reaction_flow", "element.detection_signal"],
+          "label_claim_keys": ["ast.measurement.340nm"],
+          "style_constraints": ["医学的事実にない反応物や数値を追加しない。"],
+          "prohibited_elements": ["根拠のない装飾的な分子構造を描かない。"],
+          "accessibility_goal": "色だけに依存せず矢印とラベルで順序を示す。"
+        }
+      },
+      "is_required": true
+    },
+    {
+      "visual_id": "visual.organ_distribution",
+      "visual_type": "diagram.organ_distribution",
+      "claim_keys": ["ast.is_leakage_enzyme"],
+      "priority": 80,
+      "display_size": "medium",
+      "representation": "raster_image",
+      "caption": "ASTの臓器分布を理解する図",
+      "generation": {
+        "requires_ai_generation": true,
+        "capability_id": "visual.medical_organ_distribution",
+        "preferred_provider_ids": ["provider.gpt_image", "provider.gemini_image"],
+        "structured_prompt": {
+          "prompt_schema_version": "1.0",
+          "educational_goal": "逸脱酵素としての特徴を臓器との関係から理解できる図にする。",
+          "subject": "ASTの臓器分布",
+          "must_show_claim_keys": ["ast.is_leakage_enzyme"],
+          "composition_elements": ["element.body_silhouette", "element.organ_labels"],
+          "label_claim_keys": ["ast.is_leakage_enzyme"],
+          "style_constraints": ["写実的な患者表現を使用しない。"],
+          "prohibited_elements": ["Knowledgeにない臓器別数値を表示しない。"],
+          "accessibility_goal": "臓器ラベルを図形と文字の両方で識別できるようにする。"
+        }
+      },
+      "is_required": false
+    },
+    {
+      "visual_id": "visual.comparison_table",
+      "visual_type": "table.comparison",
+      "claim_keys": ["ast.combination.alt"],
+      "priority": 90,
+      "display_size": "full_width",
+      "representation": "svg",
+      "caption": "ASTと関連検査の比較",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.comparison_table",
+        "preferred_provider_ids": ["provider.svg_generator"],
+        "structured_prompt": {
+          "prompt_schema_version": "1.0",
+          "educational_goal": "関連検査との組み合わせを比較できる表にする。",
+          "subject": "ASTと関連検査",
+          "must_show_claim_keys": ["ast.combination.alt"],
+          "composition_elements": ["element.table_header", "element.comparison_rows"],
+          "label_claim_keys": ["ast.combination.alt"],
+          "style_constraints": ["比較軸はClaimから取得する。"],
+          "prohibited_elements": ["未承認の比較項目を追加しない。"],
+          "accessibility_goal": "行見出しと列見出しを明確に区別する。"
+        }
+      },
+      "is_required": true
+    },
+    {
+      "visual_id": "visual.flowchart",
+      "visual_type": "diagram.flowchart",
+      "claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+      "priority": 70,
+      "display_size": "medium",
+      "representation": "mermaid",
+      "caption": "測定から解釈までの流れ",
+      "generation": {
+        "requires_ai_generation": false,
+        "capability_id": "visual.flowchart",
+        "preferred_provider_ids": ["provider.mermaid_renderer"],
+        "structured_prompt": {
+          "prompt_schema_version": "1.0",
+          "educational_goal": "測定法と測定原理の順序を確認できるフローにする。",
+          "subject": "AST測定フロー",
+          "must_show_claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+          "composition_elements": ["element.flow_start", "element.flow_steps", "element.flow_end"],
+          "label_claim_keys": ["ast.jscc", "ast.measurement.340nm"],
+          "style_constraints": ["分岐はKnowledgeに存在する場合だけ使用する。"],
+          "prohibited_elements": ["診断や治療判断を追加しない。"],
+          "accessibility_goal": "上から下へ一方向に読み進められる構造にする。"
+        }
+      },
+      "is_required": false
+    }
+  ]
+}
+

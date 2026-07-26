@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000011",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "細菌細胞壁",
+    "english_name": "Bacterial cell wall",
+    "aliases": [
+      "細菌の細胞壁"
+    ]
+  },
+  "classification": {
+    "term_type": "biological_structure",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_bwall_definition",
+        "assertion": "細菌細胞壁は、細菌の細胞質膜の外側で細胞を包み、ペプチドグリカンを主要な構造要素とする生体構造である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "biological_structure_v1.0",
+    "biological_structure": {
+      "overview": [
+        {
+          "claim_id": "clm_bwall_overview",
+          "assertion": "Gram陽性菌とGram陰性菌ではペプチドグリカン層の厚さや外膜の有無が異なり、この細胞表層構造の差がGram染色における染色性の違いに関係する。"
+        }
+      ],
+      "main_functions": [
+        {
+          "claim_id": "clm_bwall_function",
+          "function_name": "形態維持と機械的保護",
+          "assertion": "細菌細胞壁のペプチドグリカンは細菌の特徴的な形を保ち、細胞へ機械的な保護を与える。"
+        }
+      ],
+      "main_components": [
+        {
+          "claim_id": "clm_bwall_component",
+          "component_name": "ペプチドグリカン",
+          "assertion": "Gram陽性菌とGram陰性菌の細胞壁はいずれもペプチドグリカンを主要な構造要素として持つが、その層の厚さは異なる。"
+        }
+      ],
+      "organisms_present": [
+        {
+          "claim_id": "clm_bwall_organisms",
+          "organism_name": "多くの細菌",
+          "assertion": "細胞壁は多くの細菌に存在するが、Mycoplasma属など細胞壁ペプチドグリカンを持たない細菌もある。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_bwall_medmicrobiology",
+      "source_priority_rank": 5,
+      "title": "Medical Microbiology, 4th edition, Chapter 2: Structure",
+      "issuing_organization": "University of Texas Medical Branch at Galveston",
+      "edition": "4th edition",
+      "publication_year": 1996,
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK8477/",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "Chapter 2: Structure — Important Chemical Components of Surface Structures",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_bwall_definition",
+        "clm_bwall_function",
+        "clm_bwall_component",
+        "clm_bwall_organisms"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_bwall_rohde2019",
+      "source_priority_rank": 6,
+      "title": "The Gram-Positive Bacterial Cell Wall",
+      "issuing_organization": "American Society for Microbiology",
+      "edition": null,
+      "publication_year": 2019,
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11086966/",
+      "doi": "10.1128/microbiolspec.gpp3-0044-2018",
+      "pmid": "31124431",
+      "accessed_at": "2026-07-19",
+      "chapter": "Historical Background; The Bacterial Cell Wall",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_bwall_overview"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

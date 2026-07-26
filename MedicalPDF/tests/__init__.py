@@ -1,0 +1,1 @@
+"""MedicalPDF test suite."""

@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000010",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "抗酸菌染色",
+    "english_name": "Ziehl-Neelsen stain",
+    "aliases": [
+      "Ziehl-Neelsen染色",
+      "チール・ネルゼン染色",
+      "Ziehl-Neelsen stain"
+    ]
+  },
+  "classification": {
+    "term_type": "staining_method",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_70000001",
+        "assertion": "Ziehl-Neelsen法による抗酸菌染色は、脱色に抵抗して一次染色を保持する抗酸性を利用して抗酸菌を観察する染色法である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "staining_method_v1.0",
+    "staining_method": {
+      "purposes": [
+        {
+          "claim_id": "clm_70000002",
+          "use_case": "塗抹標本中の抗酸菌の検出",
+          "assertion": "Ziehl-Neelsen法は塗抹標本中の抗酸菌を顕微鏡で検出するために用いる。"
+        }
+      ],
+      "target_structures": [
+        {
+          "claim_id": "clm_70000003",
+          "target_name": "抗酸菌の脂質に富む細胞壁",
+          "target_kind": "cell_wall",
+          "assertion": "抗酸菌の脂質に富む細胞壁は、一次染色後に酸アルコールで脱色されにくい性質と関係する。"
+        }
+      ],
+      "applicable_specimens": [
+        {
+          "claim_id": "clm_70000004",
+          "specimen": "喀痰塗抹標本",
+          "preparation": "標準作業書に従って薄く均一な塗抹を作製し、乾燥させる。",
+          "assertion": "Ziehl-Neelsen法は抗酸菌検査のために作製した喀痰塗抹標本へ適用できる。"
+        }
+      ],
+      "fixation_requirements": [
+        {
+          "claim_id": "clm_70000005",
+          "fixative_or_method": "乾燥後の適切な固定",
+          "conditions": "感染対策を含む施設の標準作業書に従う。",
+          "assertion": "染色前に乾燥した塗抹標本を適切に固定する。"
+        }
+      ],
+      "staining_principles": [
+        {
+          "claim_id": "clm_70000006",
+          "mechanism": "加温によりカルボールフクシンの抗酸菌細胞壁への浸透を促す。",
+          "affected_target": "抗酸菌の脂質に富む細胞壁",
+          "resulting_effect": "一次染色液が細胞内へ入り、赤色系に染色される。",
+          "assertion": "Ziehl-Neelsen法では加温によってカルボールフクシンの浸透を促進する。"
+        },
+        {
+          "claim_id": "clm_70000007",
+          "mechanism": "抗酸菌は酸アルコールによる脱色後もカルボールフクシンを保持する。",
+          "affected_target": "抗酸菌と非抗酸性の背景成分",
+          "resulting_effect": "抗酸菌は赤色系、背景は対比染色により青色に観察される。",
+          "assertion": "酸アルコールに対する一次染色の保持性によって抗酸菌と背景を区別する。"
+        }
+      ],
+      "reagents": [
+        {
+          "claim_id": "clm_70000008",
+          "reagent_name": "カルボールフクシン液",
+          "reagent_role": "primary_stain",
+          "assertion": "カルボールフクシン液を一次染色液として用いる。"
+        },
+        {
+          "claim_id": "clm_70000009",
+          "reagent_name": "酸アルコール",
+          "reagent_role": "decolorizer",
+          "assertion": "酸アルコールを脱色液として用いる。"
+        },
+        {
+          "claim_id": "clm_70000010",
+          "reagent_name": "メチレンブルー液",
+          "reagent_role": "counterstain",
+          "assertion": "メチレンブルー液を対比染色液として用いる。"
+        },
+        {
+          "claim_id": "clm_70000011",
+          "reagent_name": "顕微鏡用浸油",
+          "reagent_role": "other",
+          "assertion": "染色後の標本は必要に応じて顕微鏡用浸油を用いて観察する。"
+        }
+      ],
+      "procedure_steps": [
+        {
+          "claim_id": "clm_70000012",
+          "step_order": 1,
+          "action": "一次染色と加温を行う。",
+          "reagent_claim_ids": [
+            "clm_70000008"
+          ],
+          "duration": null,
+          "conditions": "標本を乾燥させず、沸騰させないよう施設手順に従う。",
+          "assertion": "固定した塗抹標本をカルボールフクシン液で覆い、適切に加温する。"
+        },
+        {
+          "claim_id": "clm_70000013",
+          "step_order": 2,
+          "action": "脱色を行う。",
+          "reagent_claim_ids": [
+            "clm_70000009"
+          ],
+          "duration": null,
+          "conditions": "施設の標準作業書に従い、脱色不足と過脱色を避ける。",
+          "assertion": "一次染色後に酸アルコールで適切に脱色する。"
+        },
+        {
+          "claim_id": "clm_70000014",
+          "step_order": 3,
+          "action": "対比染色を行う。",
+          "reagent_claim_ids": [
+            "clm_70000010"
+          ],
+          "duration": null,
+          "conditions": "時間は採用する標準作業書に従う。",
+          "assertion": "脱色後にメチレンブルー液で対比染色する。"
+        },
+        {
+          "claim_id": "clm_70000015",
+          "step_order": 4,
+          "action": "乾燥後に顕微鏡観察を行う。",
+          "reagent_claim_ids": [
+            "clm_70000011"
+          ],
+          "duration": null,
+          "conditions": "採用する観察手順に従う。",
+          "assertion": "染色標本を乾燥させ、必要に応じて浸油を用いて顕微鏡で観察する。"
+        }
+      ],
+      "result_interpretations": [
+        {
+          "claim_id": "clm_70000016",
+          "target_name": "抗酸菌",
+          "observed_color_or_pattern": "赤色から赤桃色の桿菌",
+          "interpretation": "酸アルコールによる脱色後もカルボールフクシンを保持している。",
+          "assertion": "抗酸菌は青色の背景中に赤色から赤桃色の桿菌として観察される。"
+        },
+        {
+          "claim_id": "clm_70000017",
+          "target_name": "非抗酸性の背景成分",
+          "observed_color_or_pattern": "青色",
+          "interpretation": "一次染色が脱色され、メチレンブルーで対比染色されている。",
+          "assertion": "非抗酸性の背景成分はメチレンブルーにより青色に観察される。"
+        }
+      ],
+      "quality_controls": [
+        {
+          "claim_id": "clm_70000018",
+          "control_material": "既知の抗酸菌陽性対照",
+          "expected_result": "赤色から赤桃色の抗酸性菌体が観察される。",
+          "assertion": "既知の抗酸菌陽性対照は期待される赤色系の染色像を示す。"
+        },
+        {
+          "claim_id": "clm_70000019",
+          "control_material": "既知の抗酸菌陰性対照",
+          "expected_result": "赤色から赤桃色の抗酸性菌体を認めない。",
+          "assertion": "既知の抗酸菌陰性対照では抗酸性菌体を認めないことを確認する。"
+        }
+      ],
+      "error_causes": [
+        {
+          "claim_id": "clm_70000020",
+          "error_type": "under_decolorization",
+          "cause": "酸アルコールによる脱色が不十分である。",
+          "observed_effect": "非抗酸性の成分が赤色系に残り、偽陽性様に見えることがある。",
+          "assertion": "脱色不足は非抗酸性成分を赤色系に残す原因となる。"
+        },
+        {
+          "claim_id": "clm_70000021",
+          "error_type": "thick_smear",
+          "cause": "塗抹が厚すぎる。",
+          "observed_effect": "背景が不明瞭になり、菌体の観察が難しくなる。",
+          "assertion": "厚すぎる塗抹は抗酸菌の観察を妨げる。"
+        }
+      ],
+      "limitations": [
+        {
+          "claim_id": "clm_70000022",
+          "scope_or_target": "染色結果の判定",
+          "limitation": "塗抹の厚さ、脱色、対比染色などの手技条件が観察結果へ影響する。",
+          "assertion": "Ziehl-Neelsen法の判定には標本作製と各染色工程の適切な管理が必要である。"
+        }
+      ],
+      "safety_considerations": [
+        {
+          "claim_id": "clm_70000023",
+          "assertion": "加温操作、フェノールを含む染色液および感染性検体は、施設の安全手順とリスク評価に従って取り扱う。"
+        }
+      ],
+      "related_methods": []
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_acidfast_asm_protocol",
+      "source_priority_rank": 3,
+      "title": "Acid-Fast Stain Protocols",
+      "issuing_organization": "American Society for Microbiology",
+      "edition": null,
+      "publication_year": null,
+      "url": "https://asm.org/asm/media/protocol-images/acid-fast-stain-protocols.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_70000001",
+        "clm_70000002",
+        "clm_70000003",
+        "clm_70000004",
+        "clm_70000005",
+        "clm_70000006",
+        "clm_70000007",
+        "clm_70000008",
+        "clm_70000009",
+        "clm_70000010",
+        "clm_70000011",
+        "clm_70000012",
+        "clm_70000013",
+        "clm_70000014",
+        "clm_70000015",
+        "clm_70000016",
+        "clm_70000017",
+        "clm_70000018",
+        "clm_70000019"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_acidfast_who_microscopy_manual",
+      "source_priority_rank": 3,
+      "title": "Laboratory services in tuberculosis control. Part II: Microscopy",
+      "issuing_organization": "World Health Organization",
+      "edition": null,
+      "publication_year": 1998,
+      "url": "https://iris.who.int/bitstream/handle/10665/65942/WHO_TB_98.258_(part2).pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": null,
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_70000020",
+        "clm_70000021",
+        "clm_70000022",
+        "clm_70000023"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

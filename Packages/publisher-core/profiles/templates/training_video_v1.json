@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "template_id": "template.training_video",
+  "version": "1.0.0",
+  "template_family": "family.training_video",
+  "name": "TrainingVideo Version 1",
+  "status": "active",
+  "output_kind": "training_video",
+  "series_id": "series.clinical_exam_core",
+  "content_profile_ref": {"profile_id": "content.training_video", "version": "1.0.0"},
+  "visual_profile_ref": {"profile_id": "visual.ast_learning", "version": "1.0.0"},
+  "layout_profile_ref": {"profile_id": "layout.training_video", "version": "1.0.0"},
+  "theme_ref": {"profile_id": "theme.bluprnt_exam", "version": "1.0.0"},
+  "design_system_ref": {"profile_id": "design_system.clinical_exam", "version": "1.0.0"},
+  "media_profile_ref": null
+}
+

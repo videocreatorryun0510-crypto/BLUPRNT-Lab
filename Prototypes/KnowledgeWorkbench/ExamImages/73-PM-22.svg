@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">BLUPRNT Lab image mapping fixture</title>
+  <desc id="desc">CSV画像関連付けを確認するための医学的意味を持たないダミー画像</desc>
+  <rect width="640" height="360" fill="#f6f3eb"/>
+  <rect x="24" y="24" width="592" height="312" rx="18" fill="#fffdf8" stroke="#c56c2e" stroke-width="4"/>
+  <text x="320" y="155" text-anchor="middle" font-family="sans-serif" font-size="34" fill="#14231f">73-PM-22</text>
+  <text x="320" y="205" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#c56c2e">IMAGE MAPPING FIXTURE</text>
+  <text x="320" y="248" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#61706b">医学的意味を持たない動作確認用画像</text>
+</svg>

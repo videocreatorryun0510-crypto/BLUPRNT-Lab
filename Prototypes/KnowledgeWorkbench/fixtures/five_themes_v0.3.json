@@ -1,0 +1,213 @@
+{
+  "AST": {
+    "term": {
+      "canonical_name": "アスパラギン酸アミノトランスフェラーゼ",
+      "english_name": "Aspartate aminotransferase",
+      "aliases": ["AST", "GOT"]
+    },
+    "classification": {
+      "term_type": "test_item",
+      "primary_exam_domain": "clinical_chemistry",
+      "related_exam_domains": ["hematology"]
+    },
+    "core_facts": {
+      "definitions": [
+        {"statement": "ASTはアミノ基転移反応を触媒する酵素であり、臨床検査では主に酵素活性として測定される。"}
+      ],
+      "mechanisms": [
+        {"statement": "ASTを含む細胞が障害されると、細胞内ASTが血中へ逸脱する。"}
+      ],
+      "characteristics": [
+        {"statement": "ASTは肝臓、心筋、骨格筋、赤血球などに分布する。"},
+        {"statement": "ASTはALTと比較して肝臓以外の組織にも広く分布する。"}
+      ]
+    },
+    "template_id": "test_item_v0.3",
+    "test_item_content": {
+      "purposes": [
+        {"statement": "肝細胞、心筋、骨格筋などの細胞障害を評価する。"}
+      ],
+      "specimens": [
+        {
+          "specimen": "血清または血漿",
+          "container_or_anticoagulant": "採用測定法で確認する",
+          "handling": "溶血を避け、採用測定法で定められた条件で分離する。",
+          "stability": "採用測定法で確認する"
+        }
+      ],
+      "measurement_methods": [
+        {
+          "method_name": "IFCC勧告法に基づく方法",
+          "standardizing_body": "IFCC",
+          "factual_description": "国際的な標準測定体系に基づくAST酵素活性測定法である。"
+        },
+        {
+          "method_name": "JSCC標準化対応法",
+          "standardizing_body": "JSCC",
+          "factual_description": "国内で用いられてきたAST酵素活性の標準化対応法である。"
+        }
+      ],
+      "measurement_principles": [
+        {
+          "related_method_names": ["IFCC勧告法に基づく方法", "JSCC標準化対応法"],
+          "measured_quantity": "AST酵素活性",
+          "reaction_sequence": "AST反応で生成するオキサロ酢酸を共役反応へ導く。",
+          "detection_signal": "NADHの吸光度変化を反応速度として測定する。",
+          "wavelength_or_endpoint": "340 nm付近"
+        }
+      ],
+      "reference_ranges": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [
+            {"state_name": "肝細胞障害", "factual_relation": "肝細胞からASTが血中へ逸脱することで高値を示す。"},
+            {"state_name": "筋障害", "factual_relation": "心筋または骨格筋からASTが血中へ逸脱することで高値を示す。"}
+          ],
+          "representative_diseases": [
+            {"disease_name": "急性肝炎", "factual_relation": "肝細胞障害に伴いAST高値を示す代表疾患である。"},
+            {"disease_name": "劇症肝炎", "factual_relation": "高度な肝細胞障害に伴いAST高値を示し得る。"},
+            {"disease_name": "アルコール性肝障害", "factual_relation": "肝細胞障害に伴いAST高値を示し得る。"},
+            {"disease_name": "横紋筋融解症", "factual_relation": "骨格筋障害に伴いAST高値を示し得る。"},
+            {"disease_name": "筋ジストロフィー", "factual_relation": "骨格筋障害に伴いAST高値を示し得る。"}
+          ],
+          "interpretive_notes": []
+        },
+        "low": {
+          "pathophysiologic_states": [],
+          "representative_diseases": [],
+          "interpretive_notes": [
+            {"statement": "AST低値は高値と比較して臨床的意義が限定的である。"}
+          ]
+        }
+      },
+      "related_test_combinations": [
+        {
+          "related_test_names": ["ALT"],
+          "factual_interpretation": "ASTとALTの分布差および上昇パターンを組み合わせて評価する。"
+        },
+        {
+          "related_test_names": ["LD", "CK"],
+          "factual_interpretation": "AST高値の由来を検討する際に、他の逸脱酵素や筋由来酵素と組み合わせる。"
+        }
+      ],
+      "interpretation_cautions": [
+        {"statement": "溶血検体では赤血球由来ASTの影響により高値となり得る。"},
+        {"statement": "AST単独では障害臓器を特定できない。"}
+      ]
+    }
+  },
+  "HbA1c": {
+    "term": {
+      "canonical_name": "ヘモグロビンA1c",
+      "english_name": "Hemoglobin A1c",
+      "aliases": ["HbA1c", "糖化ヘモグロビン"]
+    },
+    "classification": {
+      "term_type": "test_item",
+      "primary_exam_domain": "clinical_chemistry",
+      "related_exam_domains": ["hematology"]
+    },
+    "core_facts": {
+      "definitions": [
+        {"statement": "HbA1cはヘモグロビンAの糖化分画である。"}
+      ],
+      "mechanisms": [
+        {"statement": "血中グルコースがヘモグロビンへ非酵素的に結合し、赤血球の生存期間中に蓄積する。"}
+      ],
+      "characteristics": [
+        {"statement": "HbA1cは中長期の血糖状態を反映する。"},
+        {"statement": "HbA1cは赤血球寿命の影響を受ける。"}
+      ]
+    },
+    "template_id": "test_item_v0.3",
+    "test_item_content": {
+      "purposes": [
+        {"statement": "中長期の血糖状態を評価する。"}
+      ],
+      "specimens": [
+        {
+          "specimen": "抗凝固全血",
+          "container_or_anticoagulant": "EDTA加全血など採用法で指定された容器",
+          "handling": "赤血球を含む全血を用いる。",
+          "stability": "採用測定法で確認する"
+        }
+      ],
+      "measurement_methods": [
+        {"method_name": "HPLC法", "standardizing_body": "", "factual_description": "ヘモグロビン分画を分離してHbA1cを測定する。"},
+        {"method_name": "免疫法", "standardizing_body": "", "factual_description": "HbA1cの糖化部位を抗体で認識して測定する。"},
+        {"method_name": "酵素法", "standardizing_body": "", "factual_description": "糖化アミノ酸を酵素反応で検出して測定する。"}
+      ],
+      "measurement_principles": [
+        {
+          "related_method_names": ["HPLC法", "免疫法", "酵素法"],
+          "measured_quantity": "総ヘモグロビンに対するHbA1cの割合",
+          "reaction_sequence": "採用法により分離、免疫反応または酵素反応を用いる。",
+          "detection_signal": "採用法に対応するクロマトグラム、吸光度または酵素反応信号を測定する。",
+          "wavelength_or_endpoint": "採用測定法で確認する"
+        }
+      ],
+      "reference_ranges": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [
+            {"state_name": "持続する高血糖", "factual_relation": "赤血球寿命中にヘモグロビンの糖化が進行する。"}
+          ],
+          "representative_diseases": [
+            {"disease_name": "糖尿病", "factual_relation": "持続する高血糖によりHbA1c高値を示し得る。"}
+          ],
+          "interpretive_notes": []
+        },
+        "low": {
+          "pathophysiologic_states": [
+            {"state_name": "赤血球寿命短縮", "factual_relation": "ヘモグロビンが糖化を受ける期間が短くなる。"}
+          ],
+          "representative_diseases": [
+            {"disease_name": "溶血性貧血", "factual_relation": "赤血球寿命短縮によりHbA1c低値を示し得る。"}
+          ],
+          "interpretive_notes": []
+        }
+      },
+      "related_test_combinations": [
+        {"related_test_names": ["血糖"], "factual_interpretation": "採血時点の血糖と中長期のHbA1cを組み合わせて評価する。"},
+        {"related_test_names": ["グリコアルブミン"], "factual_interpretation": "異なる対象蛋白と反映期間を持つ指標として比較する。"}
+      ],
+      "interpretation_cautions": [
+        {"statement": "赤血球寿命短縮では血糖状態に対して低値となり得る。"},
+        {"statement": "輸血後は赤血球集団の変化により解釈へ注意を要する。"}
+      ]
+    }
+  },
+  "巨赤芽球性貧血": {
+    "term": {"canonical_name": "巨赤芽球性貧血", "english_name": "Megaloblastic anemia", "aliases": []},
+    "classification": {"term_type": "disease", "primary_exam_domain": "hematology", "related_exam_domains": ["clinical_chemistry"]},
+    "core_facts": {
+      "definitions": [{"statement": "巨赤芽球性貧血はDNA合成障害により核と細胞質の成熟が不均衡となる大球性貧血である。"}],
+      "mechanisms": [{"statement": "造血細胞の核成熟が障害され、無効造血を生じる。"}],
+      "characteristics": [{"statement": "末梢血では大卵円形赤血球や過分葉好中球がみられる。"}]
+    },
+    "template_id": "generic_facts_v0.3",
+    "test_item_content": null
+  },
+  "Gram染色": {
+    "term": {"canonical_name": "Gram染色", "english_name": "Gram stain", "aliases": ["グラム染色"]},
+    "classification": {"term_type": "staining_method", "primary_exam_domain": "microbiology", "related_exam_domains": []},
+    "core_facts": {
+      "definitions": [{"statement": "Gram染色は細菌の細胞壁構造の差を利用する鑑別染色法である。"}],
+      "mechanisms": [{"statement": "Gram陽性菌では色素・ヨウ素複合体が保持され、Gram陰性菌は脱色後に対比染色される。"}],
+      "characteristics": [{"statement": "Gram陽性菌は紫色、Gram陰性菌は赤色に観察される。"}]
+    },
+    "template_id": "generic_facts_v0.3",
+    "test_item_content": null
+  },
+  "蟯虫": {
+    "term": {"canonical_name": "蟯虫", "english_name": "Enterobius vermicularis", "aliases": ["ギョウチュウ"]},
+    "classification": {"term_type": "parasite", "primary_exam_domain": "microbiology", "related_exam_domains": ["public_health"]},
+    "core_facts": {
+      "definitions": [{"statement": "蟯虫はヒトの腸管に寄生する線虫である。"}],
+      "mechanisms": [{"statement": "雌成虫は夜間に肛門周囲へ移動して産卵する。"}],
+      "characteristics": [{"statement": "虫卵検査は起床直後かつ入浴・排便前の肛門周囲から採取する。"}]
+    },
+    "template_id": "generic_facts_v0.3",
+    "test_item_content": null
+  }
+}

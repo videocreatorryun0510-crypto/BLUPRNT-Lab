@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_891410cf7c7bea0a",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "グラム染色",
+    "english_name": "Gram stain",
+    "aliases": [
+      "Gram staining",
+      "グラム法"
+    ]
+  },
+  "classification": {
+    "term_type": "staining_method",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_30d7903e48c8f724",
+        "statement": "グラム染色は、細菌を細胞壁の性状に基づいてグラム陽性菌とグラム陰性菌に分類する鑑別染色法である。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_cbfcaa4960c370a8",
+        "statement": "クリスタルバイオレットで一次染色後、ヨウ素液で色素・ヨウ素複合体を形成させる。"
+      },
+      {
+        "claim_id": "clm_612da36317e65f3b",
+        "statement": "アルコールまたはアセトンによる脱色後も色素・ヨウ素複合体を保持する菌はグラム陽性菌として紫色に観察される。"
+      },
+      {
+        "claim_id": "clm_fe280a81bacf520e",
+        "statement": "脱色された菌は対比染色により赤色から赤桃色に観察され、グラム陰性菌と判定される。"
+      },
+      {
+        "claim_id": "clm_048a50d6f4bb7e3c",
+        "statement": "グラム陽性菌は厚いペプチドグリカン層をもち、脱色後も色素・ヨウ素複合体を保持しやすい。"
+      },
+      {
+        "claim_id": "clm_16d122db73588048",
+        "statement": "グラム陰性菌は薄いペプチドグリカン層と外膜をもち、脱色で色素・ヨウ素複合体が流出しやすい。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_4feb723ba75cfd04",
+        "statement": "グラム染色の基本操作は、塗抹標本の固定、一次染色、媒染、脱色および対比染色からなる。"
+      },
+      {
+        "claim_id": "clm_e4cd129c18aacf2a",
+        "statement": "グラム陽性菌は紫色、グラム陰性菌は赤色から赤桃色に染色される。"
+      },
+      {
+        "claim_id": "clm_d74ebed53fc1911a",
+        "statement": "グラム染色は細菌のグラム反応、形態および配列の観察に用いられる。"
+      },
+      {
+        "claim_id": "clm_dee425b436c45359",
+        "statement": "抗酸菌は細胞壁に多量の脂質を含むため、通常のグラム染色では染色されにくい。"
+      },
+      {
+        "claim_id": "clm_b9d08a77f4dde57e",
+        "statement": "細胞壁をもたないマイコプラズマはグラム染色で染色されにくい。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "generic_facts_v0.3"
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

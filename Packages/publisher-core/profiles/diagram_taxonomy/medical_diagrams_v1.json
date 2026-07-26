@@ -1,0 +1,189 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "diagram_taxonomy.medical",
+  "version": "1.0.0",
+  "name": "BLUPRNT Lab 医学図解分類体系 Version 1",
+  "status": "active",
+  "nodes": [
+    {
+      "taxonomy_id": "taxonomy.measurement",
+      "parent_taxonomy_id": null,
+      "canonical_name": "Measurement Principle",
+      "aliases": ["測定原理"],
+      "intent_type": "measurement_principle",
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.measurement.enzyme",
+      "parent_taxonomy_id": "taxonomy.measurement",
+      "canonical_name": "Enzyme Assay",
+      "aliases": ["酵素活性測定"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.measurement.enzyme.absorbance",
+      "parent_taxonomy_id": "taxonomy.measurement.enzyme",
+      "canonical_name": "UV Absorbance",
+      "aliases": ["紫外部吸光度法", "340 nm吸光度法"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.measurement.enzyme.colorimetric",
+      "parent_taxonomy_id": "taxonomy.measurement.enzyme",
+      "canonical_name": "Colorimetric",
+      "aliases": ["比色法"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.measurement.enzyme.fluorescence",
+      "parent_taxonomy_id": "taxonomy.measurement.enzyme",
+      "canonical_name": "Fluorescence",
+      "aliases": ["蛍光法"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.measurement.enzyme.chemiluminescence",
+      "parent_taxonomy_id": "taxonomy.measurement.enzyme",
+      "canonical_name": "Chemiluminescence",
+      "aliases": ["化学発光法"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.workflow",
+      "parent_taxonomy_id": null,
+      "canonical_name": "Laboratory Workflow",
+      "aliases": ["検査工程"],
+      "intent_type": "laboratory_workflow",
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.workflow.staining",
+      "parent_taxonomy_id": "taxonomy.workflow",
+      "canonical_name": "Staining",
+      "aliases": ["染色法"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.workflow.staining.gram",
+      "parent_taxonomy_id": "taxonomy.workflow.staining",
+      "canonical_name": "Gram Stain",
+      "aliases": ["Gram染色", "グラム染色"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.workflow.staining.ziehl_neelsen",
+      "parent_taxonomy_id": "taxonomy.workflow.staining",
+      "canonical_name": "Ziehl-Neelsen Stain",
+      "aliases": ["Ziehl-Neelsen染色"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.workflow.staining.giemsa",
+      "parent_taxonomy_id": "taxonomy.workflow.staining",
+      "canonical_name": "Giemsa Stain",
+      "aliases": ["Giemsa染色"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease",
+      "parent_taxonomy_id": null,
+      "canonical_name": "Disease Mechanism",
+      "aliases": ["病態機序"],
+      "intent_type": "disease_mechanism",
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.bone_marrow_failure",
+      "parent_taxonomy_id": "taxonomy.disease",
+      "canonical_name": "Bone Marrow Failure",
+      "aliases": ["骨髄不全"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.autoimmune",
+      "parent_taxonomy_id": "taxonomy.disease",
+      "canonical_name": "Autoimmune",
+      "aliases": ["自己免疫"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.infection",
+      "parent_taxonomy_id": "taxonomy.disease",
+      "canonical_name": "Infection",
+      "aliases": ["感染"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.metabolic",
+      "parent_taxonomy_id": "taxonomy.disease",
+      "canonical_name": "Metabolic",
+      "aliases": ["代謝"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.cell_injury",
+      "parent_taxonomy_id": "taxonomy.disease",
+      "canonical_name": "Cell Injury",
+      "aliases": ["細胞障害"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.disease.cell_injury.biomarker_release",
+      "parent_taxonomy_id": "taxonomy.disease.cell_injury",
+      "canonical_name": "Biomarker Release",
+      "aliases": ["逸脱酵素放出"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.comparison",
+      "parent_taxonomy_id": null,
+      "canonical_name": "Comparison",
+      "aliases": ["比較"],
+      "intent_type": "comparison",
+      "status": "active",
+      "replacement_taxonomy_id": null
+    },
+    {
+      "taxonomy_id": "taxonomy.comparison.laboratory_test",
+      "parent_taxonomy_id": "taxonomy.comparison",
+      "canonical_name": "Laboratory Test Comparison",
+      "aliases": ["検査項目比較"],
+      "intent_type": null,
+      "status": "active",
+      "replacement_taxonomy_id": null
+    }
+  ]
+}

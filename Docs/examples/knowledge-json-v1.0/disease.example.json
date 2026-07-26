@@ -1,0 +1,263 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000012",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "鉄欠乏性貧血",
+    "english_name": "Iron deficiency anemia",
+    "aliases": [
+      "IDA"
+    ]
+  },
+  "classification": {
+    "term_type": "disease",
+    "primary_exam_domain": "hematology",
+    "related_exam_domains": [
+      "clinical_chemistry"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_ida_definition",
+        "assertion": "鉄欠乏性貧血は、体内の利用可能な鉄が不足し、ヘモグロビン合成が障害されて生じる貧血である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "disease_v1.0",
+    "disease": {
+      "overview": [
+        {
+          "claim_id": "clm_ida_overview",
+          "assertion": "典型例では貯蔵鉄の減少を背景に、小球性低色素性貧血を示す。"
+        }
+      ],
+      "pathophysiology": [
+        {
+          "claim_id": "clm_ida_path_iron_depletion",
+          "process_name": "貯蔵鉄の枯渇",
+          "upstream_claim_ids": [
+            "clm_ida_cause_blood_loss",
+            "clm_ida_cause_demand",
+            "clm_ida_cause_supply"
+          ],
+          "assertion": "鉄の喪失、需要増加、摂取不足または吸収障害が持続すると、体内の貯蔵鉄が減少する。"
+        },
+        {
+          "claim_id": "clm_ida_path_heme_synthesis",
+          "process_name": "ヘモグロビン合成障害",
+          "upstream_claim_ids": [
+            "clm_ida_path_iron_depletion"
+          ],
+          "assertion": "造血に利用できる鉄が不足するとヘモグロビン合成が低下し、小球性低色素性赤血球が生じる。"
+        }
+      ],
+      "causes": [
+        {
+          "claim_id": "clm_ida_cause_blood_loss",
+          "cause_name": "慢性出血による鉄喪失",
+          "assertion": "月経や消化管出血などの慢性出血は、鉄喪失を介して鉄欠乏性貧血の原因となる。"
+        },
+        {
+          "claim_id": "clm_ida_cause_demand",
+          "cause_name": "鉄需要の増加",
+          "assertion": "成長期や妊娠などで鉄需要が増加すると、供給が追いつかず鉄欠乏を生じることがある。"
+        },
+        {
+          "claim_id": "clm_ida_cause_supply",
+          "cause_name": "鉄摂取不足または吸収障害",
+          "assertion": "鉄摂取不足や消化管での鉄吸収障害は、鉄欠乏性貧血の原因となる。"
+        }
+      ],
+      "main_symptoms": [
+        {
+          "claim_id": "clm_ida_symptom_anemia",
+          "finding_name": "一般的な貧血症状",
+          "assertion": "倦怠感、息切れ、動悸などの貧血症状を認めることがある。"
+        },
+        {
+          "claim_id": "clm_ida_symptom_tissue_iron",
+          "finding_name": "組織鉄欠乏に関連する所見",
+          "assertion": "異食症や匙状爪など、鉄欠乏に関連する所見を認めることがある。"
+        }
+      ],
+      "main_laboratory_findings": [
+        {
+          "claim_id": "clm_ida_lab_microcytic",
+          "test_name": "血算・赤血球指数",
+          "direction_or_result": "ヘモグロビン低値、MCV・MCH低値",
+          "specimen": "EDTA加全血",
+          "conditions": "典型的な鉄欠乏性貧血",
+          "assertion": "典型例では小球性低色素性貧血を示す。"
+        },
+        {
+          "claim_id": "clm_ida_lab_ferritin",
+          "test_name": "血清フェリチン",
+          "direction_or_result": "低値",
+          "specimen": "血清",
+          "conditions": "炎症の影響がない場合を中心に解釈する",
+          "assertion": "血清フェリチン低値は貯蔵鉄の減少を示し、鉄欠乏の診断に重要である。"
+        },
+        {
+          "claim_id": "clm_ida_lab_serum_iron",
+          "test_name": "血清鉄",
+          "direction_or_result": "低値",
+          "specimen": "血清",
+          "conditions": null,
+          "assertion": "鉄欠乏性貧血では血清鉄は低値を示す。"
+        },
+        {
+          "claim_id": "clm_ida_lab_tibc",
+          "test_name": "総鉄結合能（TIBC）",
+          "direction_or_result": "高値",
+          "specimen": "血清",
+          "conditions": null,
+          "assertion": "鉄欠乏性貧血では総鉄結合能は高値を示す。"
+        },
+        {
+          "claim_id": "clm_ida_lab_tsat",
+          "test_name": "トランスフェリン飽和度",
+          "direction_or_result": "低値",
+          "specimen": "血清",
+          "conditions": "血清鉄とTIBCから算出する",
+          "assertion": "鉄欠乏性貧血ではトランスフェリン飽和度は低値を示す。"
+        },
+        {
+          "claim_id": "clm_ida_lab_smear",
+          "test_name": "末梢血塗抹標本",
+          "direction_or_result": "小球性・低色素性赤血球、大小不同や鉛筆状赤血球を認めることがある",
+          "specimen": "末梢血塗抹標本",
+          "conditions": null,
+          "assertion": "末梢血塗抹標本では小球性低色素性赤血球を認め、大小不同や鉛筆状赤血球を伴うことがある。"
+        }
+      ],
+      "differential_points": [
+        {
+          "claim_id": "clm_ida_diff_inflammation",
+          "compared_disease_name": "慢性炎症に伴う貧血",
+          "distinguishing_feature": "慢性炎症に伴う貧血では血清鉄が低値でも、TIBCは低値または正常、フェリチンは正常または高値となり得る。",
+          "assertion": "血清フェリチンとTIBCの組み合わせは、鉄欠乏性貧血と慢性炎症に伴う貧血の鑑別に重要である。"
+        },
+        {
+          "claim_id": "clm_ida_diff_thalassemia",
+          "compared_disease_name": "サラセミア",
+          "distinguishing_feature": "サラセミアでは小球性でも鉄貯蔵の枯渇を示さず、貧血の程度に比べ赤血球数が保たれることがある。",
+          "assertion": "小球性貧血では、鉄指標と赤血球数を含めてサラセミアを鑑別する。"
+        }
+      ],
+      "national_exam_point_claim_ids": [
+        "clm_ida_lab_microcytic",
+        "clm_ida_lab_ferritin",
+        "clm_ida_lab_serum_iron",
+        "clm_ida_lab_tibc",
+        "clm_ida_lab_tsat",
+        "clm_ida_diff_inflammation"
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_ida_jsh_2024",
+      "source_priority_rank": 3,
+      "title": "鉄欠乏性貧血の診断と鉄剤治療",
+      "issuing_organization": "一般社団法人 日本血液学会",
+      "edition": null,
+      "publication_year": 2024,
+      "url": "https://www.jstage.jst.go.jp/article/rinketsu/65/6/65_503/_article/-char/ja/",
+      "doi": "10.11406/rinketsu.65.503",
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "抄録",
+      "pages": "503-513",
+      "supported_claim_ids": [
+        "clm_ida_definition",
+        "clm_ida_overview",
+        "clm_ida_path_iron_depletion",
+        "clm_ida_path_heme_synthesis",
+        "clm_ida_cause_blood_loss",
+        "clm_ida_cause_demand",
+        "clm_ida_cause_supply",
+        "clm_ida_lab_microcytic",
+        "clm_ida_lab_ferritin",
+        "clm_ida_lab_tsat"
+      ],
+      "evidence_role": "primary"
+    },
+    {
+      "source_id": "src_ida_jslm_2024",
+      "source_priority_rank": 3,
+      "title": "臨床検査のガイドライン JSLM 2024：検査データの読み方と考え方",
+      "issuing_organization": "一般社団法人 日本臨床検査医学会",
+      "edition": "2024年版",
+      "publication_year": 2024,
+      "url": "https://www.jslm.org/books/guideline/2024/GL2024_05.pdf",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "血清フェリチン濃度の診断特性",
+      "pages": "29-30",
+      "supported_claim_ids": [
+        "clm_ida_lab_ferritin",
+        "clm_ida_diff_inflammation"
+      ],
+      "evidence_role": "supporting"
+    },
+    {
+      "source_id": "src_ida_ncbi_2026",
+      "source_priority_rank": 5,
+      "title": "Iron Deficiency and Microcytic Hypochromic Anemia",
+      "issuing_organization": "StatPearls Publishing",
+      "edition": "2026 update",
+      "publication_year": 2026,
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK560876/",
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-07-19",
+      "chapter": "Pathophysiology; Histopathology; Evaluation",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_ida_path_iron_depletion",
+        "clm_ida_path_heme_synthesis",
+        "clm_ida_symptom_anemia",
+        "clm_ida_symptom_tissue_iron",
+        "clm_ida_lab_serum_iron",
+        "clm_ida_lab_tibc",
+        "clm_ida_lab_smear",
+        "clm_ida_diff_thalassemia"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

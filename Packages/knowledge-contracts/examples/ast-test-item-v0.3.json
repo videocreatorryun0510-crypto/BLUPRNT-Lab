@@ -1,0 +1,186 @@
+{
+  "schema_version": "0.3",
+  "knowledge_id": "knw_ast_testitem",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "アスパラギン酸アミノトランスフェラーゼ",
+    "english_name": "Aspartate aminotransferase",
+    "aliases": ["AST", "GOT"]
+  },
+  "classification": {
+    "term_type": "test_item",
+    "primary_exam_domain": "clinical_chemistry",
+    "related_exam_domains": ["hematology"]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_ast_definition",
+        "statement": "ASTはアミノ基転移反応を触媒する酵素であり、臨床検査では主に酵素活性として測定される。"
+      }
+    ],
+    "mechanisms": [
+      {
+        "claim_id": "clm_ast_release",
+        "statement": "ASTを含む細胞が障害されると、細胞内ASTが血中へ逸脱する。"
+      }
+    ],
+    "characteristics": [
+      {
+        "claim_id": "clm_ast_distribution",
+        "statement": "ASTは肝臓、心筋、骨格筋、赤血球などに分布する。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "test_item_v0.3",
+    "test_item": {
+      "purposes": [
+        {
+          "claim_id": "clm_ast_purpose_damage",
+          "statement": "肝細胞、心筋、骨格筋などの細胞障害を評価する。"
+        }
+      ],
+      "specimens": [
+        {
+          "claim_id": "clm_ast_specimen_serum",
+          "specimen": "血清または血漿",
+          "container_or_anticoagulant": "採用測定法で確認する",
+          "handling": "溶血を避け、採用測定法で定められた条件で分離する。",
+          "stability": "採用測定法で確認する"
+        }
+      ],
+      "measurement_methods": [
+        {
+          "claim_id": "clm_ast_method_ifcc",
+          "method_name": "IFCC勧告法に基づく方法",
+          "standardizing_body": "IFCC",
+          "factual_description": "国際的な標準測定体系に基づくAST酵素活性測定法である。"
+        },
+        {
+          "claim_id": "clm_ast_method_jscc",
+          "method_name": "JSCC標準化対応法",
+          "standardizing_body": "JSCC",
+          "factual_description": "国内で用いられてきたAST酵素活性の標準化対応法である。"
+        }
+      ],
+      "measurement_principles": [
+        {
+          "claim_id": "clm_ast_principle_uv",
+          "related_method_claim_ids": ["clm_ast_method_ifcc", "clm_ast_method_jscc"],
+          "measured_quantity": "AST酵素活性",
+          "reaction_sequence": "AST反応で生成するオキサロ酢酸を共役反応へ導く。",
+          "detection_signal": "NADHの吸光度変化を反応速度として測定する。",
+          "wavelength_or_endpoint": "340 nm付近"
+        }
+      ],
+      "reference_ranges": [],
+      "value_associations": {
+        "high": {
+          "pathophysiologic_states": [
+            {
+              "claim_id": "clm_ast_high_state_liver",
+              "state_name": "肝細胞障害",
+              "related_knowledge_id": null,
+              "factual_relation": "肝細胞からASTが血中へ逸脱することで高値を示す。"
+            },
+            {
+              "claim_id": "clm_ast_high_state_muscle",
+              "state_name": "筋障害",
+              "related_knowledge_id": null,
+              "factual_relation": "心筋または骨格筋からASTが血中へ逸脱することで高値を示す。"
+            }
+          ],
+          "representative_diseases": [
+            {
+              "claim_id": "clm_ast_high_acute_hepatitis",
+              "disease_name": "急性肝炎",
+              "disease_knowledge_id": null,
+              "factual_relation": "肝細胞障害に伴いAST高値を示す代表疾患である。"
+            },
+            {
+              "claim_id": "clm_ast_high_fulminant_hepatitis",
+              "disease_name": "劇症肝炎",
+              "disease_knowledge_id": null,
+              "factual_relation": "高度な肝細胞障害に伴いAST高値を示し得る。"
+            },
+            {
+              "claim_id": "clm_ast_high_alcoholic_liver",
+              "disease_name": "アルコール性肝障害",
+              "disease_knowledge_id": null,
+              "factual_relation": "肝細胞障害に伴いAST高値を示し得る。"
+            },
+            {
+              "claim_id": "clm_ast_high_rhabdomyolysis",
+              "disease_name": "横紋筋融解症",
+              "disease_knowledge_id": null,
+              "factual_relation": "骨格筋障害に伴いAST高値を示し得る。"
+            },
+            {
+              "claim_id": "clm_ast_high_muscular_dystrophy",
+              "disease_name": "筋ジストロフィー",
+              "disease_knowledge_id": null,
+              "factual_relation": "骨格筋障害に伴いAST高値を示し得る。"
+            }
+          ],
+          "interpretive_notes": []
+        },
+        "low": {
+          "pathophysiologic_states": [],
+          "representative_diseases": [],
+          "interpretive_notes": [
+            {
+              "claim_id": "clm_ast_low_note",
+              "statement": "AST低値は高値と比較して臨床的意義が限定的である。"
+            }
+          ]
+        }
+      },
+      "related_test_combinations": [
+        {
+          "claim_id": "clm_ast_combo_alt",
+          "related_test_names": ["ALT"],
+          "related_knowledge_ids": [],
+          "factual_interpretation": "ASTとALTの分布差および上昇パターンを組み合わせて評価する。"
+        }
+      ],
+      "interpretation_cautions": [
+        {
+          "claim_id": "clm_ast_caution_hemolysis",
+          "statement": "溶血検体では赤血球由来ASTの影響により高値となり得る。"
+        }
+      ]
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": "",
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

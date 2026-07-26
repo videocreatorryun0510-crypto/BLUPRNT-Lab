@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000002",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "黄色ブドウ球菌",
+    "english_name": "Staphylococcus aureus",
+    "aliases": []
+  },
+  "classification": {
+    "term_type": "microorganism",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": [
+      "immunology"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_20000001",
+        "assertion": "黄色ブドウ球菌はStaphylococcus属に属する細菌である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "microorganism_v1.0",
+    "microorganism": {
+      "organism_group": "bacterium",
+      "taxonomy": [
+        {
+          "claim_id": "clm_20000002",
+          "rank": "genus",
+          "taxon_name": "Staphylococcus",
+          "assertion": "黄色ブドウ球菌はStaphylococcus属に分類される。"
+        }
+      ],
+      "morphology_and_staining": [
+        {
+          "claim_id": "clm_20000003",
+          "observation_method": "Gram染色",
+          "shape": "球菌",
+          "arrangement": "ブドウ房状",
+          "staining_result": "Gram陽性",
+          "assertion": "黄色ブドウ球菌はブドウ房状に配列するGram陽性球菌として観察される。"
+        }
+      ],
+      "growth_requirements": [
+        {
+          "claim_id": "clm_20000004",
+          "factor_name": "酸素要求性",
+          "condition": "通性嫌気性",
+          "assertion": "黄色ブドウ球菌は通性嫌気性菌である。"
+        }
+      ],
+      "culture_media": [
+        {
+          "claim_id": "clm_20000005",
+          "medium_name": "卵黄加マンニット食塩培地",
+          "incubation_conditions": null,
+          "expected_growth": "発育し、マンニット分解により培地が黄色化する。",
+          "assertion": "卵黄加マンニット食塩培地は黄色ブドウ球菌の分離・鑑別に用いられる。"
+        }
+      ],
+      "colony_characteristics": [
+        {
+          "claim_id": "clm_20000006",
+          "medium_name": "血液寒天培地",
+          "incubation_conditions": null,
+          "colony_finding": "β溶血を示す株がある。",
+          "assertion": "黄色ブドウ球菌は血液寒天培地でβ溶血を示すことがある。"
+        }
+      ],
+      "identification_tests": [
+        {
+          "claim_id": "clm_20000007",
+          "test_name": "カタラーゼ試験",
+          "expected_result": "陽性",
+          "interpretation": "Streptococcus属などとの鑑別に用いる。",
+          "assertion": "黄色ブドウ球菌はカタラーゼ試験陽性である。"
+        },
+        {
+          "claim_id": "clm_20000008",
+          "test_name": "コアグラーゼ試験",
+          "expected_result": "陽性",
+          "interpretation": "コアグラーゼ陰性ブドウ球菌との鑑別に用いる。",
+          "assertion": "黄色ブドウ球菌はコアグラーゼ試験陽性である。"
+        }
+      ],
+      "virulence_factors": [
+        {
+          "claim_id": "clm_20000009",
+          "factor_name": "プロテインA",
+          "effect": "免疫グロブリンGのFc部分に結合する。",
+          "assertion": "プロテインAは免疫グロブリンGのFc部分へ結合する。"
+        }
+      ],
+      "toxins": [
+        {
+          "claim_id": "clm_20000010",
+          "toxin_name": "エンテロトキシン",
+          "toxin_type": "外毒素",
+          "major_effect": "食中毒に関与する。",
+          "assertion": "エンテロトキシン産生株は毒素型食中毒の原因となる。"
+        }
+      ],
+      "associated_diseases": [
+        {
+          "claim_id": "clm_20000011",
+          "disease_name": "化膿性感染症",
+          "disease_knowledge_id": null,
+          "relation": "causes",
+          "assertion": "黄色ブドウ球菌は化膿性感染症の原因となる。"
+        },
+        {
+          "claim_id": "clm_20000012",
+          "disease_name": "食中毒",
+          "disease_knowledge_id": null,
+          "relation": "toxin_mediated_cause",
+          "assertion": "黄色ブドウ球菌はエンテロトキシンによる食中毒の原因となる。"
+        }
+      ],
+      "diagnostic_specimens": [
+        {
+          "claim_id": "clm_20000013",
+          "specimen": "膿",
+          "collection_site": "感染局所",
+          "conditions": null,
+          "assertion": "化膿性感染症では感染局所から採取した膿が検査材料となる。"
+        }
+      ],
+      "detection_methods": [
+        {
+          "claim_id": "clm_20000014",
+          "method_name": "培養・同定",
+          "target": "黄色ブドウ球菌",
+          "expected_result": "培養後に形態と同定試験を組み合わせて同定する。",
+          "assertion": "黄色ブドウ球菌の検出・同定には培養と同定試験を用いる。"
+        }
+      ],
+      "antimicrobial_resistance": [
+        {
+          "claim_id": "clm_20000015",
+          "resistance_name": "メチシリン耐性",
+          "mechanism": "mecAによりPBP2aを産生する。",
+          "affected_agent_classes": [
+            "βラクタム系抗菌薬"
+          ],
+          "assertion": "mecAを保有するMRSAはPBP2aを介してβラクタム系抗菌薬に耐性を示す。"
+        }
+      ],
+      "transmission_routes": [
+        {
+          "claim_id": "clm_20000016",
+          "route": "接触",
+          "source": "保菌者または汚染物",
+          "entry_site": null,
+          "assertion": "黄色ブドウ球菌は接触を介して伝播しうる。"
+        }
+      ],
+      "infection_control": []
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

@@ -1,0 +1,1315 @@
+"""FastAPI entry point for the Prototype Phase 1 Knowledge Workbench."""
+
+import base64
+import binascii
+import hashlib
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any, Literal, Self
+from uuid import uuid4
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from knowledge_contracts.approval_v10 import (
+    approval_contract,
+    approval_contract_json_schema,
+    approval_snapshot_from_registry,
+)
+from knowledge_contracts.exam_import_v10 import CsvImportPreview, CsvImportReport
+from knowledge_contracts.exam_v10 import (
+    ExamMetadataRecord,
+    evaluate_exam_completeness,
+    exam_metadata_json_schema,
+)
+from knowledge_contracts.registry_v10 import (
+    RegistryEntityType,
+    RegistrySnapshot,
+    RegistryStatus,
+    registry_snapshot_json_schema,
+)
+from knowledge_contracts.relation_v10 import (
+    knowledge_relation_json_schema as knowledge_relation_v10_json_schema,
+)
+from knowledge_contracts.relation_v11 import (
+    knowledge_relation_json_schema as knowledge_relation_v11_json_schema,
+)
+from knowledge_contracts.relation_v12 import (
+    disease_relation_vocabulary,
+    disease_relation_vocabulary_json_schema,
+)
+from knowledge_contracts.relation_v12 import (
+    knowledge_relation_json_schema as knowledge_relation_v12_json_schema,
+)
+from knowledge_contracts.v03 import (
+    knowledge_record_json_schema as knowledge_record_v03_json_schema,
+)
+from knowledge_contracts.v10 import (
+    KnowledgeSchemaError,
+    evaluate_knowledge_completeness,
+    knowledge_record_json_schema,
+    validate_knowledge_record,
+)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from source_bundle_publisher import (
+    SourceBundlePublisherAdapter,
+    SourceBundlePublisherError,
+    source_bundle_json_schema,
+)
+
+from knowledge_workbench.application import GenerateKnowledge
+from knowledge_workbench.errors import RegistryOperationError, WorkbenchError
+from knowledge_workbench.exam_import_mapping import load_exam_csv_mapping
+from knowledge_workbench.exam_import_service import (
+    SAMPLE_CSV_PATH,
+    ExamImportExecutionResult,
+    import_exam_csv,
+)
+from knowledge_workbench.exam_metadata_provider import DummyExamMetadataProvider
+from knowledge_workbench.knowledge_registry import KnowledgeRegistry
+from knowledge_workbench.knowledge_relation_repository import (
+    KnowledgeRelationRepository,
+)
+from knowledge_workbench.knowledge_relation_service import KnowledgeRelationService
+from knowledge_workbench.providers.base import KnowledgeProvider
+from knowledge_workbench.registry_backup import SQLiteRegistryBackupManager
+from knowledge_workbench.settings import Settings, build_provider
+from knowledge_workbench.sqlite_knowledge_registry import SQLiteKnowledgeRegistry
+from knowledge_workbench.sqlite_knowledge_relation_repository import (
+    SQLiteKnowledgeRelationRepository,
+)
+
+WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+GRAM_STAIN_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "staining-method.example.json"
+)
+ACID_FAST_STAIN_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "acid-fast-staining-method.example.json"
+)
+SPECIMEN_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "specimen.example.json"
+)
+REAGENT_STARTER_DIRECTORY = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "reagents"
+)
+REAGENT_STARTER_PATHS = {
+    "crystal-violet": REAGENT_STARTER_DIRECTORY / "crystal-violet.example.json",
+    "gram-iodine": REAGENT_STARTER_DIRECTORY / "gram-iodine.example.json",
+    "gram-decolorizer": REAGENT_STARTER_DIRECTORY / "gram-decolorizer.example.json",
+    "gram-safranin": REAGENT_STARTER_DIRECTORY / "gram-safranin.example.json",
+}
+BIOLOGICAL_STRUCTURE_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "biological-structure.example.json"
+)
+DISEASE_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "disease.example.json"
+)
+LABORATORY_TEST_ITEM_STARTER_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "Docs"
+    / "examples"
+    / "knowledge-json-v1.0"
+    / "laboratory-test-item.example.json"
+)
+
+
+class GenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    term: str = Field(min_length=1, max_length=80)
+
+
+class CsvImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_file: str = Field(
+        min_length=5,
+        max_length=180,
+        pattern=r"^[^/\\]+\.[cC][sS][vV]$",
+    )
+    csv_base64: str = Field(min_length=1, max_length=7_000_000)
+    import_mode: Literal["append", "replace"] = "replace"
+
+    @model_validator(mode="after")
+    def require_valid_base64(self) -> Self:
+        try:
+            base64.b64decode(self.csv_base64, validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise ValueError("csv_base64 must contain valid Base64 data") from error
+        return self
+
+
+class ImportCommitRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    preview_id: str = Field(pattern=r"^prv_[a-z0-9][a-z0-9_-]{7,63}$")
+
+
+class RegistryStatusRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_status: RegistryStatus
+    actor: str = Field(min_length=1, max_length=120)
+    comment: str = Field(min_length=1, max_length=1000)
+
+
+class ClaimStatusRequest(RegistryStatusRequest):
+    claim_ids: list[str] = Field(min_length=1, max_length=200)
+
+
+class ClaimMergeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_claim_id: str = Field(min_length=8, max_length=80)
+    source_claim_ids: list[str] = Field(min_length=1, max_length=100)
+    actor: str = Field(min_length=1, max_length=120)
+    comment: str = Field(min_length=1, max_length=1000)
+
+
+class RegistryRestoreRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    filename: str = Field(min_length=20, max_length=40)
+
+
+class KnowledgeRecordSaveRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    record: dict[str, Any]
+    actor: str = Field(min_length=1, max_length=120)
+    comment: str = Field(min_length=1, max_length=1000)
+
+
+@dataclass(frozen=True)
+class _PendingCsvPreview:
+    csv_text: str
+    source_file: str
+    import_mode: Literal["append", "replace"]
+    registry_fingerprint: str
+    preview: CsvImportPreview
+
+
+def _import_response(
+    result: ExamImportExecutionResult,
+    *,
+    phase: Literal["preview", "imported"],
+    preview: CsvImportPreview | None = None,
+) -> JSONResponse:
+    outcome = result.outcome
+    can_import = outcome.report.validation.can_import
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success" if can_import else "validation_error",
+            "phase": phase,
+            "preview": preview.model_dump(mode="json") if preview is not None else None,
+            "report": _serialize_import_report(outcome.report),
+            "normalized_records": [
+                item.model_dump(mode="json") for item in outcome.normalized_records
+            ],
+            "mapped_records": [item.model_dump(mode="json") for item in outcome.mapped_records],
+            "exam_metadata": _serialize_exam_metadata(outcome.exam_metadata),
+            "exam_completeness": [
+                item.model_dump(mode="json") for item in result.exam_completeness
+            ],
+            "errors": [
+                issue.model_dump(mode="json")
+                for issue in outcome.report.validation.issues
+                if issue.severity == "error"
+            ],
+        },
+    )
+
+
+def _serialize_import_report(report: CsvImportReport) -> dict[str, object]:
+    return report.model_dump(mode="json")
+
+
+def _serialize_exam_metadata(
+    records: list[ExamMetadataRecord],
+) -> list[dict[str, object]]:
+    return [item.model_dump(mode="json") for item in records]
+
+
+def _registry_fingerprint(snapshot: RegistrySnapshot) -> str:
+    serialized = json.dumps(
+        snapshot.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _build_import_preview(
+    result: ExamImportExecutionResult,
+    before: RegistrySnapshot,
+    after: RegistrySnapshot,
+    registry_fingerprint: str,
+) -> CsvImportPreview:
+    outcome = result.outcome
+    before_ids = {item.knowledge_id for item in before.knowledge}
+    after_ids = {item.knowledge_id for item in after.knowledge}
+    mapped_ids = {item.knowledge_id for item in outcome.mapped_records}
+    issues = outcome.report.validation.issues
+    unknown_rows = {
+        item.source_row_number
+        for item in issues
+        if item.code == "knowledge_mapping_failed" and item.source_row_number is not None
+    }
+    unknown_terms = list(
+        dict.fromkeys(
+            item.theme
+            for item in outcome.normalized_records
+            if item.source_row_number in unknown_rows
+        )
+    )
+    mapping_codes = {
+        "ambiguous_mapping",
+        "knowledge_mapping_failed",
+        "required_column_missing",
+        "duplicate_column",
+        "invalid_row",
+    }
+    claim_codes = {"claim_mapping_missing", "claim_not_available"}
+    return CsvImportPreview(
+        preview_id=f"prv_{uuid4().hex[:16]}",
+        can_commit=outcome.report.validation.can_import,
+        registry_fingerprint=registry_fingerprint,
+        new_knowledge_ids=sorted(after_ids - before_ids),
+        updated_knowledge_ids=sorted(mapped_ids & before_ids),
+        unknown_terms=unknown_terms,
+        mapping_failures=[item.message for item in issues if item.code in mapping_codes],
+        missing_images=[item.message for item in issues if item.code == "image_missing"],
+        unsupported_claims=[item.message for item in issues if item.code in claim_codes],
+    )
+
+
+def _registry_error_response(error: RegistryOperationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "errors": [{"code": error.code, "message": error.message}],
+        },
+    )
+
+
+def create_app(
+    provider: KnowledgeProvider | None = None,
+    settings: Settings | None = None,
+    registry: KnowledgeRegistry | None = None,
+    relation_repository: KnowledgeRelationRepository | None = None,
+) -> FastAPI:
+    app = FastAPI(
+        title="BLUPRNT Lab Knowledge Workbench",
+        version="5.14.0",
+        docs_url="/api/docs",
+        redoc_url=None,
+    )
+    resolved_settings = settings or Settings.from_environment()
+    temporary_registry_directory: TemporaryDirectory[str] | None = None
+    if registry is not None:
+        resolved_registry = registry
+    elif provider is not None:
+        temporary_registry_directory = TemporaryDirectory(prefix="bluprnt-registry-api-test-")
+        resolved_registry = SQLiteKnowledgeRegistry(
+            Path(temporary_registry_directory.name) / "knowledge_registry.sqlite3"
+        )
+    else:
+        resolved_registry = SQLiteKnowledgeRegistry(resolved_settings.registry_path)
+    resolved_relation_repository = relation_repository
+    if resolved_relation_repository is None and isinstance(
+        resolved_registry, SQLiteKnowledgeRegistry
+    ):
+        resolved_relation_repository = SQLiteKnowledgeRelationRepository(
+            resolved_registry.database_path
+        )
+    relation_service = (
+        KnowledgeRelationService(resolved_registry, resolved_relation_repository)
+        if resolved_relation_repository is not None
+        else None
+    )
+    app.state.registry_tempdir = temporary_registry_directory
+    backup_directory = (
+        Path(temporary_registry_directory.name) / "backups"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_backup_dir
+    )
+    backup_manager = (
+        SQLiteRegistryBackupManager(resolved_registry, backup_directory)
+        if isinstance(resolved_registry, SQLiteKnowledgeRegistry)
+        else None
+    )
+    source_bundle_output_directory = (
+        Path(temporary_registry_directory.name) / "source_bundle"
+        if temporary_registry_directory is not None
+        else resolved_settings.source_bundle_output_dir
+    )
+    source_bundle_audit_log_path = (
+        Path(temporary_registry_directory.name) / "publisher_logs" / "approval_gate.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.source_bundle_audit_log_path
+    )
+    source_bundle_publisher = SourceBundlePublisherAdapter.from_directories(
+        resolved_settings.source_bundle_profile_dir,
+        source_bundle_output_directory,
+        source_bundle_audit_log_path,
+    )
+    service = (
+        GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
+    )
+    latest_import_metadata: list[ExamMetadataRecord] = []
+    pending_previews: dict[str, _PendingCsvPreview] = {}
+
+    app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(WEB_DIR / "index.html")
+
+    @app.get("/api/status")
+    def status() -> dict[str, object]:
+        return {
+            "prototype": "Knowledge Workbench Phase 1",
+            "schema_version": "1.0",
+            "supported_schema_versions": ["0.3", "1.0"],
+            "exam_metadata_version": "1.0",
+            "exam_metadata_source": "manual_dummy",
+            "exam_import_version": "1.0",
+            "exam_metadata_providers": ["dummy", "csv"],
+            "exam_image_storage": "external_reference",
+            "knowledge_registry_version": "1.0",
+            "knowledge_registry_storage": "sqlite",
+            "knowledge_registry_workflow": "approval_and_merge_mvp",
+            "approval_contract_version": "1.0",
+            "approval_gate_policy": "approved_only",
+            "approval_state_sequence": [
+                item.value for item in approval_contract().state_sequence
+            ],
+            "knowledge_relation_version": "1.1",
+            "supported_knowledge_relation_versions": ["1.0", "1.1", "1.2"],
+            "knowledge_relation_storage": "independent_sqlite_tables",
+            "relation_growth_version": "1.0",
+            "relation_resolution_strategy": "indexed_unresolved_only",
+            "relation_resolution_report_storage": "sqlite",
+            "knowledge_relation_vocabulary": [
+                "uses_specimen",
+                "uses_reagent",
+                "targets_structure",
+                "related_method",
+            ],
+            "disease_relation_vocabulary_version": "1.0",
+            "supported_categories": [
+                "test_item",
+                "staining_method",
+                "specimen",
+                "reagent",
+                "biological_structure",
+                "disease",
+                "laboratory_test_item",
+            ],
+            "production_categories": [
+                "staining_method",
+                "specimen",
+                "reagent",
+                "biological_structure",
+                "disease",
+                "laboratory_test_item",
+            ],
+            "csv_import_flow": ["validation", "preview", "import"],
+            "provider": (
+                resolved_settings.provider if provider is None else "injected_test_provider"
+            ),
+            "openai_key_configured": bool(resolved_settings.openai_api_key),
+            "medical_review_required": True,
+            "source_bundle_schema_version": "1.0",
+            "source_bundle_publisher_version": "1.1.0",
+            "source_bundle_supported_knowledge_ids": list(
+                source_bundle_publisher.supported_knowledge_ids
+            ),
+            "source_bundle_output": str(source_bundle_output_directory),
+            "publisher_approval_audit_log": str(source_bundle_audit_log_path),
+        }
+
+    @app.get("/api/schema/knowledge-1.0")
+    def schema_v10() -> dict[str, object]:
+        return knowledge_record_json_schema()
+
+    @app.get("/api/schema/knowledge-0.3")
+    def schema_v03() -> dict[str, object]:
+        return knowledge_record_v03_json_schema()
+
+    @app.get("/api/schema/exam-metadata-1.0")
+    def exam_schema_v10() -> dict[str, object]:
+        return exam_metadata_json_schema()
+
+    @app.get("/api/schema/knowledge-registry-1.0")
+    def registry_schema_v10() -> dict[str, object]:
+        return registry_snapshot_json_schema()
+
+    @app.get("/api/schema/knowledge-relation-1.0")
+    def relation_schema_v10() -> dict[str, object]:
+        return knowledge_relation_v10_json_schema()
+
+    @app.get("/api/schema/knowledge-relation-1.1")
+    def relation_schema_v11() -> dict[str, object]:
+        return knowledge_relation_v11_json_schema()
+
+    @app.get("/api/schema/knowledge-relation-1.2")
+    def relation_schema_v12() -> dict[str, object]:
+        return knowledge_relation_v12_json_schema()
+
+    @app.get("/api/schema/relation-vocabulary-disease-1.0")
+    def disease_relation_vocabulary_schema() -> dict[str, object]:
+        return disease_relation_vocabulary_json_schema()
+
+    @app.get("/api/schema/source-bundle-1.0")
+    def source_bundle_schema_v10() -> dict[str, object]:
+        return source_bundle_json_schema()
+
+    @app.get("/api/schema/approval-contract-1.0")
+    def approval_schema_v10() -> dict[str, object]:
+        return approval_contract_json_schema()
+
+    @app.get("/api/approval-contract")
+    def approval_contract_v10() -> dict[str, object]:
+        return approval_contract().model_dump(mode="json")
+
+    @app.get("/api/relation-vocabulary/disease")
+    def disease_vocabulary() -> dict[str, object]:
+        return disease_relation_vocabulary().model_dump(mode="json")
+
+    @app.get("/api/registry")
+    def registry_snapshot() -> dict[str, object]:
+        return resolved_registry.snapshot().model_dump(mode="json")
+
+    @app.get("/api/registry/{knowledge_id}")
+    def registry_knowledge(knowledge_id: str) -> dict[str, object]:
+        return resolved_registry.view(knowledge_id).model_dump(mode="json")
+
+    @app.get("/api/knowledge-relations/{knowledge_id}")
+    def knowledge_relations(knowledge_id: str) -> dict[str, object]:
+        if resolved_relation_repository is None:
+            raise RegistryOperationError("このRegistryはRelation閲覧に未対応です。")
+        payload = resolved_relation_repository.view(knowledge_id).model_dump(mode="json")
+        payload["network_summary"] = resolved_relation_repository.network_summary(
+            knowledge_id
+        ).model_dump(mode="json")
+        return payload
+
+    @app.get("/api/relation-resolution-reports/{knowledge_id}")
+    def relation_resolution_reports(knowledge_id: str) -> list[dict[str, object]]:
+        if resolved_relation_repository is None:
+            raise RegistryOperationError("このRegistryはResolution Reportに未対応です。")
+        return [
+            item.model_dump(mode="json")
+            for item in resolved_relation_repository.resolution_reports(knowledge_id)
+        ]
+
+    def relation_view(knowledge_id: str) -> dict[str, object] | None:
+        if resolved_relation_repository is None:
+            return None
+        payload = resolved_relation_repository.view(knowledge_id).model_dump(mode="json")
+        payload["network_summary"] = resolved_relation_repository.network_summary(
+            knowledge_id
+        ).model_dump(mode="json")
+        return payload
+
+    def sync_relations(record: Any, *, actor: str, note: str) -> dict[str, object] | None:
+        if relation_service is None:
+            return None
+        validated = validate_knowledge_record(record)
+        payload = relation_service.synchronize(
+            validated,
+            actor=actor,
+            note=note,
+        ).model_dump(mode="json")
+        if resolved_relation_repository is not None:
+            payload["network_summary"] = resolved_relation_repository.network_summary(
+                validated.knowledge_id
+            ).model_dump(mode="json")
+        return payload
+
+    def knowledge_record_response(record: Any) -> dict[str, object]:
+        validated = validate_knowledge_record(record)
+        completeness = evaluate_knowledge_completeness(validated)
+        exam_metadata = DummyExamMetadataProvider().build(
+            validated.term.canonical_name,
+            validated,
+        )
+        exam_completeness = evaluate_exam_completeness(exam_metadata, validated)
+        registry_view = resolved_registry.view(validated.knowledge_id)
+        return {
+            "status": "success",
+            "schema_valid": True,
+            "knowledge_completeness_valid": True,
+            "exam_completeness_valid": True,
+            "data": validated.model_dump(mode="json"),
+            "knowledge_completeness": completeness.model_dump(mode="json"),
+            "exam_metadata": exam_metadata.model_dump(mode="json"),
+            "exam_completeness": exam_completeness.model_dump(mode="json"),
+            "registry": registry_view.model_dump(mode="json"),
+            "approval": approval_snapshot_from_registry(
+                registry_view.knowledge
+            ).model_dump(mode="json"),
+            "relations": relation_view(validated.knowledge_id),
+            "errors": [],
+        }
+
+    @app.get("/api/knowledge-templates/staining-method/gram-stain")
+    def gram_stain_starter() -> JSONResponse:
+        """Prefer the persisted SSOT; use the starter only before first registration."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000004")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(GRAM_STAIN_STARTER_PATH.read_text(encoding="utf-8"))
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/staining-method/acid-fast-stain")
+    def acid_fast_stain_starter() -> JSONResponse:
+        """Open the persisted acid-fast stain SSOT or its reviewable starter."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000010")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(ACID_FAST_STAIN_STARTER_PATH.read_text(encoding="utf-8"))
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/specimen/smear-specimen")
+    def specimen_starter() -> JSONResponse:
+        """Prefer the persisted Specimen SSOT; otherwise return an editable draft."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000005")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(SPECIMEN_STARTER_PATH.read_text(encoding="utf-8"))
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/reagent/{reagent_slug}")
+    def reagent_starter(reagent_slug: str) -> JSONResponse:
+        """Return one allow-listed Reagent draft, preferring the persisted SSOT."""
+
+        starter_path = REAGENT_STARTER_PATHS.get(reagent_slug)
+        if starter_path is None:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "status": "not_found",
+                    "schema_valid": False,
+                    "errors": [
+                        {
+                            "code": "reagent_starter_not_found",
+                            "message": "指定されたReagent下書きはありません。",
+                        }
+                    ],
+                },
+            )
+        try:
+            draft = validate_knowledge_record(
+                json.loads(starter_path.read_text(encoding="utf-8"))
+            )
+            persisted = resolved_registry.record(draft.knowledge_id)
+            record = persisted if persisted is not None else draft
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/biological-structure/bacterial-cell-wall")
+    def biological_structure_starter() -> JSONResponse:
+        """Open the bacterial-cell-wall SSOT or its editable MVP starter."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000011")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(
+                        BIOLOGICAL_STRUCTURE_STARTER_PATH.read_text(encoding="utf-8")
+                    )
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/disease/iron-deficiency-anemia")
+    def disease_starter() -> JSONResponse:
+        """Open the iron-deficiency-anemia SSOT or its editable MVP starter."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000012")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(DISEASE_STARTER_PATH.read_text(encoding="utf-8"))
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-templates/laboratory-test-item/ferritin")
+    def laboratory_test_item_starter() -> JSONResponse:
+        """Open the ferritin SSOT or its editable laboratory-test-item starter."""
+
+        try:
+            persisted = resolved_registry.record("knw_10000013")
+            record = (
+                persisted
+                if persisted is not None
+                else validate_knowledge_record(
+                    json.loads(
+                        LABORATORY_TEST_ITEM_STARTER_PATH.read_text(encoding="utf-8")
+                    )
+                )
+            )
+            completeness = evaluate_knowledge_completeness(record)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "data": record.model_dump(mode="json"),
+                    "knowledge_completeness": completeness.model_dump(mode="json"),
+                    "relations": relation_view(record.knowledge_id),
+                    "persisted": persisted is not None,
+                    "errors": [],
+                },
+            )
+        except (OSError, json.JSONDecodeError, KnowledgeSchemaError) as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [{"code": "starter_invalid", "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/knowledge-records/{knowledge_id}")
+    def get_knowledge_record(knowledge_id: str) -> JSONResponse:
+        try:
+            record = resolved_registry.record(knowledge_id)
+            if record is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "not_found",
+                        "errors": [
+                            {
+                                "code": "knowledge_record_not_found",
+                                "message": "保存済みKnowledge JSONがありません。",
+                            }
+                        ],
+                    },
+                )
+            return JSONResponse(status_code=200, content=knowledge_record_response(record))
+        except (RegistryOperationError, KnowledgeSchemaError) as error:
+            return _registry_error_response(
+                error
+                if isinstance(error, RegistryOperationError)
+                else RegistryOperationError(str(error))
+            )
+
+    @app.post("/api/source-bundles/{knowledge_id}")
+    def generate_source_bundle(knowledge_id: str) -> JSONResponse:
+        """Generate a derived JSON artifact without changing Knowledge or Registry."""
+
+        try:
+            record = resolved_registry.record(knowledge_id)
+            if record is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "not_found",
+                        "errors": [
+                            {
+                                "code": "knowledge_record_not_found",
+                                "message": (
+                                    "保存済みKnowledge JSONがありません。"
+                                    "先にRegistryへ保存してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            registry_view = resolved_registry.view(knowledge_id)
+            exam_metadata = DummyExamMetadataProvider().build(
+                record.term.canonical_name,
+                record,
+            )
+            publication = source_bundle_publisher.publish(
+                record,
+                registry_view,
+                exam_metadata,
+            )
+            publish_decision = source_bundle_publisher.can_publish(registry_view)
+            external_ai_decision = (
+                source_bundle_publisher.can_send_to_external_ai(registry_view)
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "bundle": publication.bundle.model_dump(mode="json"),
+                    "output_path": str(publication.output_path),
+                    "approval_gate": {
+                        "can_publish": publish_decision.model_dump(mode="json"),
+                        "can_send_to_external_ai": external_ai_decision.model_dump(
+                            mode="json"
+                        ),
+                    },
+                    "audit_log_path": str(source_bundle_publisher.audit_log_path),
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                },
+            )
+        except (RegistryOperationError, SourceBundlePublisherError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "source_bundle_generation_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "source_bundle_write_failed",
+                            "message": f"Source Bundle JSONを保存できません: {error}",
+                        }
+                    ],
+                },
+            )
+
+    @app.put("/api/knowledge-records/{knowledge_id}")
+    def save_knowledge_record(
+        knowledge_id: str, request: KnowledgeRecordSaveRequest
+    ) -> JSONResponse:
+        try:
+            record = validate_knowledge_record(request.record)
+            if record.knowledge_id != knowledge_id:
+                raise RegistryOperationError(
+                    "URLのknowledge_idとJSON内のknowledge_idが一致しません。"
+                )
+            reconciliation = resolved_registry.reconcile(
+                record,
+                actor=request.actor.strip(),
+                note=request.comment.strip(),
+            )
+            relations = sync_relations(
+                reconciliation.record,
+                actor=request.actor.strip(),
+                note=request.comment.strip(),
+            )
+            resolution_report = None
+            if relation_service is not None:
+                resolution_report = relation_service.resolve_for_target(
+                    reconciliation.record,
+                    actor=request.actor.strip(),
+                    note="Knowledge保存イベントによる索引候補の再評価",
+                )
+            response = knowledge_record_response(reconciliation.record)
+            response["relations"] = relations
+            response["resolution_report"] = (
+                resolution_report.model_dump(mode="json")
+                if resolution_report is not None
+                else None
+            )
+            response["save_comment"] = request.comment.strip()
+            return JSONResponse(status_code=200, content=response)
+        except KnowledgeSchemaError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "errors": [
+                        {
+                            "code": "knowledge_schema_error",
+                            "message": str(error),
+                            "path": error.path,
+                        }
+                    ],
+                },
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/registry/{knowledge_id}/status")
+    def registry_knowledge_status(
+        knowledge_id: str, request: RegistryStatusRequest
+    ) -> JSONResponse:
+        try:
+            resolved_registry.transition_status(
+                RegistryEntityType.KNOWLEDGE,
+                knowledge_id,
+                request.target_status,
+                actor=request.actor.strip(),
+                note=request.comment.strip(),
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "registry": resolved_registry.view(knowledge_id).model_dump(mode="json"),
+                },
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/registry/{knowledge_id}/claims/status")
+    def registry_claim_status(knowledge_id: str, request: ClaimStatusRequest) -> JSONResponse:
+        try:
+            view = resolved_registry.transition_claims_status(
+                request.claim_ids,
+                request.target_status,
+                actor=request.actor.strip(),
+                note=request.comment.strip(),
+            )
+            if view.knowledge.knowledge_id != knowledge_id:
+                raise RegistryOperationError("KnowledgeとClaimの指定が一致しません。")
+            return JSONResponse(
+                status_code=200,
+                content={"status": "success", "registry": view.model_dump(mode="json")},
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/registry/{knowledge_id}/claims/merge")
+    def registry_claim_merge(knowledge_id: str, request: ClaimMergeRequest) -> JSONResponse:
+        try:
+            view = resolved_registry.merge_claims(
+                knowledge_id,
+                request.target_claim_id,
+                request.source_claim_ids,
+                actor=request.actor.strip(),
+                comment=request.comment.strip(),
+            )
+            return JSONResponse(
+                status_code=200,
+                content={"status": "success", "registry": view.model_dump(mode="json")},
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.get("/api/registry-backups")
+    def registry_backups() -> dict[str, object]:
+        if backup_manager is None:
+            return {"status": "unavailable", "backups": []}
+        return {
+            "status": "success",
+            "backups": [item.as_dict() for item in backup_manager.list_backups()],
+        }
+
+    @app.post("/api/registry-backups")
+    def registry_create_backup() -> JSONResponse:
+        if backup_manager is None:
+            return _registry_error_response(
+                RegistryOperationError("この保存先はBackupに未対応です。")
+            )
+        try:
+            backup = backup_manager.create_backup()
+            return JSONResponse(
+                status_code=200,
+                content={"status": "success", "backup": backup.as_dict()},
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/registry-backups/restore")
+    def registry_restore_backup(request: RegistryRestoreRequest) -> JSONResponse:
+        nonlocal latest_import_metadata
+        if backup_manager is None:
+            return _registry_error_response(
+                RegistryOperationError("この保存先はRestoreに未対応です。")
+            )
+        try:
+            result = backup_manager.restore(request.filename)
+            if resolved_relation_repository is not None:
+                resolved_relation_repository.ensure_schema()
+            latest_import_metadata = []
+            pending_previews.clear()
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "restored": result.restored.as_dict(),
+                    "safety_backup": result.safety_backup.as_dict(),
+                    "registry": resolved_registry.snapshot().model_dump(mode="json"),
+                },
+            )
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    def create_preview(
+        csv_text: str,
+        source_file: str,
+        import_mode: Literal["append", "replace"],
+    ) -> tuple[ExamImportExecutionResult, CsvImportPreview]:
+        if not isinstance(resolved_registry, SQLiteKnowledgeRegistry):
+            raise RegistryOperationError("現在のRegistry Providerは安全なPreviewに未対応です。")
+        before = resolved_registry.snapshot()
+        fingerprint = _registry_fingerprint(before)
+        with TemporaryDirectory(prefix="bluprnt-import-preview-") as directory:
+            preview_registry_path = Path(directory) / "registry-preview.db"
+            resolved_registry.backup_to(preview_registry_path)
+            preview_registry = SQLiteKnowledgeRegistry(preview_registry_path)
+            result = import_exam_csv(
+                csv_text,
+                source_file,
+                previous_metadata=latest_import_metadata,
+                registry=preview_registry,
+                import_mode=import_mode,
+            )
+            after = preview_registry.snapshot()
+        preview = _build_import_preview(result, before, after, fingerprint)
+        pending_previews[preview.preview_id] = _PendingCsvPreview(
+            csv_text=csv_text,
+            source_file=source_file,
+            import_mode=import_mode,
+            registry_fingerprint=fingerprint,
+            preview=preview,
+        )
+        return result, preview
+
+    @app.post("/api/import/exam-csv/preview/sample")
+    @app.post("/api/import/exam-csv/sample")
+    def preview_sample_csv() -> JSONResponse:
+        try:
+            result, preview = create_preview(
+                SAMPLE_CSV_PATH.read_text(encoding="utf-8-sig"),
+                SAMPLE_CSV_PATH.name,
+                "replace",
+            )
+            return _import_response(result, phase="preview", preview=preview)
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/import/exam-csv/preview")
+    @app.post("/api/import/exam-csv")
+    def preview_csv(request: CsvImportRequest) -> JSONResponse:
+        mapping = load_exam_csv_mapping()
+        try:
+            csv_text = base64.b64decode(request.csv_base64, validate=True).decode(mapping.encoding)
+        except UnicodeDecodeError:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "csv_encoding_error",
+                            "message": (
+                                f"CSVを{mapping.encoding}として読めません。"
+                                "Mappingのencodingを確認してください。"
+                            ),
+                        }
+                    ],
+                },
+            )
+        try:
+            result, preview = create_preview(
+                csv_text,
+                request.source_file,
+                request.import_mode,
+            )
+            return _import_response(result, phase="preview", preview=preview)
+        except RegistryOperationError as error:
+            return _registry_error_response(error)
+
+    @app.post("/api/import/exam-csv/commit")
+    def commit_csv(request: ImportCommitRequest) -> JSONResponse:
+        nonlocal latest_import_metadata
+        pending = pending_previews.get(request.preview_id)
+        if pending is None:
+            return _registry_error_response(
+                RegistryOperationError(
+                    "Previewが見つかりません。CSVをもう一度Previewしてください。"
+                )
+            )
+        if not pending.preview.can_commit:
+            return _registry_error_response(
+                RegistryOperationError("Validation ErrorがあるためImportを確定できません。")
+            )
+        current_fingerprint = _registry_fingerprint(resolved_registry.snapshot())
+        if current_fingerprint != pending.registry_fingerprint:
+            pending_previews.pop(request.preview_id, None)
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "registry_changed",
+                    "errors": [
+                        {
+                            "code": "registry_changed_after_preview",
+                            "message": (
+                                "Preview後にRegistryが変更されました。"
+                                "安全のため再Previewしてください。"
+                            ),
+                        }
+                    ],
+                },
+            )
+        result = import_exam_csv(
+            pending.csv_text,
+            pending.source_file,
+            previous_metadata=latest_import_metadata,
+            registry=resolved_registry,
+            import_mode=pending.import_mode,
+        )
+        if result.outcome.report.validation.can_import:
+            latest_import_metadata = result.outcome.exam_metadata
+            pending_previews.pop(request.preview_id, None)
+        return _import_response(result, phase="imported", preview=pending.preview)
+
+    @app.post("/api/generate")
+    def generate(request: GenerateRequest) -> JSONResponse:
+        try:
+            active_service = service
+            if active_service is None:
+                active_service = GenerateKnowledge(
+                    build_provider(resolved_settings),
+                    registry=resolved_registry,
+                )
+            outcome = active_service.execute(request.term)
+            relations = sync_relations(
+                outcome.record,
+                actor="knowledge_workbench",
+                note="Knowledge生成後のRelation同期",
+            )
+            resolution_report = (
+                relation_service.resolve_for_target(
+                    outcome.record,
+                    actor="knowledge_workbench",
+                    note="Knowledge生成イベントによる索引候補の再評価",
+                )
+                if relation_service is not None
+                else None
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "schema_valid": True,
+                    "completeness_valid": True,
+                    "knowledge_completeness_valid": True,
+                    "exam_completeness_valid": True,
+                    "completeness": outcome.knowledge_completeness.model_dump(mode="json"),
+                    "knowledge_completeness": outcome.knowledge_completeness.model_dump(
+                        mode="json"
+                    ),
+                    "exam_completeness": outcome.exam_completeness.model_dump(mode="json"),
+                    "data": outcome.record.model_dump(mode="json"),
+                    "exam_metadata": outcome.exam_metadata.model_dump(mode="json"),
+                    "registry": (
+                        outcome.registry.model_dump(mode="json")
+                        if outcome.registry is not None
+                        else None
+                    ),
+                    "relations": relations,
+                    "resolution_report": (
+                        resolution_report.model_dump(mode="json")
+                        if resolution_report is not None
+                        else None
+                    ),
+                    "errors": [],
+                },
+            )
+        except WorkbenchError as error:
+            return JSONResponse(
+                status_code=422 if error.code == "invalid_term" else 503,
+                content={
+                    "status": "error",
+                    "schema_valid": False,
+                    "completeness_valid": False,
+                    "knowledge_completeness_valid": False,
+                    "exam_completeness_valid": False,
+                    "completeness": None,
+                    "knowledge_completeness": None,
+                    "exam_completeness": None,
+                    "data": None,
+                    "exam_metadata": None,
+                    "registry": None,
+                    "relations": None,
+                    "errors": [{"code": error.code, "message": error.message}],
+                },
+            )
+
+    return app
+
+
+app = create_app()

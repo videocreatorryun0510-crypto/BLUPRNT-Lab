@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "layout.national_exam_pdf",
+  "version": "1.1.0",
+  "name": "国家試験PDF Education対応構図",
+  "status": "active",
+  "supported_outputs": ["pdf"],
+  "regions": [
+    {"region_id": "region.title", "region_role": "role.title", "order": 1, "parent_region_id": null},
+    {"region_id": "region.hero", "region_role": "role.hero_visual", "order": 2, "parent_region_id": null},
+    {"region_id": "region.explanation", "region_role": "role.explanation", "order": 3, "parent_region_id": null},
+    {"region_id": "region.comparison", "region_role": "role.comparison", "order": 4, "parent_region_id": null},
+    {"region_id": "region.exam_points", "region_role": "role.exam_points", "order": 5, "parent_region_id": null},
+    {"region_id": "region.summary", "region_role": "role.summary", "order": 6, "parent_region_id": null}
+  ],
+  "placements": [
+    {"placement_id": "placement.definition", "item_kind": "content", "item_id": "section.definition", "region_id": "region.title", "order": 1, "is_optional": false},
+    {"placement_id": "placement.reaction", "item_kind": "visual", "item_id": "visual.reaction_diagram", "region_id": "region.hero", "order": 1, "is_optional": false},
+    {"placement_id": "placement.method", "item_kind": "content", "item_id": "section.measurement_method", "region_id": "region.explanation", "order": 1, "is_optional": false},
+    {"placement_id": "placement.principle", "item_kind": "content", "item_id": "section.measurement_principle", "region_id": "region.explanation", "order": 2, "is_optional": false},
+    {"placement_id": "placement.comparison_visual", "item_kind": "visual", "item_id": "visual.comparison_table", "region_id": "region.comparison", "order": 1, "is_optional": false},
+    {"placement_id": "placement.comparison_text", "item_kind": "content", "item_id": "section.comparison", "region_id": "region.comparison", "order": 2, "is_optional": false},
+    {"placement_id": "placement.frequent_points", "item_kind": "education_block", "item_id": "education.frequent_points", "region_id": "region.exam_points", "order": 1, "is_optional": false},
+    {"placement_id": "placement.trick_points", "item_kind": "education_block", "item_id": "education.trick_points", "region_id": "region.exam_points", "order": 2, "is_optional": true},
+    {"placement_id": "placement.common_errors", "item_kind": "education_block", "item_id": "education.common_errors", "region_id": "region.exam_points", "order": 3, "is_optional": true},
+    {"placement_id": "placement.related_comparison", "item_kind": "education_block", "item_id": "education.related_comparison", "region_id": "region.summary", "order": 1, "is_optional": false},
+    {"placement_id": "placement.exam_history", "item_kind": "education_block", "item_id": "education.exam_history", "region_id": "region.summary", "order": 2, "is_optional": false},
+    {"placement_id": "placement.priority_ranking", "item_kind": "education_block", "item_id": "education.priority_claim_ranking", "region_id": "region.summary", "order": 3, "is_optional": false},
+    {"placement_id": "placement.memory_aid", "item_kind": "education_block", "item_id": "education.memory_aid", "region_id": "region.summary", "order": 4, "is_optional": true},
+    {"placement_id": "placement.cautions", "item_kind": "content", "item_id": "section.cautions", "region_id": "region.summary", "order": 5, "is_optional": true}
+  ]
+}

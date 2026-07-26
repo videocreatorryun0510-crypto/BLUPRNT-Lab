@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_10000003",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "蟯虫",
+    "english_name": "Enterobius vermicularis",
+    "aliases": []
+  },
+  "classification": {
+    "term_type": "parasite",
+    "primary_exam_domain": "microbiology",
+    "related_exam_domains": [
+      "public_health"
+    ]
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_30000001",
+        "assertion": "蟯虫はヒトの腸管に寄生する線虫である。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "parasite_v1.0",
+    "parasite": {
+      "parasite_group": "nematode",
+      "taxonomy": [
+        {
+          "claim_id": "clm_30000002",
+          "rank": "species",
+          "taxon_name": "Enterobius vermicularis",
+          "assertion": "蟯虫の学名はEnterobius vermicularisである。"
+        }
+      ],
+      "hosts": [
+        {
+          "claim_id": "clm_30000003",
+          "host_role": "definitive_host",
+          "host_name": "ヒト",
+          "host_knowledge_id": null,
+          "assertion": "蟯虫の終宿主はヒトである。"
+        }
+      ],
+      "vectors": [],
+      "habitats": [
+        {
+          "claim_id": "clm_30000004",
+          "life_stage": "成虫",
+          "host_name": "ヒト",
+          "anatomical_site": "盲腸・虫垂・結腸",
+          "assertion": "蟯虫成虫は主に盲腸、虫垂および結腸に寄生する。"
+        }
+      ],
+      "life_cycle_steps": [
+        {
+          "claim_id": "clm_30000005",
+          "step_order": 1,
+          "stage_name": "感染性虫卵",
+          "host_name": "ヒト",
+          "location": "口",
+          "transition": "感染性虫卵が経口摂取される。",
+          "assertion": "感染性虫卵の経口摂取により感染が成立する。"
+        },
+        {
+          "claim_id": "clm_30000006",
+          "step_order": 2,
+          "stage_name": "幼虫",
+          "host_name": "ヒト",
+          "location": "小腸",
+          "transition": "虫卵から幼虫が孵化する。",
+          "assertion": "摂取された虫卵は腸管内で孵化する。"
+        },
+        {
+          "claim_id": "clm_30000007",
+          "step_order": 3,
+          "stage_name": "成虫",
+          "host_name": "ヒト",
+          "location": "大腸",
+          "transition": "幼虫が成虫へ発育する。",
+          "assertion": "幼虫は大腸で成虫へ発育する。"
+        },
+        {
+          "claim_id": "clm_30000008",
+          "step_order": 4,
+          "stage_name": "雌成虫",
+          "host_name": "ヒト",
+          "location": "肛門周囲",
+          "transition": "夜間に肛門周囲へ移動して産卵する。",
+          "assertion": "雌成虫は夜間に肛門周囲へ移動して産卵する。"
+        }
+      ],
+      "infective_stages": [
+        {
+          "claim_id": "clm_30000009",
+          "stage_name": "感染性虫卵",
+          "target_host": "ヒト",
+          "entry_route": "経口",
+          "assertion": "ヒトへの感染型は感染性虫卵である。"
+        }
+      ],
+      "diagnostic_stages": [
+        {
+          "claim_id": "clm_30000010",
+          "stage_name": "虫卵",
+          "specimen": "肛門周囲採取物",
+          "assertion": "診断では肛門周囲に産み付けられた虫卵を検出する。"
+        }
+      ],
+      "transmission_routes": [
+        {
+          "claim_id": "clm_30000011",
+          "route": "経口感染",
+          "source": "感染性虫卵",
+          "entry_site": "口",
+          "assertion": "感染性虫卵の経口摂取が主要な感染経路である。"
+        },
+        {
+          "claim_id": "clm_30000012",
+          "route": "自家感染",
+          "source": "虫卵で汚染された手指",
+          "entry_site": "口",
+          "assertion": "肛門周囲を掻いた手指を介して自家感染が起こりうる。"
+        }
+      ],
+      "morphology": [
+        {
+          "claim_id": "clm_30000013",
+          "life_stage": "虫卵",
+          "observation_method": "光学顕微鏡",
+          "size": null,
+          "shape": "一側が扁平で他側が膨隆する非対称形",
+          "distinctive_features": [
+            "左右非対称"
+          ],
+          "assertion": "蟯虫卵は一側が扁平で他側が膨隆する非対称形を示す。"
+        }
+      ],
+      "specimens": [
+        {
+          "claim_id": "clm_30000014",
+          "specimen": "肛門周囲採取物",
+          "collection_timing": "早朝、排便・入浴前",
+          "collection_conditions": "肛門周囲から採取する。",
+          "assertion": "蟯虫検査では早朝の排便・入浴前に肛門周囲から検体を採取する。"
+        }
+      ],
+      "diagnostic_methods": [
+        {
+          "claim_id": "clm_30000015",
+          "method_name": "セロハンテープ法",
+          "target_stage": "虫卵",
+          "expected_finding": "肛門周囲の虫卵",
+          "assertion": "蟯虫卵の検出にはセロハンテープ法を用いる。"
+        }
+      ],
+      "clinical_findings": [
+        {
+          "claim_id": "clm_30000016",
+          "finding_name": "夜間の肛門周囲掻痒",
+          "assertion": "蟯虫症では夜間の肛門周囲掻痒を認めることがある。"
+        }
+      ],
+      "prevention": [
+        {
+          "claim_id": "clm_30000017",
+          "preventive_measure": "手指衛生",
+          "assertion": "手指衛生は虫卵の経口摂取を防ぐために重要である。"
+        }
+      ],
+      "epidemiology": []
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}
