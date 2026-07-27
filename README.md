@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.14「Approval Gate MVP」を実装しました。** Source Bundleは`draft`でもレビュー用に生成できますが、公開と外部AI送信は`approved`のKnowledgeだけに限定されます。判定はGemini等に依存しない共通Contractで行い、Knowledge ID、承認状態、判定結果、日時をPublisher監査ログへ保存します。Gemini APIはまだ接続していません。詳細は[Approval Gate MVP](Docs/approval_gate.md)に記録しています。
+> **Phase 5.15「Presentation Contract MVP」を実装しました。** Source Bundleから、対象者、成果物形式、使用Claim、媒体条件、安全条件を表すAI非依存のPresentation Requestを生成できます。レビュー用Previewは下書きでも生成でき、Externalは`approved`だけを許可します。Gemini APIはまだ接続していません。詳細は[Presentation Contract MVP](Docs/presentation_contract.md)に記録しています。
 
 ---
 

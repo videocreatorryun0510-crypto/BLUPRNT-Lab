@@ -409,6 +409,18 @@ Version 1.0 Policyで`approved`だけを許可します。判定はKnowledge ID�
 結果、理由、Review Version、日時とともにPublisher監査ログへ保存します。Gemini等の
 Adapterはこの判定結果を回避できない接続契約にします。
 
+Phase 5.15では、Source Bundleと外部Presentation Engineの間へAI非依存の
+Presentation Contractを追加しました。
+
+`Source Bundle → Approval Gate → Presentation Request Builder → Presentation Request JSON → 将来のPresentation Engine Adapter`
+
+Presentation Requestは成果物の種類、対象者、学習目的、媒体条件、使用するClaim・図解・
+出典ID、安全検証条件だけを保持し、Claim本文やSource Bundle全文を複製しません。
+Previewはレビュー途中でも生成できますが、Externalは既存Approval Gateを通過した
+`approved`だけが生成できます。Registry最新版とのKnowledge Version、Fingerprint、
+Approval State、Review Versionが一致しない場合は保存前に停止します。Publisher Core、
+Knowledge JSON、Registry、Source Bundle Version 1.0は変更しません。
+
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 
 Phase 3.2のEducation Profileは、Content Profileが選んだ事実を「どの目的・難易度・順序・強調で教えるか」へ変換します。国家試験の重要度・出題頻度・重要Claim、比較必須、Visual優先順位、頻出・誤答・覚え方等の教育ブロック指示をPublication Plan 1.1へ保存します。覚え方の本文はKnowledgeにもProfileにも保存せず、将来Publisherが承認済みClaimから生成します。Publication Plan 1.0とPhase 3.1 PDFは変更しません。

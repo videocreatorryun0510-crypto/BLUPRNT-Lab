@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=approval-gate-5.14" />
+    <link rel="stylesheet" href="/static/styles.css?v=presentation-contract-5.15" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.14</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.15</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">Source Bundleを生成し、承認済みKnowledgeだけを外部利用へ。</p>
+          <p class="lead">Source Bundleから、AIに依存しないPresentation Requestを生成。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -101,6 +101,21 @@
             >
               Source Bundle生成
             </button>
+            <label class="visually-hidden" for="presentationRequestMode">
+              Presentation Request Mode
+            </label>
+            <select id="presentationRequestMode" aria-label="Presentation Request Mode">
+              <option value="preview">Preview</option>
+              <option value="external">External</option>
+            </select>
+            <button
+              id="generatePresentationRequestButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Presentation Request生成
+            </button>
           </div>
           <div id="knowledgeApprovalSummary" class="knowledge-approval-summary" hidden>
             <div>
@@ -154,6 +169,41 @@
             </div>
             <p id="sourceBundleGateReason" class="source-bundle-gate-reason"></p>
             <pre id="sourceBundleOutput"></pre>
+          </section>
+          <section id="presentationRequestPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">PRESENTATION REQUEST JSON 1.0</p>
+                <h3>成果物を作るための生成条件</h3>
+              </div>
+              <button
+                id="copyPresentationRequestButton"
+                class="copy-button"
+                type="button"
+              >
+                JSONをコピー
+              </button>
+            </div>
+            <p id="presentationRequestMessage" class="source-bundle-message"></p>
+            <div class="presentation-request-summary" aria-label="Presentation Request概要">
+              <div><span>Presentation Type</span><strong id="presentationType">--</strong></div>
+              <div><span>Output Format</span><strong id="presentationOutputFormat">--</strong></div>
+              <div><span>Profile</span><strong id="presentationProfile">--</strong></div>
+              <div><span>Request Mode</span><strong id="presentationMode">--</strong></div>
+              <div><span>Approval State</span><strong id="presentationApprovalState">--</strong></div>
+              <div><span>Knowledge Version</span><strong id="presentationKnowledgeVersion">--</strong></div>
+              <div><span>使用Claim</span><strong id="presentationClaimCount">--</strong></div>
+              <div><span>Key Message</span><strong id="presentationKeyMessageCount">--</strong></div>
+              <div><span>Diagram Request</span><strong id="presentationDiagramCount">--</strong></div>
+              <div><span>External利用</span><strong id="presentationExternalUse">--</strong></div>
+            </div>
+            <p class="fingerprint-line">
+              <span>Source Fingerprint</span>
+              <code id="presentationFingerprint">--</code>
+            </p>
+            <p id="presentationRequestReason" class="source-bundle-gate-reason"></p>
+            <p id="presentationRequestPath" class="source-bundle-message"></p>
+            <pre id="presentationRequestOutput"></pre>
           </section>
         </div>
       </section>
@@ -547,6 +597,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=approval-gate-5.14" defer></script>
+    <script src="/static/app.js?v=presentation-contract-5.15" defer></script>
   </body>
 </html>

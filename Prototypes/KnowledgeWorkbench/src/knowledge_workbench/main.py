@@ -52,8 +52,15 @@ from knowledge_contracts.v10 import (
     knowledge_record_json_schema,
     validate_knowledge_record,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from presentation_request_builder import (
+    PresentationRequestBuilder,
+    PresentationRequestBuilderError,
+    RequestMode,
+    presentation_request_json_schema,
+)
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from source_bundle_publisher import (
+    SourceBundle,
     SourceBundlePublisherAdapter,
     SourceBundlePublisherError,
     source_bundle_json_schema,
@@ -206,6 +213,18 @@ class KnowledgeRecordSaveRequest(BaseModel):
     comment: str = Field(min_length=1, max_length=1000)
 
 
+class PresentationRequestGenerationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: RequestMode = RequestMode.PREVIEW
+    profile_id: str = Field(
+        default="presentation_document_basic_v1",
+        min_length=3,
+        max_length=180,
+    )
+    profile_version: Literal["1.0"] = "1.0"
+
+
 @dataclass(frozen=True)
 class _PendingCsvPreview:
     csv_text: str
@@ -329,7 +348,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.14.0",
+        version="5.15.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -381,6 +400,24 @@ def create_app(
         resolved_settings.source_bundle_profile_dir,
         source_bundle_output_directory,
         source_bundle_audit_log_path,
+    )
+    presentation_request_output_directory = (
+        Path(temporary_registry_directory.name) / "presentation_request"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_request_output_dir
+    )
+    presentation_request_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "presentation_request.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_request_audit_log_path
+    )
+    presentation_request_builder = PresentationRequestBuilder.from_directories(
+        resolved_settings.presentation_profile_dir,
+        presentation_request_output_directory,
+        presentation_request_audit_log_path,
+        source_bundle_publisher,
     )
     service = (
         GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
@@ -456,6 +493,35 @@ def create_app(
             ),
             "source_bundle_output": str(source_bundle_output_directory),
             "publisher_approval_audit_log": str(source_bundle_audit_log_path),
+            "presentation_contract_version": "1.0",
+            "presentation_request_builder_version": "1.0.0",
+            "presentation_types": [
+                "presentation_document",
+                "pdf_material",
+                "instagram_slides",
+                "training_material",
+                "diagram",
+                "notebook_material",
+            ],
+            "presentation_enabled_types": ["presentation_document"],
+            "presentation_output_formats": [
+                "structured_json",
+                "pdf",
+                "pptx",
+                "png_sequence",
+                "html",
+                "markdown",
+            ],
+            "presentation_enabled_output_formats": ["structured_json"],
+            "presentation_profile_ids": list(
+                presentation_request_builder.supported_profile_ids
+            ),
+            "presentation_request_output": str(
+                presentation_request_output_directory
+            ),
+            "presentation_request_audit_log": str(
+                presentation_request_audit_log_path
+            ),
         }
 
     @app.get("/api/schema/knowledge-1.0")
@@ -493,6 +559,10 @@ def create_app(
     @app.get("/api/schema/source-bundle-1.0")
     def source_bundle_schema_v10() -> dict[str, object]:
         return source_bundle_json_schema()
+
+    @app.get("/api/schema/presentation-request-1.0")
+    def presentation_request_schema_v10() -> dict[str, object]:
+        return presentation_request_json_schema()
 
     @app.get("/api/schema/approval-contract-1.0")
     def approval_schema_v10() -> dict[str, object]:
@@ -951,6 +1021,134 @@ def create_app(
                         {
                             "code": "source_bundle_write_failed",
                             "message": f"Source Bundle JSONを保存できません: {error}",
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/presentation-requests/{knowledge_id}")
+    def generate_presentation_request(
+        knowledge_id: str,
+        request: PresentationRequestGenerationRequest,
+    ) -> JSONResponse:
+        """Build a provider-neutral request from the last saved Source Bundle."""
+
+        try:
+            record = resolved_registry.record(knowledge_id)
+            if record is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "not_found",
+                        "errors": [
+                            {
+                                "code": "knowledge_record_not_found",
+                                "message": (
+                                    "保存済みKnowledge JSONがありません。"
+                                    "先にRegistryへ保存してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            registry_view = resolved_registry.view(knowledge_id)
+            source_path = source_bundle_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}"
+                ".source-bundle.json"
+            )
+            if not source_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "source_bundle_required",
+                        "errors": [
+                            {
+                                "code": "source_bundle_required",
+                                "message": (
+                                    "先に現在のKnowledge Versionから"
+                                    "Source Bundleを生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            source_bundle = SourceBundle.model_validate_json(
+                source_path.read_text(encoding="utf-8")
+            )
+            exam_metadata = DummyExamMetadataProvider().build(
+                record.term.canonical_name,
+                record,
+            )
+            expected_fingerprint = source_bundle_publisher.source_fingerprint(
+                record,
+                registry_view,
+                exam_metadata,
+            )
+            result = presentation_request_builder.build(
+                source_bundle,
+                registry_view,
+                expected_source_fingerprint=expected_fingerprint,
+                profile_id=request.profile_id,
+                profile_version=request.profile_version,
+                request_mode=request.request_mode,
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    **result.model_dump(mode="json"),
+                    "source_bundle_path": str(source_path),
+                    "request_context": {
+                        "presentation_type": "presentation_document",
+                        "output_format": "structured_json",
+                        "profile_id": request.profile_id,
+                        "profile_version": request.profile_version,
+                        "request_mode": request.request_mode.value,
+                        "approval_state": source_bundle.metadata.approval_state.value,
+                        "knowledge_version": source_bundle.metadata.version,
+                        "source_fingerprint": (
+                            source_bundle.metadata.source_fingerprint
+                        ),
+                        "claim_count": len(source_bundle.claims),
+                        "key_message_count": len(source_bundle.key_messages),
+                        "diagram_request_count": len(
+                            source_bundle.diagram_requests
+                        ),
+                    },
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                    "external_ai_called": False,
+                },
+            )
+        except (
+            RegistryOperationError,
+            SourceBundlePublisherError,
+            PresentationRequestBuilderError,
+            ValidationError,
+        ) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_request_generation_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_request_write_failed",
+                            "message": (
+                                "Presentation Requestを読み書きできません: "
+                                f"{error}"
+                            ),
                         }
                     ],
                 },

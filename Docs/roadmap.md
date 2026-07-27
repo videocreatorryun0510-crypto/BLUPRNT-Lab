@@ -41,6 +41,7 @@
 | Phase 5.12：Disease Relation Vocabulary MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.13：Source Bundle Publisher MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.14：Approval Gate MVP | 実装完了・プロダクトオーナー確認待ち |
+| Phase 5.15：Presentation Contract MVP | 実装完了・プロダクトオーナー確認待ち |
 
 Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止し、判定をPublisher監査ログへ保存します。
 
@@ -209,6 +210,21 @@ Exam Metadataは医学知識と独立した版付きコンポーネントとし�
 - WorkbenchのApproval State、公開可否、外部AI送信可否、停止理由表示
 - 全227件の自動回帰テスト、静的解析、型検査
 - [Approval Gate MVP](approval_gate.md)
+
+### Phase 5.15成果物
+
+- AI非依存のPresentation Contract Version 1.0とJSON Schema
+- Presentation Type 6種、Output Format 6種の独立Vocabulary
+- `presentation_document`／`structured_json`のMVP生成
+- Knowledge固有医学情報を持たない`presentation_document_basic_v1`
+- Source BundleからID参照だけを選ぶPresentation Request Builder
+- `preview`と`external`の明示的分離
+- External生成時の既存`can_send_to_external_ai()`強制
+- Knowledge Version、Fingerprint、Approval State、Review VersionのStale検知
+- Claim、Key Message、Diagram Request、ReferenceのTraceability Validator
+- 原子的JSON保存とClaim本文を含まない監査ログ
+- Workbenchの生成・停止理由・JSON全文・コピー表示
+- [Presentation Contract MVP](presentation_contract.md)
 
 ---
 

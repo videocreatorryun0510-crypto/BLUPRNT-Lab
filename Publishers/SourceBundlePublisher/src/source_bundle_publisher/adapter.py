@@ -114,6 +114,18 @@ class SourceBundlePublisherAdapter:
             evaluated_at=evaluated_at,
         )
 
+    def source_fingerprint(
+        self,
+        knowledge: KnowledgeRecord,
+        registry: RegistryKnowledgeView,
+        exam_metadata: ExamMetadataRecord | None,
+    ) -> str:
+        """Recalculate the current read-only Source Bundle fingerprint."""
+
+        profile = self._profile_for(knowledge.knowledge_id)
+        self._validate_sources(knowledge, registry, exam_metadata)
+        return _source_fingerprint(knowledge, registry, exam_metadata, profile)
+
     def publish(
         self,
         knowledge: KnowledgeRecord,

@@ -13,6 +13,7 @@ fi
 "$REPOSITORY_DIR/.venv/bin/python" -m pip install \
   -e "$REPOSITORY_DIR/Packages/knowledge-contracts[dev]" \
   -e "$REPOSITORY_DIR/Publishers/SourceBundlePublisher[dev]" \
+  -e "$REPOSITORY_DIR/Publishers/PresentationRequestBuilder[dev]" \
   -e "$WORKBENCH_DIR[dev]"
 
 echo "準備が完了しました。次は Prototypes/KnowledgeWorkbench/start.sh を実行してください。"

@@ -9,4 +9,8 @@ sys.path.insert(
     0,
     str(REPOSITORY_DIR / "Publishers" / "SourceBundlePublisher" / "src"),
 )
+sys.path.insert(
+    0,
+    str(REPOSITORY_DIR / "Publishers" / "PresentationRequestBuilder" / "src"),
+)
 sys.path.insert(0, str(REPOSITORY_DIR / "Prototypes" / "KnowledgeWorkbench" / "src"))

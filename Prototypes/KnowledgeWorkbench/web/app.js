@@ -22,6 +22,12 @@ const saveKnowledgeButton = document.querySelector("#saveKnowledgeButton");
 const generateSourceBundleButton = document.querySelector(
   "#generateSourceBundleButton",
 );
+const generatePresentationRequestButton = document.querySelector(
+  "#generatePresentationRequestButton",
+);
+const presentationRequestMode = document.querySelector(
+  "#presentationRequestMode",
+);
 const knowledgeEditorMessage = document.querySelector("#knowledgeEditorMessage");
 const sourceBundlePanel = document.querySelector("#sourceBundlePanel");
 const sourceBundleMessage = document.querySelector("#sourceBundleMessage");
@@ -31,6 +37,15 @@ const knowledgeApprovalSummary = document.querySelector(
 );
 const sourceBundleGateReason = document.querySelector(
   "#sourceBundleGateReason",
+);
+const presentationRequestPanel = document.querySelector(
+  "#presentationRequestPanel",
+);
+const presentationRequestOutput = document.querySelector(
+  "#presentationRequestOutput",
+);
+const presentationRequestReason = document.querySelector(
+  "#presentationRequestReason",
 );
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
@@ -181,10 +196,25 @@ generateSourceBundleButton.addEventListener("click", async () => {
   await generateSourceBundle();
 });
 
+generatePresentationRequestButton.addEventListener("click", async () => {
+  await generatePresentationRequest();
+});
+
 document.querySelector("#copySourceBundleButton").addEventListener(
   "click",
   async (event) => {
     await navigator.clipboard.writeText(sourceBundleOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "JSONをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyPresentationRequestButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(presentationRequestOutput.textContent);
     event.currentTarget.textContent = "コピー済み";
     window.setTimeout(() => {
       event.currentTarget.textContent = "JSONをコピー";
@@ -475,7 +505,9 @@ function setSourceBundleAvailability(record, persisted) {
     record !== null &&
     supportedIds.has(record.knowledge_id);
   generateSourceBundleButton.disabled = !available;
-  if (!available) sourceBundlePanel.hidden = true;
+  generatePresentationRequestButton.disabled = true;
+  sourceBundlePanel.hidden = true;
+  presentationRequestPanel.hidden = true;
 }
 
 async function generateSourceBundle() {
@@ -523,6 +555,8 @@ async function generateSourceBundle() {
         payload.bundle.metadata.approval_state) +
       " · KnowledgeとRegistryは変更していません。";
     sourceBundlePanel.hidden = false;
+    generatePresentationRequestButton.disabled = false;
+    presentationRequestPanel.hidden = true;
     knowledgeEditorMessage.textContent =
       "Source Bundle JSON Version 1.0を生成・保存しました。";
     sourceBundlePanel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -532,7 +566,98 @@ async function generateSourceBundle() {
         ? error.message
         : "Source Bundle生成の通信に失敗しました。";
   } finally {
-    setSourceBundleAvailability(record, true);
+    generateSourceBundleButton.disabled = false;
+  }
+}
+
+async function generatePresentationRequest() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  generatePresentationRequestButton.disabled = true;
+  presentationRequestPanel.hidden = true;
+  const mode = presentationRequestMode.value;
+  knowledgeEditorMessage.textContent =
+    (mode === "external" ? "External" : "Preview") +
+    " Presentation Requestを検証しています…";
+  try {
+    const response = await fetch(
+      "/api/presentation-requests/" + encodeURIComponent(record.knowledge_id),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request_mode: mode,
+          profile_id: "presentation_document_basic_v1",
+          profile_version: "1.0",
+        }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message ||
+          "Presentation Requestを生成できませんでした。",
+      );
+    }
+    const context = payload.request_context;
+    setText("#presentationType", context.presentation_type);
+    setText("#presentationOutputFormat", context.output_format);
+    setText(
+      "#presentationProfile",
+      context.profile_id + " v" + context.profile_version,
+    );
+    setText("#presentationMode", context.request_mode);
+    setText(
+      "#presentationApprovalState",
+      registryStatusLabels[context.approval_state] || context.approval_state,
+    );
+    setText("#presentationKnowledgeVersion", "v" + context.knowledge_version);
+    setText("#presentationClaimCount", String(context.claim_count));
+    setText("#presentationKeyMessageCount", String(context.key_message_count));
+    setText("#presentationDiagramCount", String(context.diagram_request_count));
+    setText(
+      "#presentationExternalUse",
+      payload.decision.external_use_allowed ? "許可" : "停止",
+    );
+    setText("#presentationFingerprint", context.source_fingerprint);
+    presentationRequestReason.textContent =
+      payload.decision.reason +
+      " · Freshness " +
+      (payload.decision.freshness.is_current ? "OK" : "NG") +
+      " · 監査ログ：" +
+      payload.audit_log_path;
+    presentationRequestReason.className = payload.decision.allowed
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    setText(
+      "#presentationRequestPath",
+      payload.output_path
+        ? "保存先：" + payload.output_path
+        : "停止理由：" + payload.decision.reason_code + " · JSONは保存していません。",
+    );
+    presentationRequestOutput.textContent = payload.request
+      ? JSON.stringify(payload.request, null, 2)
+      : "Presentation Requestは生成されませんでした。";
+    presentationRequestPanel.hidden = false;
+    knowledgeEditorMessage.textContent = payload.decision.allowed
+      ? "Presentation Request JSON Version 1.0を生成・保存しました。"
+      : "安全確認によりPresentation Request生成を停止しました。";
+    presentationRequestPanel.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Presentation Request生成の通信に失敗しました。";
+  } finally {
+    generatePresentationRequestButton.disabled = false;
   }
 }
 

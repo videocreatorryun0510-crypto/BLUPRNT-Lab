@@ -1,8 +1,8 @@
-# Knowledge Workbench — Phase 5.14
+# Knowledge Workbench — Phase 5.15
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
-Phase 5.14ではApproval Gate Version 1.0を追加しました。Source Bundleは下書きでも生成できますが、公開と外部AI送信は`approved`だけが許可されます。Workbenchで承認状態、2種類の判定、停止理由、監査ログ保存先を確認できます。Gemini APIやPDF等の描画は行いません。
+Phase 5.15ではPresentation Contract Version 1.0を追加しました。Source Bundle生成後、成果物の種類、対象者、使用Claim、媒体条件、安全条件だけを持つPresentation Requestを生成できます。Previewはレビュー途中でも作れますが、Externalは`approved`だけが許可されます。Gemini APIやPDF等の描画は行いません。
 
 ## できること
 
@@ -66,6 +66,11 @@ Phase 5.14ではApproval Gate Version 1.0を追加しました。Source Bundle�
 58. Knowledge画面でApproval StateとReview Versionを確認する
 59. Source Bundle生成時に公開可否・外部AI送信可否と停止理由を確認する
 60. Gate判定をProvider非依存のPublisher監査ログへ保存する
+61. Source Bundleから`presentation_document`／`structured_json`のPresentation Requestを生成する
+62. PreviewとExternalを選び、未承認Externalを停止する
+63. Knowledge Version、Fingerprint、Approval State、Review Versionの不一致を検出する
+64. Claim、Key Message、Diagram Request、Referenceの追跡IDを確認する
+65. Presentation Requestの生成条件、停止理由、保存先、JSON全文、監査ログを確認する
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 

@@ -20,6 +20,15 @@ DEFAULT_SOURCE_BUNDLE_OUTPUT_DIR = (
 DEFAULT_SOURCE_BUNDLE_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "approval_gate.jsonl"
 )
+DEFAULT_PRESENTATION_PROFILE_DIR = (
+    REPOSITORY_ROOT / "Publishers" / "PresentationRequestBuilder" / "profiles"
+)
+DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "presentation_request"
+)
+DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_request.jsonl"
+)
 
 
 @dataclass(frozen=True)
@@ -32,6 +41,9 @@ class Settings:
     source_bundle_profile_dir: Path = DEFAULT_SOURCE_BUNDLE_PROFILE_DIR
     source_bundle_output_dir: Path = DEFAULT_SOURCE_BUNDLE_OUTPUT_DIR
     source_bundle_audit_log_path: Path = DEFAULT_SOURCE_BUNDLE_AUDIT_LOG_PATH
+    presentation_profile_dir: Path = DEFAULT_PRESENTATION_PROFILE_DIR
+    presentation_request_output_dir: Path = DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR
+    presentation_request_audit_log_path: Path = DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -45,6 +57,15 @@ class Settings:
         ).strip()
         source_bundle_audit_log_path = os.getenv(
             "SOURCE_BUNDLE_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_profile_path = os.getenv(
+            "PRESENTATION_PROFILE_DIR", ""
+        ).strip()
+        presentation_request_output_path = os.getenv(
+            "PRESENTATION_REQUEST_OUTPUT_DIR", ""
+        ).strip()
+        presentation_request_audit_log_path = os.getenv(
+            "PRESENTATION_REQUEST_AUDIT_LOG_PATH", ""
         ).strip()
         return cls(
             provider=os.getenv("KNOWLEDGE_PROVIDER", "openai").strip().lower(),
@@ -70,6 +91,21 @@ class Settings:
                 Path(source_bundle_audit_log_path).expanduser()
                 if source_bundle_audit_log_path
                 else DEFAULT_SOURCE_BUNDLE_AUDIT_LOG_PATH
+            ),
+            presentation_profile_dir=(
+                Path(presentation_profile_path).expanduser()
+                if presentation_profile_path
+                else DEFAULT_PRESENTATION_PROFILE_DIR
+            ),
+            presentation_request_output_dir=(
+                Path(presentation_request_output_path).expanduser()
+                if presentation_request_output_path
+                else DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR
+            ),
+            presentation_request_audit_log_path=(
+                Path(presentation_request_audit_log_path).expanduser()
+                if presentation_request_audit_log_path
+                else DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH
             ),
         )
 
