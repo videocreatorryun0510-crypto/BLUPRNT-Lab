@@ -23,7 +23,7 @@ fi
 
 # Local Publisher adapters remain separately versioned packages. Expose their
 # editable source tree even before setup.sh is rerun in an existing environment.
-export PYTHONPATH="$REPOSITORY_DIR/Publishers/PresentationRequestBuilder/src:$REPOSITORY_DIR/Publishers/SourceBundlePublisher/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$REPOSITORY_DIR/Publishers/PresentationEngineAdapter/src:$REPOSITORY_DIR/Publishers/PresentationRequestBuilder/src:$REPOSITORY_DIR/Publishers/SourceBundlePublisher/src${PYTHONPATH:+:$PYTHONPATH}"
 
 cd "$WORKBENCH_DIR"
 exec "$REPOSITORY_DIR/.venv/bin/uvicorn" knowledge_workbench.main:app \

@@ -52,7 +52,13 @@ from knowledge_contracts.v10 import (
     knowledge_record_json_schema,
     validate_knowledge_record,
 )
+from presentation_engine_adapter import (
+    DummyPresentationEngineAdapter,
+    PresentationEngineRunner,
+    presentation_result_json_schema,
+)
 from presentation_request_builder import (
+    PresentationRequest,
     PresentationRequestBuilder,
     PresentationRequestBuilderError,
     RequestMode,
@@ -225,6 +231,13 @@ class PresentationRequestGenerationRequest(BaseModel):
     profile_version: Literal["1.0"] = "1.0"
 
 
+class PresentationEngineExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: RequestMode = RequestMode.PREVIEW
+    adapter: Literal["dummy"] = "dummy"
+
+
 @dataclass(frozen=True)
 class _PendingCsvPreview:
     csv_text: str
@@ -348,7 +361,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.15.0",
+        version="5.16.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -418,6 +431,18 @@ def create_app(
         presentation_request_output_directory,
         presentation_request_audit_log_path,
         source_bundle_publisher,
+    )
+    presentation_engine_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "presentation_engine.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_engine_audit_log_path
+    )
+    dummy_presentation_engine_adapter = DummyPresentationEngineAdapter()
+    presentation_engine_runner = PresentationEngineRunner.from_audit_path(
+        source_bundle_publisher,
+        presentation_engine_audit_log_path,
     )
     service = (
         GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
@@ -522,6 +547,15 @@ def create_app(
             "presentation_request_audit_log": str(
                 presentation_request_audit_log_path
             ),
+            "presentation_engine_adapter_contract_version": "1.0",
+            "presentation_result_contract_version": "1.0",
+            "presentation_engine_adapters": [
+                dummy_presentation_engine_adapter.provider_name
+            ],
+            "presentation_engine_external_api_enabled": False,
+            "presentation_engine_audit_log": str(
+                presentation_engine_audit_log_path
+            ),
         }
 
     @app.get("/api/schema/knowledge-1.0")
@@ -563,6 +597,10 @@ def create_app(
     @app.get("/api/schema/presentation-request-1.0")
     def presentation_request_schema_v10() -> dict[str, object]:
         return presentation_request_json_schema()
+
+    @app.get("/api/schema/presentation-result-1.0")
+    def presentation_result_schema_v10() -> dict[str, object]:
+        return presentation_result_json_schema()
 
     @app.get("/api/schema/approval-contract-1.0")
     def approval_schema_v10() -> dict[str, object]:
@@ -1119,6 +1157,7 @@ def create_app(
                     "external_ai_called": False,
                 },
             )
+
         except (
             RegistryOperationError,
             SourceBundlePublisherError,
@@ -1154,6 +1193,117 @@ def create_app(
                 },
             )
 
+    @app.post("/api/presentation-engine/{knowledge_id}/execute")
+    def execute_presentation_engine(
+        knowledge_id: str,
+        request: PresentationEngineExecutionRequest,
+    ) -> JSONResponse:
+        """Run a metadata-only Dummy Adapter without any external AI call."""
+
+        try:
+            registry_view = resolved_registry.view(knowledge_id)
+            request_path = presentation_request_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}."
+                f"{request.request_mode.value}.presentation-request.json"
+            )
+            if not request_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "presentation_request_required",
+                        "errors": [
+                            {
+                                "code": "presentation_request_required",
+                                "message": (
+                                    "先に同じModeのPresentation Requestを"
+                                    "生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            presentation_request = PresentationRequest.model_validate_json(
+                request_path.read_text(encoding="utf-8")
+            )
+            outcome = presentation_engine_runner.run(
+                presentation_request,
+                registry_view,
+                dummy_presentation_engine_adapter,
+            )
+            artifact = (
+                outcome.result.generated_artifacts[0]
+                if outcome.result.generated_artifacts
+                else None
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": outcome.result.status.value,
+                    "result": outcome.result.model_dump(mode="json"),
+                    "adapter": outcome.adapter.model_dump(mode="json"),
+                    "request_fingerprint": outcome.request_fingerprint,
+                    "approval_gate": outcome.approval_gate.model_dump(mode="json"),
+                    "request_path": str(request_path),
+                    "audit_log_path": outcome.audit_log_path,
+                    "engine_context": {
+                        "mode": request.request_mode.value,
+                        "provider": outcome.adapter.provider_name,
+                        "provider_version": outcome.adapter.provider_version,
+                        "validation": (
+                            "passed"
+                            if outcome.result.validation_result.is_valid
+                            else "failed"
+                        ),
+                        "pages": artifact.pages if artifact is not None else 0,
+                        "claims_used": (
+                            artifact.claims_used if artifact is not None else 0
+                        ),
+                        "diagram_requests": (
+                            artifact.diagram_requests if artifact is not None else 0
+                        ),
+                        "references": (
+                            artifact.references if artifact is not None else 0
+                        ),
+                        "output_type": (
+                            artifact.output_type.value
+                            if artifact is not None
+                            else presentation_request.presentation.presentation_type.value
+                        ),
+                    },
+                    "external_ai_called": False,
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_engine_execution_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_engine_audit_failed",
+                            "message": (
+                                "Presentation Engine監査ログを保存できません: "
+                                f"{error}"
+                            ),
+                        }
+                    ],
+                },
+            )
     @app.put("/api/knowledge-records/{knowledge_id}")
     def save_knowledge_record(
         knowledge_id: str, request: KnowledgeRecordSaveRequest

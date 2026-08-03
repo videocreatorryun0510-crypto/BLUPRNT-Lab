@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluprnt-presentation-engine-adapter"
+version = "1.0.0"
+description = "Provider-neutral Presentation Engine Adapter Contract for BLUPRNT Lab"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "bluprnt-knowledge-contracts>=1.0,<2",
+  "bluprnt-presentation-request-builder>=1.0,<2",
+  "pydantic>=2.11,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+  "ruff>=0.12,<1",
+  "mypy>=1.16,<3",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+presentation_engine_adapter = ["py.typed"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src",
+  "../PresentationRequestBuilder/src",
+  "../SourceBundlePublisher/src",
+  "../../Packages/knowledge-contracts/src",
+  "../../Prototypes/KnowledgeWorkbench/src",
+]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src:../PresentationRequestBuilder/src:../SourceBundlePublisher/src:../../Packages/knowledge-contracts/src:../../Prototypes/KnowledgeWorkbench/src"
+packages = ["presentation_engine_adapter"]

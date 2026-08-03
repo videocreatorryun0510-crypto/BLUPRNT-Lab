@@ -214,6 +214,7 @@ flowchart LR
 | `Packages/publisher-core/` | Content・Education・Visual・Visual Grammar・Diagram Taxonomy・Diagram Intent・Claim Mapping・Semantic Blueprint・Layout・Theme・Template Registry |
 | `Prototypes/KnowledgeWorkbench/` | AI入力・JSON確認・国家試験CSV Importの試験画面 |
 | `Publishers/PDFPublisher/` | Publication PlanからA4 PDFを生成する媒体別Adapter、Layout・Theme・Placeholder処理 |
+| `Publishers/PresentationEngineAdapter/` | Presentation Requestと外部Presentation Engine間のProvider非依存Adapter・Result・Validation・監査 |
 | `MedicalPDF/` | 旧PDF生成プロトタイプ。将来PDF Publisherへ移行 |
 | `NationalExam/` | 国家試験対策コンテンツ制作ドメイン |
 | `TrainingVideo/` | 医療研修動画制作ドメイン |
@@ -237,6 +238,8 @@ flowchart LR
 | `Docs/disease_category.md` | Phase 5.10のDisease Schema、鉄欠乏性貧血、Completeness、Registry、運用判断 |
 | `Docs/laboratory_test_item_category.md` | Phase 5.11の検査項目Schema、フェリチン、Completeness、Registry、移行判断 |
 | `Docs/publisher_architecture.md` | Publisher共通層、Profile、Template Registry、Media Profile拡張点 |
+| `Docs/presentation_contract.md` | Phase 5.15のPresentation Request、Profile、安全Policy、Traceability |
+| `Docs/presentation_engine_adapter_contract.md` | Phase 5.16のProvider非依存Adapter、Result、Validation、Approval Gate、監査 |
 
 ### 3.3 実装時に追加するトップレベル
 
@@ -420,6 +423,15 @@ Previewはレビュー途中でも生成できますが、Externalは既存Appro
 `approved`だけが生成できます。Registry最新版とのKnowledge Version、Fingerprint、
 Approval State、Review Versionが一致しない場合は保存前に停止します。Publisher Core、
 Knowledge JSON、Registry、Source Bundle Version 1.0は変更しません。
+
+Phase 5.16では、Presentation Requestの後段へProvider非依存のPresentation Engine
+Adapter Contractを追加しました。
+
+`Presentation Request → Presentation Engine Runner（Registry・Approval Gate・Audit） → Adapter Interface → Dummy / 将来Gemini・Claude・OpenAI → Presentation Result`
+
+Dummy AdapterはRequest ID、Request Fingerprint、Claim・Diagram Request・ReferenceのIDと
+件数だけを扱い、外部通信や医学本文の生成・変更を行いません。Provider固有SDKとPromptは
+将来の個別Adapter内部へ隔離します。
 
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 

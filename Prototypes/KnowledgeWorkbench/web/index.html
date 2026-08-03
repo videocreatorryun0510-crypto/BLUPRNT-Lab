@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=presentation-contract-5.15" />
+    <link rel="stylesheet" href="/static/styles.css?v=presentation-engine-5.16" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.15</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.16</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">Source Bundleから、AIに依存しないPresentation Requestを生成。</p>
+          <p class="lead">Presentation Requestを、AIに依存しないAdapter境界で安全に検証。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -116,6 +116,14 @@
             >
               Presentation Request生成
             </button>
+            <button
+              id="executeDummyAdapterButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Dummy Adapter実行
+            </button>
           </div>
           <div id="knowledgeApprovalSummary" class="knowledge-approval-summary" hidden>
             <div>
@@ -204,6 +212,40 @@
             <p id="presentationRequestReason" class="source-bundle-gate-reason"></p>
             <p id="presentationRequestPath" class="source-bundle-message"></p>
             <pre id="presentationRequestOutput"></pre>
+          </section>
+          <section id="presentationEnginePanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">PRESENTATION ENGINE ADAPTER 1.0</p>
+                <h3>Providerに依存しない実行結果</h3>
+              </div>
+              <button
+                id="copyPresentationResultButton"
+                class="copy-button"
+                type="button"
+              >
+                Result JSONをコピー
+              </button>
+            </div>
+            <p id="presentationEngineMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Presentation Engine概要">
+              <div><span>Mode</span><strong id="engineMode">--</strong></div>
+              <div><span>Preview</span><strong id="enginePreviewSupport">--</strong></div>
+              <div><span>External</span><strong id="engineExternalSupport">--</strong></div>
+              <div><span>Adapter</span><strong id="engineAdapter">--</strong></div>
+              <div><span>Validation</span><strong id="engineValidation">--</strong></div>
+              <div><span>Result</span><strong id="engineResultStatus">--</strong></div>
+              <div><span>Pages</span><strong id="enginePages">--</strong></div>
+              <div><span>Claims</span><strong id="engineClaims">--</strong></div>
+              <div><span>Diagrams</span><strong id="engineDiagrams">--</strong></div>
+              <div><span>References</span><strong id="engineReferences">--</strong></div>
+            </div>
+            <p class="fingerprint-line">
+              <span>Request Fingerprint</span>
+              <code id="engineRequestFingerprint">--</code>
+            </p>
+            <p id="presentationEngineReason" class="source-bundle-gate-reason"></p>
+            <pre id="presentationResultOutput"></pre>
           </section>
         </div>
       </section>
@@ -597,6 +639,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=presentation-contract-5.15" defer></script>
+    <script src="/static/app.js?v=presentation-engine-5.16" defer></script>
   </body>
 </html>

@@ -29,6 +29,9 @@ DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR = (
 DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_request.jsonl"
 )
+DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_engine.jsonl"
+)
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,7 @@ class Settings:
     presentation_profile_dir: Path = DEFAULT_PRESENTATION_PROFILE_DIR
     presentation_request_output_dir: Path = DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR
     presentation_request_audit_log_path: Path = DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH
+    presentation_engine_audit_log_path: Path = DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -66,6 +70,9 @@ class Settings:
         ).strip()
         presentation_request_audit_log_path = os.getenv(
             "PRESENTATION_REQUEST_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_engine_audit_log_path = os.getenv(
+            "PRESENTATION_ENGINE_AUDIT_LOG_PATH", ""
         ).strip()
         return cls(
             provider=os.getenv("KNOWLEDGE_PROVIDER", "openai").strip().lower(),
@@ -106,6 +113,11 @@ class Settings:
                 Path(presentation_request_audit_log_path).expanduser()
                 if presentation_request_audit_log_path
                 else DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH
+            ),
+            presentation_engine_audit_log_path=(
+                Path(presentation_engine_audit_log_path).expanduser()
+                if presentation_engine_audit_log_path
+                else DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH
             ),
         )
 

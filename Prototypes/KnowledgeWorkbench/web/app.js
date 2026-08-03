@@ -28,6 +28,9 @@ const generatePresentationRequestButton = document.querySelector(
 const presentationRequestMode = document.querySelector(
   "#presentationRequestMode",
 );
+const executeDummyAdapterButton = document.querySelector(
+  "#executeDummyAdapterButton",
+);
 const knowledgeEditorMessage = document.querySelector("#knowledgeEditorMessage");
 const sourceBundlePanel = document.querySelector("#sourceBundlePanel");
 const sourceBundleMessage = document.querySelector("#sourceBundleMessage");
@@ -46,6 +49,15 @@ const presentationRequestOutput = document.querySelector(
 );
 const presentationRequestReason = document.querySelector(
   "#presentationRequestReason",
+);
+const presentationEnginePanel = document.querySelector(
+  "#presentationEnginePanel",
+);
+const presentationResultOutput = document.querySelector(
+  "#presentationResultOutput",
+);
+const presentationEngineReason = document.querySelector(
+  "#presentationEngineReason",
 );
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
@@ -200,6 +212,15 @@ generatePresentationRequestButton.addEventListener("click", async () => {
   await generatePresentationRequest();
 });
 
+executeDummyAdapterButton.addEventListener("click", async () => {
+  await executeDummyAdapter();
+});
+
+presentationRequestMode.addEventListener("change", () => {
+  executeDummyAdapterButton.disabled = true;
+  presentationEnginePanel.hidden = true;
+});
+
 document.querySelector("#copySourceBundleButton").addEventListener(
   "click",
   async (event) => {
@@ -218,6 +239,17 @@ document.querySelector("#copyPresentationRequestButton").addEventListener(
     event.currentTarget.textContent = "コピー済み";
     window.setTimeout(() => {
       event.currentTarget.textContent = "JSONをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyPresentationResultButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(presentationResultOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "Result JSONをコピー";
     }, 1300);
   },
 );
@@ -506,8 +538,10 @@ function setSourceBundleAvailability(record, persisted) {
     supportedIds.has(record.knowledge_id);
   generateSourceBundleButton.disabled = !available;
   generatePresentationRequestButton.disabled = true;
+  executeDummyAdapterButton.disabled = true;
   sourceBundlePanel.hidden = true;
   presentationRequestPanel.hidden = true;
+  presentationEnginePanel.hidden = true;
 }
 
 async function generateSourceBundle() {
@@ -520,6 +554,8 @@ async function generateSourceBundle() {
   }
   generateSourceBundleButton.disabled = true;
   sourceBundlePanel.hidden = true;
+  executeDummyAdapterButton.disabled = true;
+  presentationEnginePanel.hidden = true;
   knowledgeEditorMessage.textContent =
     "Registryへ保存済みの版からSource Bundleを生成しています…";
   try {
@@ -557,6 +593,7 @@ async function generateSourceBundle() {
     sourceBundlePanel.hidden = false;
     generatePresentationRequestButton.disabled = false;
     presentationRequestPanel.hidden = true;
+    presentationEnginePanel.hidden = true;
     knowledgeEditorMessage.textContent =
       "Source Bundle JSON Version 1.0を生成・保存しました。";
     sourceBundlePanel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -579,7 +616,9 @@ async function generatePresentationRequest() {
     return;
   }
   generatePresentationRequestButton.disabled = true;
+  executeDummyAdapterButton.disabled = true;
   presentationRequestPanel.hidden = true;
+  presentationEnginePanel.hidden = true;
   const mode = presentationRequestMode.value;
   knowledgeEditorMessage.textContent =
     (mode === "external" ? "External" : "Preview") +
@@ -644,6 +683,7 @@ async function generatePresentationRequest() {
       ? JSON.stringify(payload.request, null, 2)
       : "Presentation Requestは生成されませんでした。";
     presentationRequestPanel.hidden = false;
+    executeDummyAdapterButton.disabled = !payload.decision.allowed;
     knowledgeEditorMessage.textContent = payload.decision.allowed
       ? "Presentation Request JSON Version 1.0を生成・保存しました。"
       : "安全確認によりPresentation Request生成を停止しました。";
@@ -658,6 +698,79 @@ async function generatePresentationRequest() {
         : "Presentation Request生成の通信に失敗しました。";
   } finally {
     generatePresentationRequestButton.disabled = false;
+  }
+}
+
+async function executeDummyAdapter() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  executeDummyAdapterButton.disabled = true;
+  presentationEnginePanel.hidden = true;
+  const mode = presentationRequestMode.value;
+  knowledgeEditorMessage.textContent =
+    "Dummy Adapterで" + (mode === "external" ? "External" : "Preview") +
+    "フローを検証しています…";
+  try {
+    const response = await fetch(
+      "/api/presentation-engine/" + encodeURIComponent(record.knowledge_id) +
+        "/execute",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: mode, adapter: "dummy" }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Dummy Adapterを実行できませんでした。",
+      );
+    }
+    const context = payload.engine_context;
+    setText("#engineMode", context.mode);
+    setText("#enginePreviewSupport", payload.adapter.supports_preview ? "対応" : "非対応");
+    setText("#engineExternalSupport", payload.adapter.supports_external ? "対応" : "非対応");
+    setText(
+      "#engineAdapter",
+      payload.adapter.provider_name + " v" + payload.adapter.provider_version,
+    );
+    setText("#engineValidation", context.validation === "passed" ? "OK" : "NG");
+    setText("#engineResultStatus", payload.result.status);
+    setText("#enginePages", String(context.pages));
+    setText("#engineClaims", String(context.claims_used));
+    setText("#engineDiagrams", String(context.diagram_requests));
+    setText("#engineReferences", String(context.references));
+    setText("#engineRequestFingerprint", payload.request_fingerprint);
+    presentationEngineReason.textContent =
+      "Approval Gate " + (payload.approval_gate.allowed ? "許可" : "確認済み") +
+      " · 外部AI通信なし · 監査ログ：" + payload.audit_log_path;
+    presentationEngineReason.className = payload.result.validation_result.is_valid
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    document.querySelector("#presentationEngineMessage").textContent =
+      "Presentation Result Contract Version 1.0 · " + context.output_type +
+      " · KnowledgeとRegistryは変更していません。";
+    presentationResultOutput.textContent = JSON.stringify(payload.result, null, 2);
+    presentationEnginePanel.hidden = false;
+    knowledgeEditorMessage.textContent = payload.result.validation_result.is_valid
+      ? "Dummy Adapterの全フロー検証が成功しました。"
+      : "Presentation Result Validationにより停止しました。";
+    presentationEnginePanel.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Dummy Adapter実行の通信に失敗しました。";
+  } finally {
+    executeDummyAdapterButton.disabled = false;
   }
 }
 

@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.15「Presentation Contract MVP」を実装しました。** Source Bundleから、対象者、成果物形式、使用Claim、媒体条件、安全条件を表すAI非依存のPresentation Requestを生成できます。レビュー用Previewは下書きでも生成でき、Externalは`approved`だけを許可します。Gemini APIはまだ接続していません。詳細は[Presentation Contract MVP](Docs/presentation_contract.md)に記録しています。
+> **Phase 5.16「Presentation Engine Adapter Contract MVP」を実装しました。** Presentation Requestを、Gemini・Claude・OpenAIに依存しない共通Adapter境界で検証・実行できます。Dummy Adapterは外部通信を行わず、Approval Gate、Request Fingerprint、件数、Result Contract、監査までを確認します。詳細は[Presentation Engine Adapter Contract](Docs/presentation_engine_adapter_contract.md)に記録しています。
 
 ---
 
