@@ -3,6 +3,13 @@
 from datetime import UTC, datetime
 
 from presentation_request_builder import PresentationRequest
+from provider_payload_resolver import (
+    PresentationPayload,
+    TraceablePresentationResponse,
+    TraceableResponseValidation,
+    TraceableResponseValidator,
+    build_dummy_traceable_response,
+)
 
 from presentation_engine_adapter.fingerprint import presentation_request_fingerprint
 from presentation_engine_adapter.models import (
@@ -27,6 +34,7 @@ class DummyPresentationEngineAdapter:
     def __init__(self) -> None:
         self._request_validator = PresentationEngineRequestValidator()
         self._response_validator = PresentationEngineResponseValidator()
+        self._traceable_response_validator = TraceableResponseValidator()
 
     def validate_request(
         self,
@@ -83,3 +91,25 @@ class DummyPresentationEngineAdapter:
         response: PresentationEngineResponse,
     ) -> AdapterValidationReport:
         return self._response_validator.validate(request, payload, response)
+
+    def execute_traceable_payload(
+        self,
+        payload: PresentationPayload,
+        *,
+        executed_at: datetime | None = None,
+    ) -> TraceablePresentationResponse:
+        """Execute a traceable Payload without external communication."""
+
+        return build_dummy_traceable_response(
+            payload,
+            provider_name=self.provider_name,
+            provider_version=self.provider_version,
+            executed_at=executed_at,
+        )
+
+    def validate_traceable_response(
+        self,
+        payload: PresentationPayload,
+        response: TraceablePresentationResponse,
+    ) -> TraceableResponseValidation:
+        return self._traceable_response_validator.validate(payload, response)

@@ -1,4 +1,4 @@
-# Presentation Engine Adapter Contract — Phase 5.16
+# Presentation Engine Adapter Contract — Phase 5.16 / 5.17
 
 Presentation Requestと外部Presentation Engineの間に置く、Provider非依存の境界です。
 
@@ -25,6 +25,10 @@ Presentation Engine Adapter Interface
 - 本文や医学知識をResult・Auditへ保存しない
 
 Dummy AdapterはネットワークライブラリやAPIキーを使用しません。`execute()`は件数と成果物種別だけを持つメタデータ応答を返します。
+
+Phase 5.17では`execute_traceable_payload()`を追加しました。承認済み正本からProvider Payload Resolverが生成した`PresentationPayload`を受け取り、医学本文をResultへ複製しないTraceable Responseを返します。
+
+Phase 5.16の`PresentationRequest -> build_payload() -> execute()`経路は互換性維持のため残していますが、実Provider追加時はPhase 5.17のTraceable Payload経路を利用します。既存の`PresentationEngineAdapter` Interfaceそのものは変更していません。
 
 ## Presentation Result Version 1.0
 

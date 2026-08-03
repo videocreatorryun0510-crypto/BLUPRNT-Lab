@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=presentation-engine-5.16" />
+    <link rel="stylesheet" href="/static/styles.css?v=provider-payload-5.17" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.16</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.17</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">Presentation Requestを、AIに依存しないAdapter境界で安全に検証。</p>
+          <p class="lead">承認済み正本だけを、安全で追跡可能なProvider Payloadへ変換。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -115,6 +115,22 @@
               disabled
             >
               Presentation Request生成
+            </button>
+            <button
+              id="generateProviderPayloadButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Provider Payload Preview
+            </button>
+            <button
+              id="executeTraceableDummyButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Traceable Dummy実行
             </button>
             <button
               id="executeDummyAdapterButton"
@@ -246,6 +262,64 @@
             </p>
             <p id="presentationEngineReason" class="source-bundle-gate-reason"></p>
             <pre id="presentationResultOutput"></pre>
+          </section>
+          <section id="providerPayloadPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">PROVIDER PAYLOAD JSON 1.0</p>
+                <h3>外部AIへ送る直前の承認済みデータ</h3>
+              </div>
+              <button id="copyProviderPayloadButton" class="copy-button" type="button">
+                JSONをコピー
+              </button>
+            </div>
+            <p id="providerPayloadMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Provider Payload概要">
+              <div><span>Payload ID</span><strong id="payloadId">--</strong></div>
+              <div><span>Contract</span><strong id="payloadContractVersion">--</strong></div>
+              <div><span>Request ID</span><strong id="payloadRequestId">--</strong></div>
+              <div><span>Knowledge</span><strong id="payloadKnowledge">--</strong></div>
+              <div><span>Approval</span><strong id="payloadApprovalState">--</strong></div>
+              <div><span>Claims</span><strong id="payloadClaimCount">--</strong></div>
+              <div><span>Key Messages</span><strong id="payloadKeyMessageCount">--</strong></div>
+              <div><span>Exam Points</span><strong id="payloadExamPointCount">--</strong></div>
+              <div><span>Diagrams</span><strong id="payloadDiagramCount">--</strong></div>
+              <div><span>References</span><strong id="payloadReferenceCount">--</strong></div>
+              <div><span>Data Egress</span><strong id="payloadEgressResult">--</strong></div>
+              <div><span>Secret Scan</span><strong id="payloadSecretResult">--</strong></div>
+              <div><span>Stale Check</span><strong id="payloadStaleResult">--</strong></div>
+              <div><span>External利用</span><strong id="payloadExternalUse">--</strong></div>
+            </div>
+            <p class="fingerprint-line">
+              <span>Payload Fingerprint</span>
+              <code id="payloadFingerprint">--</code>
+            </p>
+            <p id="providerPayloadReason" class="source-bundle-gate-reason"></p>
+            <pre id="providerPayloadOutput"></pre>
+          </section>
+          <section id="traceableResponsePanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">TRACEABLE RESPONSE JSON 1.0</p>
+                <h3>Claim・図解・出典を追跡できるDummy応答</h3>
+              </div>
+              <button id="copyTraceableResponseButton" class="copy-button" type="button">
+                Responseをコピー
+              </button>
+            </div>
+            <p id="traceableResponseMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Traceable Response概要">
+              <div><span>Response ID</span><strong id="traceResponseId">--</strong></div>
+              <div><span>Provider</span><strong id="traceProvider">--</strong></div>
+              <div><span>Status</span><strong id="traceStatus">--</strong></div>
+              <div><span>Fingerprint</span><strong id="traceFingerprint">--</strong></div>
+              <div><span>Used Claims</span><strong id="traceClaimCount">--</strong></div>
+              <div><span>Used Diagrams</span><strong id="traceDiagramCount">--</strong></div>
+              <div><span>Used References</span><strong id="traceReferenceCount">--</strong></div>
+              <div><span>Validation</span><strong id="traceValidation">--</strong></div>
+            </div>
+            <p id="traceableResponseReason" class="source-bundle-gate-reason"></p>
+            <pre id="traceableResponseOutput"></pre>
           </section>
         </div>
       </section>
@@ -639,6 +713,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=presentation-engine-5.16" defer></script>
+    <script src="/static/app.js?v=provider-payload-5.17" defer></script>
   </body>
 </html>

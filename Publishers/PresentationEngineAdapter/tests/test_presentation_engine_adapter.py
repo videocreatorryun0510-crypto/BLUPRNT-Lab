@@ -16,6 +16,7 @@ from presentation_request_builder import (
     PresentationRequestBuilder,
     RequestMode,
 )
+from provider_payload_resolver import ProviderPayloadResolver
 from source_bundle_publisher import SourceBundlePublisherAdapter
 
 from presentation_engine_adapter import (
@@ -206,6 +207,40 @@ def test_provider_can_be_replaced_without_changing_result_contract(tmp_path: Pat
     assert outcome.result.result_contract_version == "1.0"
     assert outcome.result.provider == "openai_simulated"
     assert outcome.result.provider_version == "9.9.9"
+
+
+def test_dummy_accepts_phase_517_traceable_payload_without_network(tmp_path: Path) -> None:
+    registry, view, gate, request, assertions = _fixture(
+        tmp_path,
+        status=RegistryStatus.APPROVED,
+        mode=RequestMode.EXTERNAL,
+    )
+    record = registry.record(request.source.knowledge_id)
+    assert record is not None
+    publication = gate.publish(record, view, None, generated_at=NOW)
+    resolver = ProviderPayloadResolver.from_directories(
+        gate,
+        tmp_path / "provider_payload",
+        tmp_path / "logs" / "provider_payload.jsonl",
+    )
+    payload_result = resolver.resolve(
+        request,
+        publication.bundle,
+        view,
+        None,
+        expected_source_fingerprint=publication.bundle.metadata.source_fingerprint,
+        created_at=NOW,
+    )
+    assert payload_result.payload is not None
+
+    adapter = DummyPresentationEngineAdapter()
+    response = adapter.execute_traceable_payload(payload_result.payload, executed_at=NOW)
+    validation = adapter.validate_traceable_response(payload_result.payload, response)
+
+    assert response.execution.status.value == "completed"
+    assert validation.is_valid is True
+    response_json = response.model_dump_json()
+    assert all(assertion not in response_json for assertion in assertions)
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,4 @@
-"""Make editable BLUPRNT source trees importable without installation."""
+"""Expose editable BLUPRNT packages to Provider Payload tests."""
 
 import sys
 from pathlib import Path
@@ -9,7 +9,6 @@ for source in (
     REPOSITORY_ROOT / "Publishers" / "SourceBundlePublisher" / "src",
     REPOSITORY_ROOT / "Publishers" / "PresentationRequestBuilder" / "src",
     REPOSITORY_ROOT / "Publishers" / "ProviderPayloadResolver" / "src",
-    REPOSITORY_ROOT / "Publishers" / "PresentationEngineAdapter" / "src",
     REPOSITORY_ROOT / "Prototypes" / "KnowledgeWorkbench" / "src",
 ):
     sys.path.insert(0, str(source))

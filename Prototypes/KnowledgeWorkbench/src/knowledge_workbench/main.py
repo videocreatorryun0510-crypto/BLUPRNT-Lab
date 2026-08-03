@@ -64,6 +64,13 @@ from presentation_request_builder import (
     RequestMode,
     presentation_request_json_schema,
 )
+from provider_payload_resolver import (
+    PresentationPayload,
+    ProviderPayloadResolver,
+    TraceableResponseService,
+    presentation_payload_json_schema,
+    traceable_response_json_schema,
+)
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from source_bundle_publisher import (
     SourceBundle,
@@ -238,6 +245,13 @@ class PresentationEngineExecutionRequest(BaseModel):
     adapter: Literal["dummy"] = "dummy"
 
 
+class ProviderPayloadExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: RequestMode = RequestMode.PREVIEW
+    adapter: Literal["dummy"] = "dummy"
+
+
 @dataclass(frozen=True)
 class _PendingCsvPreview:
     csv_text: str
@@ -361,7 +375,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.16.0",
+        version="5.17.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -443,6 +457,39 @@ def create_app(
     presentation_engine_runner = PresentationEngineRunner.from_audit_path(
         source_bundle_publisher,
         presentation_engine_audit_log_path,
+    )
+    provider_payload_output_directory = (
+        Path(temporary_registry_directory.name) / "provider_payload"
+        if temporary_registry_directory is not None
+        else resolved_settings.provider_payload_output_dir
+    )
+    presentation_response_output_directory = (
+        Path(temporary_registry_directory.name) / "presentation_response"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_response_output_dir
+    )
+    provider_payload_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "provider_payload.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.provider_payload_audit_log_path
+    )
+    presentation_response_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "presentation_response.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_response_audit_log_path
+    )
+    provider_payload_resolver = ProviderPayloadResolver.from_directories(
+        source_bundle_publisher,
+        provider_payload_output_directory,
+        provider_payload_audit_log_path,
+    )
+    traceable_response_service = TraceableResponseService.from_directories(
+        presentation_response_output_directory,
+        presentation_response_audit_log_path,
     )
     service = (
         GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
@@ -556,6 +603,21 @@ def create_app(
             "presentation_engine_audit_log": str(
                 presentation_engine_audit_log_path
             ),
+            "provider_payload_contract_version": "1.0",
+            "provider_payload_resolver_version": "1.0.0",
+            "provider_payload_preview_policy": "approved_only",
+            "data_egress_policy_version": "1.0.0",
+            "traceable_response_contract_version": "1.0",
+            "provider_payload_output": str(provider_payload_output_directory),
+            "presentation_response_output": str(
+                presentation_response_output_directory
+            ),
+            "provider_payload_audit_log": str(
+                provider_payload_audit_log_path
+            ),
+            "presentation_response_audit_log": str(
+                presentation_response_audit_log_path
+            ),
         }
 
     @app.get("/api/schema/knowledge-1.0")
@@ -601,6 +663,14 @@ def create_app(
     @app.get("/api/schema/presentation-result-1.0")
     def presentation_result_schema_v10() -> dict[str, object]:
         return presentation_result_json_schema()
+
+    @app.get("/api/schema/provider-payload-1.0")
+    def provider_payload_schema_v10() -> dict[str, object]:
+        return presentation_payload_json_schema()
+
+    @app.get("/api/schema/traceable-response-1.0")
+    def traceable_response_schema_v10() -> dict[str, object]:
+        return traceable_response_json_schema()
 
     @app.get("/api/schema/approval-contract-1.0")
     def approval_schema_v10() -> dict[str, object]:
@@ -1304,6 +1374,255 @@ def create_app(
                     ],
                 },
             )
+
+    @app.post("/api/provider-payloads/{knowledge_id}")
+    def generate_provider_payload(
+        knowledge_id: str,
+        request: ProviderPayloadExecutionRequest,
+    ) -> JSONResponse:
+        """Resolve selected approved SSOT facts without external communication."""
+
+        try:
+            record = resolved_registry.record(knowledge_id)
+            if record is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "not_found",
+                        "errors": [
+                            {
+                                "code": "knowledge_record_not_found",
+                                "message": "保存済みKnowledge JSONがありません。",
+                            }
+                        ],
+                    },
+                )
+            registry_view = resolved_registry.view(knowledge_id)
+            source_path = source_bundle_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}"
+                ".source-bundle.json"
+            )
+            request_path = presentation_request_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}."
+                f"{request.request_mode.value}.presentation-request.json"
+            )
+            if not source_path.is_file() or not request_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "presentation_sources_required",
+                        "errors": [
+                            {
+                                "code": "presentation_sources_required",
+                                "message": (
+                                    "先に同じ版のSource BundleとPresentation Requestを"
+                                    "生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            source_bundle = SourceBundle.model_validate_json(
+                source_path.read_text(encoding="utf-8")
+            )
+            presentation_request = PresentationRequest.model_validate_json(
+                request_path.read_text(encoding="utf-8")
+            )
+            exam_metadata = DummyExamMetadataProvider().build(
+                record.term.canonical_name,
+                record,
+            )
+            expected_fingerprint = source_bundle_publisher.source_fingerprint(
+                record,
+                registry_view,
+                exam_metadata,
+            )
+            result = provider_payload_resolver.resolve(
+                presentation_request,
+                source_bundle,
+                registry_view,
+                exam_metadata,
+                expected_source_fingerprint=expected_fingerprint,
+            )
+            payload = result.payload
+            return JSONResponse(
+                status_code=200,
+                content={
+                    **result.model_dump(mode="json"),
+                    "payload_context": {
+                        "payload_id": result.attempted_payload_id,
+                        "payload_contract_version": "1.0",
+                        "request_id": (
+                            presentation_request.identity.presentation_request_id
+                        ),
+                        "knowledge_id": knowledge_id,
+                        "knowledge_version": (
+                            registry_view.knowledge.knowledge_version
+                        ),
+                        "approval_state": registry_view.knowledge.status.value,
+                        "payload_fingerprint": (
+                            payload.metadata.payload_fingerprint if payload else None
+                        ),
+                        "claim_count": (
+                            len(payload.medical_content.selected_claims)
+                            if payload
+                            else 0
+                        ),
+                        "key_message_count": (
+                            len(payload.medical_content.key_messages)
+                            if payload
+                            else 0
+                        ),
+                        "exam_point_count": (
+                            len(payload.medical_content.exam_points)
+                            if payload
+                            else 0
+                        ),
+                        "diagram_request_count": (
+                            len(payload.visual_content.diagram_requests)
+                            if payload
+                            else 0
+                        ),
+                        "reference_count": (
+                            len(payload.medical_content.references)
+                            if payload
+                            else 0
+                        ),
+                        "external_use_allowed": result.external_use_allowed,
+                    },
+                    "source_bundle_path": str(source_path),
+                    "presentation_request_path": str(request_path),
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                    "external_ai_called": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "provider_payload_resolution_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "provider_payload_write_failed",
+                            "message": f"Provider Payloadを保存できません: {error}",
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/provider-payloads/{knowledge_id}/execute-dummy")
+    def execute_traceable_dummy(
+        knowledge_id: str,
+        request: ProviderPayloadExecutionRequest,
+    ) -> JSONResponse:
+        """Run the traceable Dummy path against a validated saved Payload."""
+
+        try:
+            registry_view = resolved_registry.view(knowledge_id)
+            payload_path = provider_payload_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}."
+                f"{request.request_mode.value}.provider-payload.json"
+            )
+            if not payload_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "provider_payload_required",
+                        "errors": [
+                            {
+                                "code": "provider_payload_required",
+                                "message": (
+                                    "先に承認済み正本からProvider Payloadを"
+                                    "生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            payload = PresentationPayload.model_validate_json(
+                payload_path.read_text(encoding="utf-8")
+            )
+            response = dummy_presentation_engine_adapter.execute_traceable_payload(
+                payload
+            )
+            outcome = traceable_response_service.accept(payload, response)
+            trace = outcome.response.traceability
+            validation = outcome.response.validation
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": outcome.status,
+                    "response": outcome.response.model_dump(mode="json"),
+                    "response_context": {
+                        "response_id": outcome.response.identity.response_id,
+                        "provider": outcome.response.provider.provider_name,
+                        "provider_version": (
+                            outcome.response.provider.provider_version
+                        ),
+                        "execution_status": (
+                            outcome.response.execution.status.value
+                        ),
+                        "payload_fingerprint_match": (
+                            validation.fingerprint_result
+                        ),
+                        "used_claim_count": len(trace.used_claim_ids),
+                        "used_diagram_request_count": len(
+                            trace.used_diagram_request_ids
+                        ),
+                        "used_reference_count": len(trace.used_reference_ids),
+                        "validation_result": validation.is_valid,
+                    },
+                    "payload_path": str(payload_path),
+                    "output_path": outcome.output_path,
+                    "audit_log_path": outcome.audit_log_path,
+                    "external_ai_called": False,
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "traceable_dummy_execution_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "traceable_response_write_failed",
+                            "message": (
+                                "Traceable Responseを保存できません: " f"{error}"
+                            ),
+                        }
+                    ],
+                },
+            )
+
     @app.put("/api/knowledge-records/{knowledge_id}")
     def save_knowledge_record(
         knowledge_id: str, request: KnowledgeRecordSaveRequest

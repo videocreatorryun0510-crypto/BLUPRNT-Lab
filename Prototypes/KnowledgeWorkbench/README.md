@@ -1,10 +1,12 @@
-# Knowledge Workbench — Phase 5.16
+# Knowledge Workbench — Phase 5.17
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
 Phase 5.15ではPresentation Contract Version 1.0を追加しました。Source Bundle生成後、成果物の種類、対象者、使用Claim、媒体条件、安全条件だけを持つPresentation Requestを生成できます。Previewはレビュー途中でも作れますが、Externalは`approved`だけが許可されます。Gemini APIやPDF等の描画は行いません。
 
 Phase 5.16ではProvider非依存のPresentation Engine Adapter ContractとDummy Adapterを追加しました。Presentation Request生成後に、Approval Gate、Request Fingerprint、Claim・図解・出典件数、Provider Version、Presentation Resultを外部通信なしで確認できます。
+
+Phase 5.17では、Presentation Requestの参照IDを承認済み正本へ解決するProvider Payload Resolverを追加しました。未承認Claim、Stale、Secret、ローカルパス、個人情報候補をPayload生成前に停止し、Dummy Responseでは使用Claim・図解・出典IDとFingerprintを追跡できます。Provider Payload Previewも安全側の初期Policyとして`approved`だけが対象です。
 
 ## できること
 
@@ -77,6 +79,11 @@ Phase 5.16ではProvider非依存のPresentation Engine Adapter ContractとDummy
 67. Adapter、Provider Version、Request Fingerprint、Claim・図解・出典件数を確認する
 68. Presentation Result Validation、Result JSON、監査ログを確認する
 69. Dummy実行で外部AIが呼ばれず、KnowledgeとRegistryが変更されないことを確認する
+70. 承認済みClaimだけを無変更の`exact_text`としてProvider Payloadへ解決する
+71. 未承認・Stale・Secret・ローカル絶対パスをData Egress Policyで停止する
+72. Payload FingerprintとClaim・Diagram・Reference Trace Mapを確認する
+73. Traceable Dummy Responseで使用IDとFingerprint一致を検証する
+74. Payload・Response監査ログに医学本文が保存されないことを確認する
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 

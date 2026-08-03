@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.16「Presentation Engine Adapter Contract MVP」を実装しました。** Presentation Requestを、Gemini・Claude・OpenAIに依存しない共通Adapter境界で検証・実行できます。Dummy Adapterは外部通信を行わず、Approval Gate、Request Fingerprint、件数、Result Contract、監査までを確認します。詳細は[Presentation Engine Adapter Contract](Docs/presentation_engine_adapter_contract.md)に記録しています。
+> **Phase 5.17「Provider Payload Preparation & Response Traceability MVP」を実装しました。** Presentation Requestの参照IDを承認済み正本へ解決し、Secret・Stale・送信範囲を検査したProvider非依存Payloadを生成します。Dummy ResponseはClaim・図解・出典IDを追跡し、医学本文をResultや監査へ複製しません。詳細は[Provider Payload & Response Traceability](Docs/provider_payload_and_response_traceability.md)に記録しています。
 
 ---
 

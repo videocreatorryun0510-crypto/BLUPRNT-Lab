@@ -215,6 +215,7 @@ flowchart LR
 | `Prototypes/KnowledgeWorkbench/` | AI入力・JSON確認・国家試験CSV Importの試験画面 |
 | `Publishers/PDFPublisher/` | Publication PlanからA4 PDFを生成する媒体別Adapter、Layout・Theme・Placeholder処理 |
 | `Publishers/PresentationEngineAdapter/` | Presentation Requestと外部Presentation Engine間のProvider非依存Adapter・Result・Validation・監査 |
+| `Publishers/ProviderPayloadResolver/` | 承認済み正本のID解決、最小送信Payload、Data Egress Policy、Traceable Response・監査 |
 | `MedicalPDF/` | 旧PDF生成プロトタイプ。将来PDF Publisherへ移行 |
 | `NationalExam/` | 国家試験対策コンテンツ制作ドメイン |
 | `TrainingVideo/` | 医療研修動画制作ドメイン |
@@ -240,6 +241,7 @@ flowchart LR
 | `Docs/publisher_architecture.md` | Publisher共通層、Profile、Template Registry、Media Profile拡張点 |
 | `Docs/presentation_contract.md` | Phase 5.15のPresentation Request、Profile、安全Policy、Traceability |
 | `Docs/presentation_engine_adapter_contract.md` | Phase 5.16のProvider非依存Adapter、Result、Validation、Approval Gate、監査 |
+| `Docs/provider_payload_and_response_traceability.md` | Phase 5.17の承認済みPayload解決、送信Policy、Fingerprint、Traceable Response |
 
 ### 3.3 実装時に追加するトップレベル
 
@@ -432,6 +434,16 @@ Adapter Contractを追加しました。
 Dummy AdapterはRequest ID、Request Fingerprint、Claim・Diagram Request・ReferenceのIDと
 件数だけを扱い、外部通信や医学本文の生成・変更を行いません。Provider固有SDKとPromptは
 将来の個別Adapter内部へ隔離します。
+
+Phase 5.17では、Adapterの直前へ承認済み正本だけを解決するProvider Payload Resolverを
+追加しました。
+
+`Registry + Source Bundle + Presentation Request → Provider Payload Resolver（Approval・Stale・Data Egress） → Presentation Payload → Dummy / 将来Provider → Traceable Response`
+
+Resolverは選択されたClaim、Key Message、Diagram Request、Referenceだけを解決し、Claim本文を
+要約・言い換え・結合しません。Previewを含め未承認ClaimのPayload生成を停止します。
+Payload FingerprintとTrace Mapで正本との対応を固定し、Responseと監査ログには医学本文を
+複製しません。既存Adapter InterfaceとPublisher Coreは変更しません。
 
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 

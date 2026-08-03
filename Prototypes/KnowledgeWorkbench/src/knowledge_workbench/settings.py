@@ -32,6 +32,18 @@ DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH = (
 DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_engine.jsonl"
 )
+DEFAULT_PROVIDER_PAYLOAD_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "provider_payload"
+)
+DEFAULT_PRESENTATION_RESPONSE_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "presentation_response"
+)
+DEFAULT_PROVIDER_PAYLOAD_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "provider_payload.jsonl"
+)
+DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_response.jsonl"
+)
 
 
 @dataclass(frozen=True)
@@ -48,6 +60,12 @@ class Settings:
     presentation_request_output_dir: Path = DEFAULT_PRESENTATION_REQUEST_OUTPUT_DIR
     presentation_request_audit_log_path: Path = DEFAULT_PRESENTATION_REQUEST_AUDIT_LOG_PATH
     presentation_engine_audit_log_path: Path = DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH
+    provider_payload_output_dir: Path = DEFAULT_PROVIDER_PAYLOAD_OUTPUT_DIR
+    presentation_response_output_dir: Path = DEFAULT_PRESENTATION_RESPONSE_OUTPUT_DIR
+    provider_payload_audit_log_path: Path = DEFAULT_PROVIDER_PAYLOAD_AUDIT_LOG_PATH
+    presentation_response_audit_log_path: Path = (
+        DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH
+    )
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -73,6 +91,18 @@ class Settings:
         ).strip()
         presentation_engine_audit_log_path = os.getenv(
             "PRESENTATION_ENGINE_AUDIT_LOG_PATH", ""
+        ).strip()
+        provider_payload_output_path = os.getenv(
+            "PROVIDER_PAYLOAD_OUTPUT_DIR", ""
+        ).strip()
+        presentation_response_output_path = os.getenv(
+            "PRESENTATION_RESPONSE_OUTPUT_DIR", ""
+        ).strip()
+        provider_payload_audit_log_path = os.getenv(
+            "PROVIDER_PAYLOAD_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_response_audit_log_path = os.getenv(
+            "PRESENTATION_RESPONSE_AUDIT_LOG_PATH", ""
         ).strip()
         return cls(
             provider=os.getenv("KNOWLEDGE_PROVIDER", "openai").strip().lower(),
@@ -118,6 +148,26 @@ class Settings:
                 Path(presentation_engine_audit_log_path).expanduser()
                 if presentation_engine_audit_log_path
                 else DEFAULT_PRESENTATION_ENGINE_AUDIT_LOG_PATH
+            ),
+            provider_payload_output_dir=(
+                Path(provider_payload_output_path).expanduser()
+                if provider_payload_output_path
+                else DEFAULT_PROVIDER_PAYLOAD_OUTPUT_DIR
+            ),
+            presentation_response_output_dir=(
+                Path(presentation_response_output_path).expanduser()
+                if presentation_response_output_path
+                else DEFAULT_PRESENTATION_RESPONSE_OUTPUT_DIR
+            ),
+            provider_payload_audit_log_path=(
+                Path(provider_payload_audit_log_path).expanduser()
+                if provider_payload_audit_log_path
+                else DEFAULT_PROVIDER_PAYLOAD_AUDIT_LOG_PATH
+            ),
+            presentation_response_audit_log_path=(
+                Path(presentation_response_audit_log_path).expanduser()
+                if presentation_response_audit_log_path
+                else DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH
             ),
         )
 

@@ -31,6 +31,12 @@ const presentationRequestMode = document.querySelector(
 const executeDummyAdapterButton = document.querySelector(
   "#executeDummyAdapterButton",
 );
+const generateProviderPayloadButton = document.querySelector(
+  "#generateProviderPayloadButton",
+);
+const executeTraceableDummyButton = document.querySelector(
+  "#executeTraceableDummyButton",
+);
 const knowledgeEditorMessage = document.querySelector("#knowledgeEditorMessage");
 const sourceBundlePanel = document.querySelector("#sourceBundlePanel");
 const sourceBundleMessage = document.querySelector("#sourceBundleMessage");
@@ -58,6 +64,18 @@ const presentationResultOutput = document.querySelector(
 );
 const presentationEngineReason = document.querySelector(
   "#presentationEngineReason",
+);
+const providerPayloadPanel = document.querySelector("#providerPayloadPanel");
+const providerPayloadOutput = document.querySelector("#providerPayloadOutput");
+const providerPayloadReason = document.querySelector("#providerPayloadReason");
+const traceableResponsePanel = document.querySelector(
+  "#traceableResponsePanel",
+);
+const traceableResponseOutput = document.querySelector(
+  "#traceableResponseOutput",
+);
+const traceableResponseReason = document.querySelector(
+  "#traceableResponseReason",
 );
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
@@ -216,9 +234,18 @@ executeDummyAdapterButton.addEventListener("click", async () => {
   await executeDummyAdapter();
 });
 
+generateProviderPayloadButton.addEventListener("click", async () => {
+  await generateProviderPayload();
+});
+
+executeTraceableDummyButton.addEventListener("click", async () => {
+  await executeTraceableDummy();
+});
+
 presentationRequestMode.addEventListener("change", () => {
   executeDummyAdapterButton.disabled = true;
   presentationEnginePanel.hidden = true;
+  resetProviderPayloadState();
 });
 
 document.querySelector("#copySourceBundleButton").addEventListener(
@@ -250,6 +277,28 @@ document.querySelector("#copyPresentationResultButton").addEventListener(
     event.currentTarget.textContent = "コピー済み";
     window.setTimeout(() => {
       event.currentTarget.textContent = "Result JSONをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyProviderPayloadButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(providerPayloadOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "JSONをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyTraceableResponseButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(traceableResponseOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "Responseをコピー";
     }, 1300);
   },
 );
@@ -539,6 +588,7 @@ function setSourceBundleAvailability(record, persisted) {
   generateSourceBundleButton.disabled = !available;
   generatePresentationRequestButton.disabled = true;
   executeDummyAdapterButton.disabled = true;
+  resetProviderPayloadState();
   sourceBundlePanel.hidden = true;
   presentationRequestPanel.hidden = true;
   presentationEnginePanel.hidden = true;
@@ -555,6 +605,7 @@ async function generateSourceBundle() {
   generateSourceBundleButton.disabled = true;
   sourceBundlePanel.hidden = true;
   executeDummyAdapterButton.disabled = true;
+  resetProviderPayloadState();
   presentationEnginePanel.hidden = true;
   knowledgeEditorMessage.textContent =
     "Registryへ保存済みの版からSource Bundleを生成しています…";
@@ -594,6 +645,7 @@ async function generateSourceBundle() {
     generatePresentationRequestButton.disabled = false;
     presentationRequestPanel.hidden = true;
     presentationEnginePanel.hidden = true;
+    resetProviderPayloadState();
     knowledgeEditorMessage.textContent =
       "Source Bundle JSON Version 1.0を生成・保存しました。";
     sourceBundlePanel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -619,6 +671,7 @@ async function generatePresentationRequest() {
   executeDummyAdapterButton.disabled = true;
   presentationRequestPanel.hidden = true;
   presentationEnginePanel.hidden = true;
+  resetProviderPayloadState();
   const mode = presentationRequestMode.value;
   knowledgeEditorMessage.textContent =
     (mode === "external" ? "External" : "Preview") +
@@ -684,6 +737,7 @@ async function generatePresentationRequest() {
       : "Presentation Requestは生成されませんでした。";
     presentationRequestPanel.hidden = false;
     executeDummyAdapterButton.disabled = !payload.decision.allowed;
+    generateProviderPayloadButton.disabled = !payload.decision.allowed;
     knowledgeEditorMessage.textContent = payload.decision.allowed
       ? "Presentation Request JSON Version 1.0を生成・保存しました。"
       : "安全確認によりPresentation Request生成を停止しました。";
@@ -698,6 +752,164 @@ async function generatePresentationRequest() {
         : "Presentation Request生成の通信に失敗しました。";
   } finally {
     generatePresentationRequestButton.disabled = false;
+  }
+}
+
+function resetProviderPayloadState() {
+  generateProviderPayloadButton.disabled = true;
+  executeTraceableDummyButton.disabled = true;
+  providerPayloadPanel.hidden = true;
+  traceableResponsePanel.hidden = true;
+}
+
+async function generateProviderPayload() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  generateProviderPayloadButton.disabled = true;
+  executeTraceableDummyButton.disabled = true;
+  providerPayloadPanel.hidden = true;
+  traceableResponsePanel.hidden = true;
+  const mode = presentationRequestMode.value;
+  knowledgeEditorMessage.textContent =
+    "承認済み正本からProvider Payloadを安全確認しています…";
+  try {
+    const response = await fetch(
+      "/api/provider-payloads/" + encodeURIComponent(record.knowledge_id),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: mode, adapter: "dummy" }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Provider Payloadを確認できませんでした。",
+      );
+    }
+    const context = payload.payload_context;
+    const validation = payload.validation;
+    setText("#payloadId", context.payload_id);
+    setText("#payloadContractVersion", "v" + context.payload_contract_version);
+    setText("#payloadRequestId", context.request_id);
+    setText(
+      "#payloadKnowledge",
+      context.knowledge_id + " v" + context.knowledge_version,
+    );
+    setText(
+      "#payloadApprovalState",
+      registryStatusLabels[context.approval_state] || context.approval_state,
+    );
+    setText("#payloadClaimCount", String(context.claim_count));
+    setText("#payloadKeyMessageCount", String(context.key_message_count));
+    setText("#payloadExamPointCount", String(context.exam_point_count));
+    setText("#payloadDiagramCount", String(context.diagram_request_count));
+    setText("#payloadReferenceCount", String(context.reference_count));
+    setText("#payloadEgressResult", validation.egress_policy_result ? "OK" : "停止");
+    setText("#payloadSecretResult", validation.secret_scan_result ? "OK" : "検出");
+    setText("#payloadStaleResult", validation.stale_check_result ? "OK" : "不一致");
+    setText("#payloadExternalUse", context.external_use_allowed ? "許可" : "停止");
+    setText("#payloadFingerprint", context.payload_fingerprint || "未生成");
+    providerPayloadReason.textContent =
+      (payload.stop_reasons.length
+        ? "停止理由：" + payload.stop_reasons.join(" / ")
+        : "承認・Stale・Secret・Data Egress検証に合格しました。") +
+      " · 監査ログ：" +
+      payload.audit_log_path;
+    providerPayloadReason.className = payload.validation.is_valid
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    document.querySelector("#providerPayloadMessage").textContent =
+      payload.output_path
+        ? "保存先：" + payload.output_path + " · 外部AI通信なし"
+        : "安全確認によりJSONは生成・保存していません。";
+    providerPayloadOutput.textContent = payload.payload
+      ? JSON.stringify(payload.payload, null, 2)
+      : "Provider Payloadは生成されませんでした。";
+    providerPayloadPanel.hidden = false;
+    executeTraceableDummyButton.disabled = payload.status !== "success";
+    knowledgeEditorMessage.textContent = payload.validation.is_valid
+      ? "Provider Payload JSON Version 1.0を生成・保存しました。"
+      : "未承認または安全検証によりProvider Payload生成を停止しました。";
+    providerPayloadPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Provider Payload確認の通信に失敗しました。";
+  } finally {
+    generateProviderPayloadButton.disabled = false;
+  }
+}
+
+async function executeTraceableDummy() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  executeTraceableDummyButton.disabled = true;
+  traceableResponsePanel.hidden = true;
+  const mode = presentationRequestMode.value;
+  knowledgeEditorMessage.textContent =
+    "Traceable Dummy Responseを検証しています…";
+  try {
+    const response = await fetch(
+      "/api/provider-payloads/" +
+        encodeURIComponent(record.knowledge_id) +
+        "/execute-dummy",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: mode, adapter: "dummy" }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Traceable Dummyを実行できませんでした。",
+      );
+    }
+    const context = payload.response_context;
+    setText("#traceResponseId", context.response_id);
+    setText(
+      "#traceProvider",
+      context.provider + " v" + context.provider_version,
+    );
+    setText("#traceStatus", context.execution_status);
+    setText("#traceFingerprint", context.payload_fingerprint_match ? "一致" : "不一致");
+    setText("#traceClaimCount", String(context.used_claim_count));
+    setText("#traceDiagramCount", String(context.used_diagram_request_count));
+    setText("#traceReferenceCount", String(context.used_reference_count));
+    setText("#traceValidation", context.validation_result ? "OK" : "NG");
+    document.querySelector("#traceableResponseMessage").textContent =
+      "Traceable Response Contract Version 1.0 · 医学本文をResultへ複製していません。";
+    traceableResponseReason.textContent =
+      "外部AI通信なし · 保存先：" + payload.output_path +
+      " · 監査ログ：" + payload.audit_log_path;
+    traceableResponseReason.className = context.validation_result
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    traceableResponseOutput.textContent = JSON.stringify(payload.response, null, 2);
+    traceableResponsePanel.hidden = false;
+    knowledgeEditorMessage.textContent = context.validation_result
+      ? "Traceable Dummy Responseの検証が成功しました。"
+      : "Traceable Response Validationにより停止しました。";
+    traceableResponsePanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Traceable Dummy実行の通信に失敗しました。";
+  } finally {
+    executeTraceableDummyButton.disabled = false;
   }
 }
 
