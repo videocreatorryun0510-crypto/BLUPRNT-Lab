@@ -52,6 +52,10 @@ from knowledge_contracts.v10 import (
     knowledge_record_json_schema,
     validate_knowledge_record,
 )
+from presentation_artifact import (
+    PresentationArtifactBuilder,
+    presentation_artifact_json_schema,
+)
 from presentation_engine_adapter import (
     DummyPresentationEngineAdapter,
     GeminiAdapterConfig,
@@ -256,6 +260,12 @@ class PresentationEngineExecutionRequest(BaseModel):
     adapter: Literal["dummy"] = "dummy"
 
 
+class PresentationArtifactGenerationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: RequestMode = RequestMode.PREVIEW
+
+
 class ProviderPayloadExecutionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -407,7 +417,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.18.1",
+        version="5.19.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -538,6 +548,22 @@ def create_app(
     presentation_prompt_builder = PresentationPromptBuilder.from_directories(
         presentation_prompt_output_directory,
         presentation_prompt_audit_log_path,
+    )
+    presentation_artifact_output_directory = (
+        Path(temporary_registry_directory.name) / "presentation_artifact"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_artifact_output_dir
+    )
+    presentation_artifact_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "presentation_artifact.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_artifact_audit_log_path
+    )
+    presentation_artifact_builder = PresentationArtifactBuilder.from_directories(
+        presentation_artifact_output_directory,
+        presentation_artifact_audit_log_path,
     )
     gemini_response_output_directory = (
         Path(temporary_registry_directory.name) / "gemini_sandbox_response"
@@ -724,6 +750,16 @@ def create_app(
             "presentation_prompt_audit_log": str(
                 presentation_prompt_audit_log_path
             ),
+            "presentation_artifact_contract_version": "1.0",
+            "presentation_artifact_builder_version": "1.0.0",
+            "presentation_artifact_provider_neutral": True,
+            "presentation_artifact_renderer_neutral": True,
+            "presentation_artifact_output": str(
+                presentation_artifact_output_directory
+            ),
+            "presentation_artifact_audit_log": str(
+                presentation_artifact_audit_log_path
+            ),
             "gemini_sandbox_adapter_version": "1.0.1",
             "gemini_sandbox_model": gemini_sandbox_adapter.config.model,
             "gemini_sandbox_api_key_configured": bool(
@@ -890,6 +926,10 @@ def create_app(
     @app.get("/api/schema/presentation-prompt-1.0")
     def presentation_prompt_schema_v10() -> dict[str, object]:
         return presentation_prompt_json_schema()
+
+    @app.get("/api/schema/presentation-artifact-1.0")
+    def presentation_artifact_schema_v10() -> dict[str, object]:
+        return presentation_artifact_json_schema()
 
     @app.get("/api/schema/approval-contract-1.0")
     def approval_schema_v10() -> dict[str, object]:
@@ -1475,6 +1515,140 @@ def create_app(
                             "code": "presentation_request_write_failed",
                             "message": (
                                 "Presentation Requestを読み書きできません: "
+                                f"{error}"
+                            ),
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/presentation-artifacts/{knowledge_id}")
+    def generate_presentation_artifact(
+        knowledge_id: str,
+        request: PresentationArtifactGenerationRequest,
+    ) -> JSONResponse:
+        """Compose and validate the provider-neutral educational SSOT artifact."""
+
+        try:
+            record = resolved_registry.record(knowledge_id)
+            if record is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "not_found",
+                        "errors": [
+                            {
+                                "code": "knowledge_record_not_found",
+                                "message": "保存済みKnowledge JSONがありません。",
+                            }
+                        ],
+                    },
+                )
+            registry_view = resolved_registry.view(knowledge_id)
+            source_path = source_bundle_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}"
+                ".source-bundle.json"
+            )
+            request_path = presentation_request_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}."
+                f"{request.request_mode.value}.presentation-request.json"
+            )
+            if not source_path.is_file() or not request_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "presentation_sources_required",
+                        "errors": [
+                            {
+                                "code": "presentation_sources_required",
+                                "message": (
+                                    "先に同じ版のSource BundleとPresentation Requestを"
+                                    "生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            source_bundle = SourceBundle.model_validate_json(
+                source_path.read_text(encoding="utf-8")
+            )
+            presentation_request = PresentationRequest.model_validate_json(
+                request_path.read_text(encoding="utf-8")
+            )
+            result = presentation_artifact_builder.build(
+                presentation_request,
+                source_bundle,
+                record,
+            )
+            artifact = result.artifact
+            return JSONResponse(
+                status_code=200,
+                content={
+                    **result.model_dump(mode="json"),
+                    "artifact_context": {
+                        "artifact_id": (
+                            artifact.identity.artifact_id if artifact else None
+                        ),
+                        "artifact_version": (
+                            artifact.identity.artifact_version if artifact else None
+                        ),
+                        "page_count": len(artifact.pages) if artifact else 0,
+                        "claim_count": (
+                            len(artifact.claim_catalog) if artifact else 0
+                        ),
+                        "diagram_count": (
+                            sum(
+                                len(page.diagram_instruction.items)
+                                for page in artifact.pages
+                                if page.diagram_instruction is not None
+                            )
+                            if artifact
+                            else 0
+                        ),
+                        "reference_count": (
+                            len(artifact.reference_catalog) if artifact else 0
+                        ),
+                        "fingerprint": (
+                            artifact.metadata.fingerprint if artifact else None
+                        ),
+                        "validation": (
+                            "passed" if result.validation.is_valid else "failed"
+                        ),
+                        "builder_version": (
+                            artifact.metadata.builder_version if artifact else "1.0.0"
+                        ),
+                    },
+                    "source_bundle_path": str(source_path),
+                    "presentation_request_path": str(request_path),
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                    "external_ai_called": False,
+                    "renderer_called": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_artifact_generation_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_artifact_write_failed",
+                            "message": (
+                                "Presentation Artifactを読み書きできません: "
                                 f"{error}"
                             ),
                         }

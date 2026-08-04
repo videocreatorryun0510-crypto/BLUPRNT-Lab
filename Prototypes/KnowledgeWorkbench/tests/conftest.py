@@ -25,4 +25,8 @@ sys.path.insert(
     0,
     str(REPOSITORY_DIR / "Publishers" / "PresentationEngineAdapter" / "src"),
 )
+sys.path.insert(
+    0,
+    str(REPOSITORY_DIR / "Publishers" / "PresentationArtifact" / "src"),
+)
 sys.path.insert(0, str(REPOSITORY_DIR / "Prototypes" / "KnowledgeWorkbench" / "src"))

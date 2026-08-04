@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=gemini-acceptance-5.18.1" />
+    <link rel="stylesheet" href="/static/styles.css?v=presentation-artifact-5.19" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.18.1</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.19</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">隔離Fixtureで、Gemini実APIへの1回限りの受入テストを安全に確認。</p>
+          <p class="lead">Providerや描画先に依存しない教材構成の正本を安全に確認。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -182,6 +182,14 @@
               Presentation Request生成
             </button>
             <button
+              id="generatePresentationArtifactButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Presentation Artifact生成・保存
+            </button>
+            <button
               id="generateProviderPayloadButton"
               class="secondary-action"
               type="button"
@@ -309,6 +317,40 @@
             <p id="presentationRequestReason" class="source-bundle-gate-reason"></p>
             <p id="presentationRequestPath" class="source-bundle-message"></p>
             <pre id="presentationRequestOutput"></pre>
+          </section>
+          <section id="presentationArtifactPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">PRESENTATION ARTIFACT JSON 1.0</p>
+                <h3>Presentation Artifact Preview</h3>
+                <p>媒体に依存しない教材構成の正本</p>
+              </div>
+              <button
+                id="copyPresentationArtifactButton"
+                class="copy-button"
+                type="button"
+              >
+                JSONをコピー
+              </button>
+            </div>
+            <p id="presentationArtifactMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Presentation Artifact概要">
+              <div><span>Artifact ID</span><strong id="artifactId">--</strong></div>
+              <div><span>Version</span><strong id="artifactVersion">--</strong></div>
+              <div><span>Pages</span><strong id="artifactPageCount">--</strong></div>
+              <div><span>Claims</span><strong id="artifactClaimCount">--</strong></div>
+              <div><span>Diagrams</span><strong id="artifactDiagramCount">--</strong></div>
+              <div><span>References</span><strong id="artifactReferenceCount">--</strong></div>
+              <div><span>Validation</span><strong id="artifactValidation">--</strong></div>
+              <div><span>Builder</span><strong id="artifactBuilderVersion">--</strong></div>
+            </div>
+            <p class="fingerprint-line">
+              <span>Artifact Fingerprint</span>
+              <code id="artifactFingerprint">--</code>
+            </p>
+            <div id="presentationArtifactPages" class="artifact-page-list"></div>
+            <p id="presentationArtifactPath" class="source-bundle-message"></p>
+            <pre id="presentationArtifactOutput"></pre>
           </section>
           <section id="presentationEnginePanel" class="source-bundle-output" hidden>
             <div class="source-bundle-heading">
@@ -853,6 +895,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=gemini-acceptance-5.18.1" defer></script>
+    <script src="/static/app.js?v=presentation-artifact-5.19" defer></script>
   </body>
 </html>

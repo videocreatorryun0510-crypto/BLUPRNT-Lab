@@ -17,6 +17,7 @@ fi
   -e "$REPOSITORY_DIR/Publishers/ProviderPayloadResolver[dev]" \
   -e "$REPOSITORY_DIR/Publishers/PresentationPromptBuilder[dev]" \
   -e "$REPOSITORY_DIR/Publishers/PresentationEngineAdapter[dev]" \
+  -e "$REPOSITORY_DIR/Publishers/PresentationArtifact[dev]" \
   -e "$WORKBENCH_DIR[dev]"
 
 echo "準備が完了しました。次は Prototypes/KnowledgeWorkbench/start.sh を実行してください。"

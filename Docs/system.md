@@ -217,6 +217,7 @@ flowchart LR
 | `Publishers/PresentationEngineAdapter/` | Presentation Requestと外部Presentation Engine間のProvider非依存Adapter・Result・Validation・監査 |
 | `Publishers/ProviderPayloadResolver/` | 承認済み正本のID解決、最小送信Payload、Data Egress Policy、Traceable Response・監査 |
 | `Publishers/PresentationPromptBuilder/` | Provider Payloadから外部AI非依存のPresentation Promptを生成・検証・監査 |
+| `Publishers/PresentationArtifact/` | Provider・Rendererに依存しない教材構成の正本、保存前Validation、Renderer／Draft Mapper境界 |
 | `MedicalPDF/` | 旧PDF生成プロトタイプ。将来PDF Publisherへ移行 |
 | `NationalExam/` | 国家試験対策コンテンツ制作ドメイン |
 | `TrainingVideo/` | 医療研修動画制作ドメイン |

@@ -25,6 +25,9 @@ const generateSourceBundleButton = document.querySelector(
 const generatePresentationRequestButton = document.querySelector(
   "#generatePresentationRequestButton",
 );
+const generatePresentationArtifactButton = document.querySelector(
+  "#generatePresentationArtifactButton",
+);
 const presentationRequestMode = document.querySelector(
   "#presentationRequestMode",
 );
@@ -61,6 +64,15 @@ const presentationRequestOutput = document.querySelector(
 );
 const presentationRequestReason = document.querySelector(
   "#presentationRequestReason",
+);
+const presentationArtifactPanel = document.querySelector(
+  "#presentationArtifactPanel",
+);
+const presentationArtifactOutput = document.querySelector(
+  "#presentationArtifactOutput",
+);
+const presentationArtifactPages = document.querySelector(
+  "#presentationArtifactPages",
 );
 const presentationEnginePanel = document.querySelector(
   "#presentationEnginePanel",
@@ -262,6 +274,10 @@ generatePresentationRequestButton.addEventListener("click", async () => {
   await generatePresentationRequest();
 });
 
+generatePresentationArtifactButton.addEventListener("click", async () => {
+  await generatePresentationArtifact();
+});
+
 executeDummyAdapterButton.addEventListener("click", async () => {
   await executeDummyAdapter();
 });
@@ -293,6 +309,7 @@ executeGeminiAcceptanceButton.addEventListener("click", async () => {
 presentationRequestMode.addEventListener("change", () => {
   executeDummyAdapterButton.disabled = true;
   presentationEnginePanel.hidden = true;
+  resetPresentationArtifactState();
   resetProviderPayloadState();
 });
 
@@ -314,6 +331,18 @@ document.querySelector("#copyPresentationRequestButton").addEventListener(
     event.currentTarget.textContent = "コピー済み";
     window.setTimeout(() => {
       event.currentTarget.textContent = "JSONをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyPresentationArtifactButton").addEventListener(
+  "click",
+  async (event) => {
+    const button = event.currentTarget;
+    await navigator.clipboard.writeText(presentationArtifactOutput.textContent);
+    button.textContent = "コピー済み";
+    window.setTimeout(() => {
+      button.textContent = "JSONをコピー";
     }, 1300);
   },
 );
@@ -657,6 +686,7 @@ function setSourceBundleAvailability(record, persisted) {
     supportedIds.has(record.knowledge_id);
   generateSourceBundleButton.disabled = !available;
   generatePresentationRequestButton.disabled = true;
+  resetPresentationArtifactState();
   executeDummyAdapterButton.disabled = true;
   resetProviderPayloadState();
   sourceBundlePanel.hidden = true;
@@ -674,6 +704,7 @@ async function generateSourceBundle() {
   }
   generateSourceBundleButton.disabled = true;
   sourceBundlePanel.hidden = true;
+  resetPresentationArtifactState();
   executeDummyAdapterButton.disabled = true;
   resetProviderPayloadState();
   presentationEnginePanel.hidden = true;
@@ -714,6 +745,7 @@ async function generateSourceBundle() {
     sourceBundlePanel.hidden = false;
     generatePresentationRequestButton.disabled = false;
     presentationRequestPanel.hidden = true;
+    resetPresentationArtifactState();
     presentationEnginePanel.hidden = true;
     resetProviderPayloadState();
     knowledgeEditorMessage.textContent =
@@ -740,6 +772,7 @@ async function generatePresentationRequest() {
   generatePresentationRequestButton.disabled = true;
   executeDummyAdapterButton.disabled = true;
   presentationRequestPanel.hidden = true;
+  resetPresentationArtifactState();
   presentationEnginePanel.hidden = true;
   resetProviderPayloadState();
   const mode = presentationRequestMode.value;
@@ -807,6 +840,7 @@ async function generatePresentationRequest() {
       : "Presentation Requestは生成されませんでした。";
     presentationRequestPanel.hidden = false;
     executeDummyAdapterButton.disabled = !payload.decision.allowed;
+    generatePresentationArtifactButton.disabled = !payload.decision.allowed;
     generateProviderPayloadButton.disabled = !payload.decision.allowed;
     knowledgeEditorMessage.textContent = payload.decision.allowed
       ? "Presentation Request JSON Version 1.0を生成・保存しました。"
@@ -822,6 +856,101 @@ async function generatePresentationRequest() {
         : "Presentation Request生成の通信に失敗しました。";
   } finally {
     generatePresentationRequestButton.disabled = false;
+  }
+}
+
+function resetPresentationArtifactState() {
+  generatePresentationArtifactButton.disabled = true;
+  presentationArtifactPanel.hidden = true;
+  presentationArtifactOutput.textContent = "";
+  presentationArtifactPages.replaceChildren();
+}
+
+async function generatePresentationArtifact() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  const mode = presentationRequestMode.value;
+  generatePresentationArtifactButton.disabled = true;
+  presentationArtifactPanel.hidden = true;
+  knowledgeEditorMessage.textContent =
+    "Presentation Artifactを構成・検証しています…";
+  try {
+    const response = await fetch(
+      "/api/presentation-artifacts/" + encodeURIComponent(record.knowledge_id),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: mode }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message ||
+          "Presentation Artifactを生成できませんでした。",
+      );
+    }
+    const context = payload.artifact_context;
+    setText("#artifactId", context.artifact_id || "--");
+    setText("#artifactVersion", context.artifact_version ? "v" + context.artifact_version : "--");
+    setText("#artifactPageCount", String(context.page_count));
+    setText("#artifactClaimCount", String(context.claim_count));
+    setText("#artifactDiagramCount", String(context.diagram_count));
+    setText("#artifactReferenceCount", String(context.reference_count));
+    setText("#artifactValidation", context.validation === "passed" ? "OK" : "NG");
+    setText("#artifactBuilderVersion", "v" + context.builder_version);
+    setText("#artifactFingerprint", context.fingerprint || "--");
+    setText(
+      "#presentationArtifactPath",
+      payload.output_path
+        ? "保存先：" + payload.output_path
+        : "Validation失敗のため保存していません。",
+    );
+    const artifact = payload.artifact;
+    presentationArtifactOutput.textContent = artifact
+      ? JSON.stringify(artifact, null, 2)
+      : "Artifactは保存されませんでした。";
+    presentationArtifactPages.replaceChildren();
+    for (const page of artifact?.pages || []) {
+      const card = document.createElement("div");
+      card.className = "artifact-page-card";
+      const headline = document.createElement("strong");
+      headline.textContent = "Page " + page.page_number + " · " + page.headline;
+      const summary = document.createElement("span");
+      const diagrams = page.diagram_instruction?.items?.length || 0;
+      summary.textContent =
+        "Claim " + page.supporting_claim_ids.length +
+        "件 · Diagram " + diagrams +
+        "件 · Reference " + page.reference_ids.length + "件";
+      card.append(headline, summary);
+      presentationArtifactPages.append(card);
+    }
+    setText(
+      "#presentationArtifactMessage",
+      payload.validation.is_valid
+        ? "Validation OK · 教材構成を保存しました。Knowledge・Registry・Providerには触れていません。"
+        : "Validation NG · Artifactは保存していません。",
+    );
+    presentationArtifactPanel.hidden = false;
+    knowledgeEditorMessage.textContent = payload.validation.is_valid
+      ? "Presentation Artifact Version 1.0を生成・保存しました。"
+      : "Artifact Validationが失敗しました。";
+    presentationArtifactPanel.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Presentation Artifact生成の通信に失敗しました。";
+  } finally {
+    generatePresentationArtifactButton.disabled = false;
   }
 }
 

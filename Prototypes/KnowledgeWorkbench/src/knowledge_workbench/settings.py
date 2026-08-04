@@ -52,6 +52,12 @@ DEFAULT_PRESENTATION_PROMPT_OUTPUT_DIR = (
 DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_prompt.jsonl"
 )
+DEFAULT_PRESENTATION_ARTIFACT_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "presentation_artifact"
+)
+DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_artifact.jsonl"
+)
 DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR = (
     REPOSITORY_ROOT / "Publisher Output" / "gemini_sandbox_response"
 )
@@ -83,6 +89,10 @@ class Settings:
     presentation_prompt_output_dir: Path = DEFAULT_PRESENTATION_PROMPT_OUTPUT_DIR
     presentation_prompt_audit_log_path: Path = (
         DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH
+    )
+    presentation_artifact_output_dir: Path = DEFAULT_PRESENTATION_ARTIFACT_OUTPUT_DIR
+    presentation_artifact_audit_log_path: Path = (
+        DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH
     )
     gemini_sandbox_response_output_dir: Path = (
         DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR
@@ -140,6 +150,12 @@ class Settings:
         ).strip()
         presentation_prompt_audit_log_path = os.getenv(
             "PRESENTATION_PROMPT_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_artifact_output_path = os.getenv(
+            "PRESENTATION_ARTIFACT_OUTPUT_DIR", ""
+        ).strip()
+        presentation_artifact_audit_log_path = os.getenv(
+            "PRESENTATION_ARTIFACT_AUDIT_LOG_PATH", ""
         ).strip()
         gemini_response_output_path = os.getenv(
             "GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR", ""
@@ -221,6 +237,16 @@ class Settings:
                 Path(presentation_prompt_audit_log_path).expanduser()
                 if presentation_prompt_audit_log_path
                 else DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH
+            ),
+            presentation_artifact_output_dir=(
+                Path(presentation_artifact_output_path).expanduser()
+                if presentation_artifact_output_path
+                else DEFAULT_PRESENTATION_ARTIFACT_OUTPUT_DIR
+            ),
+            presentation_artifact_audit_log_path=(
+                Path(presentation_artifact_audit_log_path).expanduser()
+                if presentation_artifact_audit_log_path
+                else DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH
             ),
             gemini_sandbox_response_output_dir=(
                 Path(gemini_response_output_path).expanduser()
