@@ -8,6 +8,7 @@ for source in (
     REPOSITORY_ROOT / "Packages" / "knowledge-contracts" / "src",
     REPOSITORY_ROOT / "Publishers" / "SourceBundlePublisher" / "src",
     REPOSITORY_ROOT / "Publishers" / "PresentationRequestBuilder" / "src",
+    REPOSITORY_ROOT / "Publishers" / "PresentationPromptBuilder" / "src",
     REPOSITORY_ROOT / "Publishers" / "ProviderPayloadResolver" / "src",
     REPOSITORY_ROOT / "Publishers" / "PresentationEngineAdapter" / "src",
     REPOSITORY_ROOT / "Prototypes" / "KnowledgeWorkbench" / "src",

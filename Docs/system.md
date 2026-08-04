@@ -216,6 +216,7 @@ flowchart LR
 | `Publishers/PDFPublisher/` | Publication PlanからA4 PDFを生成する媒体別Adapter、Layout・Theme・Placeholder処理 |
 | `Publishers/PresentationEngineAdapter/` | Presentation Requestと外部Presentation Engine間のProvider非依存Adapter・Result・Validation・監査 |
 | `Publishers/ProviderPayloadResolver/` | 承認済み正本のID解決、最小送信Payload、Data Egress Policy、Traceable Response・監査 |
+| `Publishers/PresentationPromptBuilder/` | Provider Payloadから外部AI非依存のPresentation Promptを生成・検証・監査 |
 | `MedicalPDF/` | 旧PDF生成プロトタイプ。将来PDF Publisherへ移行 |
 | `NationalExam/` | 国家試験対策コンテンツ制作ドメイン |
 | `TrainingVideo/` | 医療研修動画制作ドメイン |
@@ -242,6 +243,7 @@ flowchart LR
 | `Docs/presentation_contract.md` | Phase 5.15のPresentation Request、Profile、安全Policy、Traceability |
 | `Docs/presentation_engine_adapter_contract.md` | Phase 5.16のProvider非依存Adapter、Result、Validation、Approval Gate、監査 |
 | `Docs/provider_payload_and_response_traceability.md` | Phase 5.17の承認済みPayload解決、送信Policy、Fingerprint、Traceable Response |
+| `Docs/presentation_prompt_and_gemini_sandbox.md` | Phase 5.18のProvider非依存Prompt、Gemini Sandbox、Response Mapping、監査 |
 
 ### 3.3 実装時に追加するトップレベル
 
@@ -444,6 +446,12 @@ Resolverは選択されたClaim、Key Message、Diagram Request、Referenceだ�
 要約・言い換え・結合しません。Previewを含め未承認ClaimのPayload生成を停止します。
 Payload FingerprintとTrace Mapで正本との対応を固定し、Responseと監査ログには医学本文を
 複製しません。既存Adapter InterfaceとPublisher Coreは変更しません。
+
+Phase 5.18では、Provider Payloadと実Providerの間へPresentation Prompt Builderを追加しました。
+
+`Presentation Payload → Provider非依存Prompt Builder → Presentation Prompt 1.0 → Gemini Sandbox Adapter（固有変換・API通信） → Response Mapper → 既存Traceable Response`
+
+Builderは学習目的、対象者、無変更Claim、Key Message、Diagram Request、Referenceと表示・検証方針だけを扱い、Provider名、API URL、認証、モデル固有命令を持ちません。Gemini固有処理はAdapter内部に閉じ込め、外部送信は従来のApproval Gate、Stale検知、Data Egress Policy、Fingerprint検証をすべて通過した場合だけ行います。Knowledge、Registry、Source Bundle、Presentation Request、Provider Payload、Traceable Response、Publisher Coreは変更しません。
 
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 

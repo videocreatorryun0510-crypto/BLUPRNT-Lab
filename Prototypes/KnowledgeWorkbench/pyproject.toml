@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "bluprnt-knowledge-contracts>=1.0,<2",
+  "bluprnt-presentation-prompt-builder>=1.0,<2",
   "bluprnt-provider-payload-resolver>=1.0,<2",
   "bluprnt-presentation-engine-adapter>=1.0,<2",
   "bluprnt-presentation-request-builder>=1.0,<2",
@@ -44,5 +45,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-mypy_path = "src:../../Packages/knowledge-contracts/src:../../Publishers/SourceBundlePublisher/src:../../Publishers/PresentationRequestBuilder/src:../../Publishers/ProviderPayloadResolver/src:../../Publishers/PresentationEngineAdapter/src"
+mypy_path = "src:../../Packages/knowledge-contracts/src:../../Publishers/SourceBundlePublisher/src:../../Publishers/PresentationRequestBuilder/src:../../Publishers/ProviderPayloadResolver/src:../../Publishers/PresentationPromptBuilder/src:../../Publishers/PresentationEngineAdapter/src"
 packages = ["knowledge_workbench"]

@@ -37,6 +37,12 @@ const generateProviderPayloadButton = document.querySelector(
 const executeTraceableDummyButton = document.querySelector(
   "#executeTraceableDummyButton",
 );
+const generatePresentationPromptButton = document.querySelector(
+  "#generatePresentationPromptButton",
+);
+const executeGeminiSandboxButton = document.querySelector(
+  "#executeGeminiSandboxButton",
+);
 const knowledgeEditorMessage = document.querySelector("#knowledgeEditorMessage");
 const sourceBundlePanel = document.querySelector("#sourceBundlePanel");
 const sourceBundleMessage = document.querySelector("#sourceBundleMessage");
@@ -77,6 +83,18 @@ const traceableResponseOutput = document.querySelector(
 const traceableResponseReason = document.querySelector(
   "#traceableResponseReason",
 );
+const presentationPromptPanel = document.querySelector(
+  "#presentationPromptPanel",
+);
+const presentationPromptOutput = document.querySelector(
+  "#presentationPromptOutput",
+);
+const presentationPromptReason = document.querySelector(
+  "#presentationPromptReason",
+);
+const geminiSandboxPanel = document.querySelector("#geminiSandboxPanel");
+const geminiSandboxOutput = document.querySelector("#geminiSandboxOutput");
+const geminiSandboxReason = document.querySelector("#geminiSandboxReason");
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
 let currentRegistry = null;
@@ -242,6 +260,14 @@ executeTraceableDummyButton.addEventListener("click", async () => {
   await executeTraceableDummy();
 });
 
+generatePresentationPromptButton.addEventListener("click", async () => {
+  await generatePresentationPrompt();
+});
+
+executeGeminiSandboxButton.addEventListener("click", async () => {
+  await executeGeminiSandbox();
+});
+
 presentationRequestMode.addEventListener("change", () => {
   executeDummyAdapterButton.disabled = true;
   presentationEnginePanel.hidden = true;
@@ -296,6 +322,28 @@ document.querySelector("#copyTraceableResponseButton").addEventListener(
   "click",
   async (event) => {
     await navigator.clipboard.writeText(traceableResponseOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "Responseをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyPresentationPromptButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(presentationPromptOutput.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "Promptをコピー";
+    }, 1300);
+  },
+);
+
+document.querySelector("#copyGeminiResponseButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(geminiSandboxOutput.textContent);
     event.currentTarget.textContent = "コピー済み";
     window.setTimeout(() => {
       event.currentTarget.textContent = "Responseをコピー";
@@ -758,8 +806,12 @@ async function generatePresentationRequest() {
 function resetProviderPayloadState() {
   generateProviderPayloadButton.disabled = true;
   executeTraceableDummyButton.disabled = true;
+  generatePresentationPromptButton.disabled = true;
+  executeGeminiSandboxButton.disabled = true;
   providerPayloadPanel.hidden = true;
   traceableResponsePanel.hidden = true;
+  presentationPromptPanel.hidden = true;
+  geminiSandboxPanel.hidden = true;
 }
 
 async function generateProviderPayload() {
@@ -772,8 +824,12 @@ async function generateProviderPayload() {
   }
   generateProviderPayloadButton.disabled = true;
   executeTraceableDummyButton.disabled = true;
+  generatePresentationPromptButton.disabled = true;
+  executeGeminiSandboxButton.disabled = true;
   providerPayloadPanel.hidden = true;
   traceableResponsePanel.hidden = true;
+  presentationPromptPanel.hidden = true;
+  geminiSandboxPanel.hidden = true;
   const mode = presentationRequestMode.value;
   knowledgeEditorMessage.textContent =
     "承認済み正本からProvider Payloadを安全確認しています…";
@@ -833,6 +889,7 @@ async function generateProviderPayload() {
       : "Provider Payloadは生成されませんでした。";
     providerPayloadPanel.hidden = false;
     executeTraceableDummyButton.disabled = payload.status !== "success";
+    generatePresentationPromptButton.disabled = payload.status !== "success";
     knowledgeEditorMessage.textContent = payload.validation.is_valid
       ? "Provider Payload JSON Version 1.0を生成・保存しました。"
       : "未承認または安全検証によりProvider Payload生成を停止しました。";
@@ -910,6 +967,170 @@ async function executeTraceableDummy() {
         : "Traceable Dummy実行の通信に失敗しました。";
   } finally {
     executeTraceableDummyButton.disabled = false;
+  }
+}
+
+async function generatePresentationPrompt() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  generatePresentationPromptButton.disabled = true;
+  executeGeminiSandboxButton.disabled = true;
+  presentationPromptPanel.hidden = true;
+  geminiSandboxPanel.hidden = true;
+  const mode = presentationRequestMode.value;
+  knowledgeEditorMessage.textContent =
+    "Providerに依存しないPresentation Promptを生成しています…";
+  try {
+    const response = await fetch(
+      "/api/presentation-prompts/" + encodeURIComponent(record.knowledge_id),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: mode }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Presentation Promptを生成できませんでした。",
+      );
+    }
+    const context = payload.prompt_context;
+    setText("#promptId", context.prompt_id);
+    setText("#promptBuilderVersion", "v" + context.prompt_builder_version);
+    setText("#promptProviderNeutral", context.provider_neutral ? "OK" : "NG");
+    setText(
+      "#promptApprovalState",
+      registryStatusLabels[context.approval_state] || context.approval_state,
+    );
+    setText("#promptRequestMode", context.request_mode);
+    setText("#promptClaimCount", String(context.claim_count));
+    setText("#promptKeyMessageCount", String(context.key_message_count));
+    setText("#promptDiagramCount", String(context.diagram_request_count));
+    setText("#promptReferenceCount", String(context.reference_count));
+    setText("#promptValidation", payload.validation.is_valid ? "OK" : "NG");
+    setText("#promptFingerprint", context.prompt_fingerprint || "未生成");
+    document.querySelector("#presentationPromptMessage").textContent =
+      payload.output_path
+        ? "保存先：" + payload.output_path + " · Provider固有情報なし"
+        : "安全確認によりPromptは生成・保存していません。";
+    presentationPromptReason.textContent =
+      (payload.stop_reasons.length
+        ? "停止理由：" + payload.stop_reasons.join(" / ")
+        : "承認・Fingerprint・Claim本文一致を確認しました。") +
+      " · 監査ログ：" +
+      payload.audit_log_path;
+    presentationPromptReason.className = payload.validation.is_valid
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    presentationPromptOutput.textContent = payload.prompt
+      ? JSON.stringify(payload.prompt, null, 2)
+      : "Presentation Promptは生成されませんでした。";
+    presentationPromptPanel.hidden = false;
+    executeGeminiSandboxButton.disabled =
+      payload.status !== "success" || mode !== "external";
+    knowledgeEditorMessage.textContent = payload.validation.is_valid
+      ? "Provider-neutral Presentation Promptを生成しました。"
+      : "Presentation Promptの安全検証により停止しました。";
+    presentationPromptPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Presentation Prompt生成の通信に失敗しました。";
+  } finally {
+    generatePresentationPromptButton.disabled = false;
+  }
+}
+
+async function executeGeminiSandbox() {
+  let record;
+  try {
+    record = JSON.parse(knowledgeJsonEditor.value);
+  } catch {
+    knowledgeEditorMessage.textContent = "先に保存済みKnowledgeを開いてください。";
+    return;
+  }
+  executeGeminiSandboxButton.disabled = true;
+  geminiSandboxPanel.hidden = true;
+  knowledgeEditorMessage.textContent =
+    "Approval GateとFingerprintを確認してGemini Sandboxを実行しています…";
+  try {
+    const response = await fetch(
+      "/api/presentation-prompts/" +
+        encodeURIComponent(record.knowledge_id) +
+        "/execute-gemini",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_mode: "external" }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Gemini Sandboxを実行できませんでした。",
+      );
+    }
+    const report = payload.sandbox_report;
+    const validation = payload.response.validation;
+    const usage = report.usage;
+    setText("#geminiProvider", report.provider + " / Adapter v" + report.adapter_version);
+    setText("#geminiModel", report.model);
+    setText("#geminiStatus", report.status);
+    setText("#geminiApiCalled", report.external_ai_called ? "実行" : "停止");
+    setText("#geminiAttempts", String(report.attempt_count));
+    setText("#geminiPromptTokens", usage.prompt_tokens ?? "未取得");
+    setText("#geminiCompletionTokens", usage.completion_tokens ?? "未取得");
+    setText("#geminiTotalTokens", usage.total_tokens ?? "未取得");
+    setText(
+      "#geminiEstimatedCost",
+      usage.estimated_cost_usd === null
+        ? "料金設定なし"
+        : "$" + usage.estimated_cost_usd,
+    );
+    setText("#geminiDuration", report.duration_ms + " ms");
+    setText("#geminiValidation", validation.is_valid ? "OK" : "NG");
+    setText(
+      "#geminiPromptVisibility",
+      payload.gemini_prompt_visible ? "Debug表示" : "非表示",
+    );
+    document.querySelector("#geminiSandboxMessage").textContent =
+      "Gemini固有PromptとAPIキーは通常画面・監査ログへ保存しません。";
+    geminiSandboxReason.textContent =
+      (report.error_code
+        ? "停止理由：" + report.error_code + " · " + report.error_message
+        : "Gemini Sandbox応答をTraceable Responseへ変換しました。") +
+      " · 監査ログ：" +
+      report.audit_log_path;
+    geminiSandboxReason.className = validation.is_valid
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    geminiSandboxOutput.textContent = JSON.stringify(
+      { response: payload.response, report },
+      null,
+      2,
+    );
+    const debugOutput = document.querySelector("#geminiPromptDebugOutput");
+    debugOutput.hidden = !payload.gemini_prompt_visible;
+    debugOutput.textContent = payload.gemini_prompt_debug || "";
+    geminiSandboxPanel.hidden = false;
+    knowledgeEditorMessage.textContent = validation.is_valid
+      ? "Gemini SandboxとTraceable Response Validationが成功しました。"
+      : "Gemini Sandboxは安全に停止し、理由を記録しました。";
+    geminiSandboxPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    knowledgeEditorMessage.textContent =
+      error instanceof Error
+        ? error.message
+        : "Gemini Sandbox実行の通信に失敗しました。";
+  } finally {
+    executeGeminiSandboxButton.disabled = false;
   }
 }
 
@@ -2875,6 +3096,7 @@ fetch("/api/status")
   .then((response) => response.json())
   .then((status) => {
     const badge = document.querySelector("#providerBadge");
+    const geminiBadge = document.querySelector("#geminiBadge");
     if (status.provider === "fixture") {
       badge.textContent = "固定テストモード";
     } else if (status.openai_key_configured) {
@@ -2883,6 +3105,13 @@ fetch("/api/status")
     } else {
       badge.textContent = "OpenAI APIキー未設定";
       badge.className = "badge warning";
+    }
+    if (status.gemini_sandbox_api_key_configured) {
+      geminiBadge.textContent = "Gemini Sandbox準備OK";
+      geminiBadge.className = "badge success";
+    } else {
+      geminiBadge.textContent = "Gemini APIキー未設定";
+      geminiBadge.className = "badge warning";
     }
   })
   .catch(() => {});

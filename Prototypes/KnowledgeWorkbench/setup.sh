@@ -15,6 +15,7 @@ fi
   -e "$REPOSITORY_DIR/Publishers/SourceBundlePublisher[dev]" \
   -e "$REPOSITORY_DIR/Publishers/PresentationRequestBuilder[dev]" \
   -e "$REPOSITORY_DIR/Publishers/ProviderPayloadResolver[dev]" \
+  -e "$REPOSITORY_DIR/Publishers/PresentationPromptBuilder[dev]" \
   -e "$REPOSITORY_DIR/Publishers/PresentationEngineAdapter[dev]" \
   -e "$WORKBENCH_DIR[dev]"
 

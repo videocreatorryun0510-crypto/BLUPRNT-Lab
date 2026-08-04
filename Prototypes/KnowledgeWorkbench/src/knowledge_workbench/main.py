@@ -54,8 +54,15 @@ from knowledge_contracts.v10 import (
 )
 from presentation_engine_adapter import (
     DummyPresentationEngineAdapter,
+    GeminiAdapterConfig,
+    GeminiSandboxAdapter,
     PresentationEngineRunner,
     presentation_result_json_schema,
+)
+from presentation_prompt_builder import (
+    PresentationPrompt,
+    PresentationPromptBuilder,
+    presentation_prompt_json_schema,
 )
 from presentation_request_builder import (
     PresentationRequest,
@@ -252,6 +259,18 @@ class ProviderPayloadExecutionRequest(BaseModel):
     adapter: Literal["dummy"] = "dummy"
 
 
+class PresentationPromptExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: RequestMode = RequestMode.EXTERNAL
+
+
+class GeminiSandboxExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_mode: Literal[RequestMode.EXTERNAL] = RequestMode.EXTERNAL
+
+
 @dataclass(frozen=True)
 class _PendingCsvPreview:
     csv_text: str
@@ -372,10 +391,11 @@ def create_app(
     settings: Settings | None = None,
     registry: KnowledgeRegistry | None = None,
     relation_repository: KnowledgeRelationRepository | None = None,
+    gemini_adapter: GeminiSandboxAdapter | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.17.0",
+        version="5.18.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -490,6 +510,52 @@ def create_app(
     traceable_response_service = TraceableResponseService.from_directories(
         presentation_response_output_directory,
         presentation_response_audit_log_path,
+    )
+    presentation_prompt_output_directory = (
+        Path(temporary_registry_directory.name) / "presentation_prompt"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_prompt_output_dir
+    )
+    presentation_prompt_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "presentation_prompt.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.presentation_prompt_audit_log_path
+    )
+    presentation_prompt_builder = PresentationPromptBuilder.from_directories(
+        presentation_prompt_output_directory,
+        presentation_prompt_audit_log_path,
+    )
+    gemini_response_output_directory = (
+        Path(temporary_registry_directory.name) / "gemini_sandbox_response"
+        if temporary_registry_directory is not None
+        else resolved_settings.gemini_sandbox_response_output_dir
+    )
+    gemini_sandbox_audit_log_path = (
+        Path(temporary_registry_directory.name)
+        / "publisher_logs"
+        / "gemini_sandbox.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.gemini_sandbox_audit_log_path
+    )
+    gemini_sandbox_adapter = gemini_adapter or GeminiSandboxAdapter.from_directories(
+        GeminiAdapterConfig(
+            api_key=resolved_settings.gemini_api_key,
+            model=resolved_settings.gemini_model,
+            endpoint=resolved_settings.gemini_endpoint,
+            timeout_seconds=resolved_settings.gemini_timeout_seconds,
+            retry_limit=1,
+            debug_prompt=resolved_settings.gemini_debug_prompt,
+            input_cost_per_million_tokens=(
+                resolved_settings.gemini_input_cost_per_million_tokens
+            ),
+            output_cost_per_million_tokens=(
+                resolved_settings.gemini_output_cost_per_million_tokens
+            ),
+        ),
+        gemini_response_output_directory,
+        gemini_sandbox_audit_log_path,
     )
     service = (
         GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
@@ -618,6 +684,29 @@ def create_app(
             "presentation_response_audit_log": str(
                 presentation_response_audit_log_path
             ),
+            "presentation_prompt_contract_version": "1.0",
+            "presentation_prompt_builder_version": "1.0.0",
+            "presentation_prompt_provider_neutral": True,
+            "presentation_prompt_output": str(
+                presentation_prompt_output_directory
+            ),
+            "presentation_prompt_audit_log": str(
+                presentation_prompt_audit_log_path
+            ),
+            "gemini_sandbox_adapter_version": "1.0.0",
+            "gemini_sandbox_model": gemini_sandbox_adapter.config.model,
+            "gemini_sandbox_api_key_configured": bool(
+                gemini_sandbox_adapter.config.api_key
+            ),
+            "gemini_sandbox_external_api_enabled": bool(
+                gemini_sandbox_adapter.config.api_key
+            ),
+            "gemini_sandbox_store_provider_data": False,
+            "gemini_sandbox_retry_limit": 1,
+            "gemini_sandbox_response_output": str(
+                gemini_response_output_directory
+            ),
+            "gemini_sandbox_audit_log": str(gemini_sandbox_audit_log_path),
         }
 
     @app.get("/api/schema/knowledge-1.0")
@@ -671,6 +760,10 @@ def create_app(
     @app.get("/api/schema/traceable-response-1.0")
     def traceable_response_schema_v10() -> dict[str, object]:
         return traceable_response_json_schema()
+
+    @app.get("/api/schema/presentation-prompt-1.0")
+    def presentation_prompt_schema_v10() -> dict[str, object]:
+        return presentation_prompt_json_schema()
 
     @app.get("/api/schema/approval-contract-1.0")
     def approval_schema_v10() -> dict[str, object]:
@@ -1617,6 +1710,186 @@ def create_app(
                             "code": "traceable_response_write_failed",
                             "message": (
                                 "Traceable Responseを保存できません: " f"{error}"
+                            ),
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/presentation-prompts/{knowledge_id}")
+    def generate_presentation_prompt(
+        knowledge_id: str,
+        request: PresentationPromptExecutionRequest,
+    ) -> JSONResponse:
+        """Build a Provider-neutral Presentation Prompt from a saved Payload."""
+
+        try:
+            registry_view = resolved_registry.view(knowledge_id)
+            payload_path = provider_payload_output_directory / (
+                f"{knowledge_id}_v{registry_view.knowledge.knowledge_version}."
+                f"{request.request_mode.value}.provider-payload.json"
+            )
+            if not payload_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "provider_payload_required",
+                        "errors": [
+                            {
+                                "code": "provider_payload_required",
+                                "message": (
+                                    "先に同じ版・同じModeのProvider Payloadを"
+                                    "生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            payload = PresentationPayload.model_validate_json(
+                payload_path.read_text(encoding="utf-8")
+            )
+            result = presentation_prompt_builder.build(payload)
+            prompt = result.prompt
+            return JSONResponse(
+                status_code=200,
+                content={
+                    **result.model_dump(mode="json"),
+                    "prompt_context": {
+                        "prompt_id": result.attempted_prompt_id,
+                        "prompt_contract_version": "1.0",
+                        "prompt_builder_version": "1.0.0",
+                        "provider_neutral": True,
+                        "payload_id": payload.identity.payload_id,
+                        "payload_fingerprint": (
+                            payload.metadata.payload_fingerprint
+                        ),
+                        "prompt_fingerprint": (
+                            prompt.metadata.prompt_fingerprint if prompt else None
+                        ),
+                        "request_mode": request.request_mode.value,
+                        "approval_state": payload.source.approval_state.value,
+                        "claim_count": len(prompt.claims) if prompt else 0,
+                        "key_message_count": (
+                            len(prompt.key_messages) if prompt else 0
+                        ),
+                        "diagram_request_count": (
+                            len(prompt.diagram_requests) if prompt else 0
+                        ),
+                        "reference_count": len(prompt.references) if prompt else 0,
+                    },
+                    "payload_path": str(payload_path),
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                    "provider_called": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_prompt_build_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "presentation_prompt_write_failed",
+                            "message": (
+                                "Presentation Promptを保存できません: " f"{error}"
+                            ),
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/presentation-prompts/{knowledge_id}/execute-gemini")
+    def execute_gemini_sandbox(
+        knowledge_id: str,
+        request: GeminiSandboxExecutionRequest,
+    ) -> JSONResponse:
+        """Execute Gemini Sandbox after approval and fingerprint preflight."""
+
+        try:
+            registry_view = resolved_registry.view(knowledge_id)
+            version = registry_view.knowledge.knowledge_version
+            payload_path = provider_payload_output_directory / (
+                f"{knowledge_id}_v{version}.external.provider-payload.json"
+            )
+            prompt_path = presentation_prompt_output_directory / (
+                f"{knowledge_id}_v{version}.external.presentation-prompt.json"
+            )
+            if not payload_path.is_file() or not prompt_path.is_file():
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "presentation_prompt_required",
+                        "errors": [
+                            {
+                                "code": "presentation_prompt_required",
+                                "message": (
+                                    "先に承認済みExternal Provider Payloadと"
+                                    "Presentation Promptを生成してください。"
+                                ),
+                            }
+                        ],
+                    },
+                )
+            payload = PresentationPayload.model_validate_json(
+                payload_path.read_text(encoding="utf-8")
+            )
+            prompt = PresentationPrompt.model_validate_json(
+                prompt_path.read_text(encoding="utf-8")
+            )
+            result = gemini_sandbox_adapter.execute(payload, prompt)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": result.response.execution.status.value,
+                    "response": result.response.model_dump(mode="json"),
+                    "sandbox_report": result.report.model_dump(mode="json"),
+                    "gemini_prompt_debug": result.gemini_prompt_debug,
+                    "gemini_prompt_visible": (
+                        result.gemini_prompt_debug is not None
+                    ),
+                    "payload_path": str(payload_path),
+                    "prompt_path": str(prompt_path),
+                    "registry_mutated": False,
+                    "knowledge_mutated": False,
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "gemini_sandbox_execution_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except OSError as error:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "gemini_sandbox_audit_failed",
+                            "message": (
+                                "Gemini Sandbox監査ログを保存できません: " f"{error}"
                             ),
                         }
                     ],

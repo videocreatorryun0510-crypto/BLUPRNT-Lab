@@ -44,6 +44,18 @@ DEFAULT_PROVIDER_PAYLOAD_AUDIT_LOG_PATH = (
 DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_response.jsonl"
 )
+DEFAULT_PRESENTATION_PROMPT_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "presentation_prompt"
+)
+DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_prompt.jsonl"
+)
+DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR = (
+    REPOSITORY_ROOT / "Publisher Output" / "gemini_sandbox_response"
+)
+DEFAULT_GEMINI_SANDBOX_AUDIT_LOG_PATH = (
+    REPOSITORY_ROOT / "Publisher Output" / "logs" / "gemini_sandbox.jsonl"
+)
 
 
 @dataclass(frozen=True)
@@ -66,6 +78,23 @@ class Settings:
     presentation_response_audit_log_path: Path = (
         DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH
     )
+    presentation_prompt_output_dir: Path = DEFAULT_PRESENTATION_PROMPT_OUTPUT_DIR
+    presentation_prompt_audit_log_path: Path = (
+        DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH
+    )
+    gemini_sandbox_response_output_dir: Path = (
+        DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR
+    )
+    gemini_sandbox_audit_log_path: Path = DEFAULT_GEMINI_SANDBOX_AUDIT_LOG_PATH
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.6-flash"
+    gemini_endpoint: str = (
+        "https://generativelanguage.googleapis.com/v1beta/interactions"
+    )
+    gemini_timeout_seconds: float = 30.0
+    gemini_debug_prompt: bool = False
+    gemini_input_cost_per_million_tokens: float | None = None
+    gemini_output_cost_per_million_tokens: float | None = None
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -103,6 +132,18 @@ class Settings:
         ).strip()
         presentation_response_audit_log_path = os.getenv(
             "PRESENTATION_RESPONSE_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_prompt_output_path = os.getenv(
+            "PRESENTATION_PROMPT_OUTPUT_DIR", ""
+        ).strip()
+        presentation_prompt_audit_log_path = os.getenv(
+            "PRESENTATION_PROMPT_AUDIT_LOG_PATH", ""
+        ).strip()
+        gemini_response_output_path = os.getenv(
+            "GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR", ""
+        ).strip()
+        gemini_audit_log_path = os.getenv(
+            "GEMINI_SANDBOX_AUDIT_LOG_PATH", ""
         ).strip()
         return cls(
             provider=os.getenv("KNOWLEDGE_PROVIDER", "openai").strip().lower(),
@@ -169,7 +210,51 @@ class Settings:
                 if presentation_response_audit_log_path
                 else DEFAULT_PRESENTATION_RESPONSE_AUDIT_LOG_PATH
             ),
+            presentation_prompt_output_dir=(
+                Path(presentation_prompt_output_path).expanduser()
+                if presentation_prompt_output_path
+                else DEFAULT_PRESENTATION_PROMPT_OUTPUT_DIR
+            ),
+            presentation_prompt_audit_log_path=(
+                Path(presentation_prompt_audit_log_path).expanduser()
+                if presentation_prompt_audit_log_path
+                else DEFAULT_PRESENTATION_PROMPT_AUDIT_LOG_PATH
+            ),
+            gemini_sandbox_response_output_dir=(
+                Path(gemini_response_output_path).expanduser()
+                if gemini_response_output_path
+                else DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR
+            ),
+            gemini_sandbox_audit_log_path=(
+                Path(gemini_audit_log_path).expanduser()
+                if gemini_audit_log_path
+                else DEFAULT_GEMINI_SANDBOX_AUDIT_LOG_PATH
+            ),
+            gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
+            gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip(),
+            gemini_endpoint=os.getenv(
+                "GEMINI_ENDPOINT",
+                "https://generativelanguage.googleapis.com/v1beta/interactions",
+            ).strip(),
+            gemini_timeout_seconds=float(
+                os.getenv("GEMINI_TIMEOUT_SECONDS", "30").strip()
+            ),
+            gemini_debug_prompt=(
+                os.getenv("GEMINI_DEBUG_PROMPT", "false").strip().lower()
+                in {"1", "true", "yes", "on"}
+            ),
+            gemini_input_cost_per_million_tokens=_optional_float(
+                os.getenv("GEMINI_INPUT_COST_PER_MILLION_TOKENS", "")
+            ),
+            gemini_output_cost_per_million_tokens=_optional_float(
+                os.getenv("GEMINI_OUTPUT_COST_PER_MILLION_TOKENS", "")
+            ),
         )
+
+
+def _optional_float(value: str) -> float | None:
+    stripped = value.strip()
+    return float(stripped) if stripped else None
 
 
 def build_provider(settings: Settings) -> KnowledgeProvider:

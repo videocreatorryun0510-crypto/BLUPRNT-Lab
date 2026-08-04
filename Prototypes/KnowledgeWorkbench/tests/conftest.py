@@ -15,6 +15,10 @@ sys.path.insert(
 )
 sys.path.insert(
     0,
+    str(REPOSITORY_DIR / "Publishers" / "PresentationPromptBuilder" / "src"),
+)
+sys.path.insert(
+    0,
     str(REPOSITORY_DIR / "Publishers" / "ProviderPayloadResolver" / "src"),
 )
 sys.path.insert(

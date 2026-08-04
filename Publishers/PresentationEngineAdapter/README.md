@@ -1,4 +1,4 @@
-# Presentation Engine Adapter Contract — Phase 5.16 / 5.17
+# Presentation Engine Adapter Contract — Phase 5.16–5.18
 
 Presentation Requestと外部Presentation Engineの間に置く、Provider非依存の境界です。
 
@@ -9,7 +9,7 @@ Presentation Engine Runner（Approval Gate・監査）
         ↓
 Presentation Engine Adapter Interface
         ├── Dummy Adapter（実装済み・通信なし）
-        ├── Gemini Adapter（将来）
+        ├── Gemini Sandbox Adapter（実装済み）
         ├── Claude Adapter（将来）
         └── OpenAI Adapter（将来）
 ```
@@ -30,6 +30,8 @@ Phase 5.17では`execute_traceable_payload()`を追加しました。承認済�
 
 Phase 5.16の`PresentationRequest -> build_payload() -> execute()`経路は互換性維持のため残していますが、実Provider追加時はPhase 5.17のTraceable Payload経路を利用します。既存の`PresentationEngineAdapter` Interfaceそのものは変更していません。
 
+Phase 5.18では、Provider PayloadからProvider非依存のPresentation Promptを作るBuilderを独立Packageとして追加し、Gemini固有変換・Interactions API通信・Response MappingだけをGemini Sandbox Adapterへ閉じ込めました。既存Interfaceと既存Contractは変更していません。
+
 ## Presentation Result Version 1.0
 
 ResultはRequest ID、Provider、状態、検証結果、生成物メタデータ、Warning、Errorだけを持ちます。`generated_artifacts`にも本文、Claim本文、Source Bundleは含めません。
@@ -41,8 +43,8 @@ ResultはRequest ID、Provider、状態、検証結果、生成物メタデー�
 
 ## 対象外
 
-- Gemini・Claude・OpenAI API
-- Provider固有Prompt
+- Claude・OpenAI API
+- Gemini以外のProvider固有変換
 - PDF・PowerPoint・画像・動画生成
 - AI応答本文の保存
 - 医学知識の生成・変更

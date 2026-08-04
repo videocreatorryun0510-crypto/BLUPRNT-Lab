@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.17「Provider Payload Preparation & Response Traceability MVP」を実装しました。** Presentation Requestの参照IDを承認済み正本へ解決し、Secret・Stale・送信範囲を検査したProvider非依存Payloadを生成します。Dummy ResponseはClaim・図解・出典IDを追跡し、医学本文をResultや監査へ複製しません。詳細は[Provider Payload & Response Traceability](Docs/provider_payload_and_response_traceability.md)に記録しています。
+> **Phase 5.18「Presentation Prompt Builder & Gemini Adapter Sandbox MVP」を実装しました。** Provider PayloadからGemini等に依存しないPresentation Promptを生成し、Gemini固有変換・認証・Timeout・Retry・Response MappingをAdapter内だけへ分離しました。Geminiは`store=false`で呼び出し、Resultと監査へ医学本文を保存しません。詳細は[Presentation Prompt & Gemini Sandbox](Docs/presentation_prompt_and_gemini_sandbox.md)に記録しています。
 
 ---
 

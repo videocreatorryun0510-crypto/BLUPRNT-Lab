@@ -4,18 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=provider-payload-5.17" />
+    <link rel="stylesheet" href="/static/styles.css?v=prompt-gemini-5.18" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.17</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.18</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">承認済み正本だけを、安全で追跡可能なProvider Payloadへ変換。</p>
+          <p class="lead">Provider非依存Promptを経由し、Gemini Sandboxへ安全に接続。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
+          <span id="geminiBadge" class="badge neutral">Gemini確認中</span>
           <span class="badge warning">医学監修前</span>
         </div>
       </header>
@@ -131,6 +132,22 @@
               disabled
             >
               Traceable Dummy実行
+            </button>
+            <button
+              id="generatePresentationPromptButton"
+              class="secondary-action"
+              type="button"
+              disabled
+            >
+              Presentation Prompt Preview
+            </button>
+            <button
+              id="executeGeminiSandboxButton"
+              class="primary-action"
+              type="button"
+              disabled
+            >
+              Gemini Sandbox実行
             </button>
             <button
               id="executeDummyAdapterButton"
@@ -320,6 +337,65 @@
             </div>
             <p id="traceableResponseReason" class="source-bundle-gate-reason"></p>
             <pre id="traceableResponseOutput"></pre>
+          </section>
+          <section id="presentationPromptPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">PRESENTATION PROMPT JSON 1.0</p>
+                <h3>Providerに依存しない教材生成指示</h3>
+              </div>
+              <button id="copyPresentationPromptButton" class="copy-button" type="button">
+                Promptをコピー
+              </button>
+            </div>
+            <p id="presentationPromptMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Presentation Prompt概要">
+              <div><span>Prompt ID</span><strong id="promptId">--</strong></div>
+              <div><span>Builder</span><strong id="promptBuilderVersion">--</strong></div>
+              <div><span>Provider Neutral</span><strong id="promptProviderNeutral">--</strong></div>
+              <div><span>Approval</span><strong id="promptApprovalState">--</strong></div>
+              <div><span>Mode</span><strong id="promptRequestMode">--</strong></div>
+              <div><span>Claims</span><strong id="promptClaimCount">--</strong></div>
+              <div><span>Key Messages</span><strong id="promptKeyMessageCount">--</strong></div>
+              <div><span>Diagrams</span><strong id="promptDiagramCount">--</strong></div>
+              <div><span>References</span><strong id="promptReferenceCount">--</strong></div>
+              <div><span>Validation</span><strong id="promptValidation">--</strong></div>
+            </div>
+            <p class="fingerprint-line">
+              <span>Prompt Fingerprint</span>
+              <code id="promptFingerprint">--</code>
+            </p>
+            <p id="presentationPromptReason" class="source-bundle-gate-reason"></p>
+            <pre id="presentationPromptOutput"></pre>
+          </section>
+          <section id="geminiSandboxPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">GEMINI SANDBOX · TRACEABLE RESPONSE</p>
+                <h3>実Provider接続結果（医学本文は保存しません）</h3>
+              </div>
+              <button id="copyGeminiResponseButton" class="copy-button" type="button">
+                Responseをコピー
+              </button>
+            </div>
+            <p id="geminiSandboxMessage" class="source-bundle-message"></p>
+            <div class="presentation-engine-summary" aria-label="Gemini Sandbox概要">
+              <div><span>Provider</span><strong id="geminiProvider">--</strong></div>
+              <div><span>Model</span><strong id="geminiModel">--</strong></div>
+              <div><span>Status</span><strong id="geminiStatus">--</strong></div>
+              <div><span>API Called</span><strong id="geminiApiCalled">--</strong></div>
+              <div><span>Attempts</span><strong id="geminiAttempts">--</strong></div>
+              <div><span>Prompt Tokens</span><strong id="geminiPromptTokens">--</strong></div>
+              <div><span>Completion Tokens</span><strong id="geminiCompletionTokens">--</strong></div>
+              <div><span>Total Tokens</span><strong id="geminiTotalTokens">--</strong></div>
+              <div><span>Estimated Cost</span><strong id="geminiEstimatedCost">--</strong></div>
+              <div><span>Duration</span><strong id="geminiDuration">--</strong></div>
+              <div><span>Validation</span><strong id="geminiValidation">--</strong></div>
+              <div><span>Gemini Prompt</span><strong id="geminiPromptVisibility">非表示</strong></div>
+            </div>
+            <p id="geminiSandboxReason" class="source-bundle-gate-reason"></p>
+            <pre id="geminiSandboxOutput"></pre>
+            <pre id="geminiPromptDebugOutput" hidden></pre>
           </section>
         </div>
       </section>
