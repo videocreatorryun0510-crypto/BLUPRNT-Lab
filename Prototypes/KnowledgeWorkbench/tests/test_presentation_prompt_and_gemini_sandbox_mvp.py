@@ -239,7 +239,7 @@ def test_phase_518_status_schema_and_ui_are_exposed(tmp_path: Path) -> None:
     assert status["presentation_prompt_contract_version"] == "1.0"
     assert status["presentation_prompt_builder_version"] == "1.0.0"
     assert status["presentation_prompt_provider_neutral"] is True
-    assert status["gemini_sandbox_adapter_version"] == "1.0.0"
+    assert status["gemini_sandbox_adapter_version"] == "1.0.1"
     assert status["gemini_sandbox_store_provider_data"] is False
     assert status["gemini_sandbox_retry_limit"] == 1
     assert "PHASE 5.18" in page.text

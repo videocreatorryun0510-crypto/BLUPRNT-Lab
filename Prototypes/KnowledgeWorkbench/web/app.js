@@ -95,11 +95,25 @@ const presentationPromptReason = document.querySelector(
 const geminiSandboxPanel = document.querySelector("#geminiSandboxPanel");
 const geminiSandboxOutput = document.querySelector("#geminiSandboxOutput");
 const geminiSandboxReason = document.querySelector("#geminiSandboxReason");
+const prepareGeminiAcceptanceButton = document.querySelector(
+  "#prepareGeminiAcceptanceButton",
+);
+const executeGeminiAcceptanceButton = document.querySelector(
+  "#executeGeminiAcceptanceButton",
+);
+const geminiAcceptancePreflight = document.querySelector(
+  "#geminiAcceptancePreflight",
+);
+const geminiAcceptanceResultPanel = document.querySelector(
+  "#geminiAcceptanceResultPanel",
+);
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
 let currentRegistry = null;
 let currentPreviewId = null;
 let currentPreviewCanCommit = false;
+let geminiAcceptanceFingerprint = null;
+let geminiAcceptanceExecutionStarted = false;
 
 const termTypeLabels = {
   test_item: "検査項目",
@@ -266,6 +280,14 @@ generatePresentationPromptButton.addEventListener("click", async () => {
 
 executeGeminiSandboxButton.addEventListener("click", async () => {
   await executeGeminiSandbox();
+});
+
+prepareGeminiAcceptanceButton.addEventListener("click", async () => {
+  await prepareGeminiAcceptance();
+});
+
+executeGeminiAcceptanceButton.addEventListener("click", async () => {
+  await executeGeminiAcceptance();
 });
 
 presentationRequestMode.addEventListener("change", () => {
@@ -1045,6 +1067,177 @@ async function generatePresentationPrompt() {
         : "Presentation Prompt生成の通信に失敗しました。";
   } finally {
     generatePresentationPromptButton.disabled = false;
+  }
+}
+
+async function prepareGeminiAcceptance() {
+  prepareGeminiAcceptanceButton.disabled = true;
+  executeGeminiAcceptanceButton.disabled = true;
+  geminiAcceptanceResultPanel.hidden = true;
+  document.querySelector("#geminiAcceptanceMessage").textContent =
+    "隔離Fixtureを組み立て、送信前の安全条件を確認しています…";
+  try {
+    const response = await fetch("/api/gemini-acceptance/preflight", {
+      method: "POST",
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "送信前確認を作成できませんでした。",
+      );
+    }
+    const preflight = payload.preflight;
+    const check = (value) => (value ? "OK" : "NG");
+    geminiAcceptanceFingerprint = preflight.payload_fingerprint;
+    geminiAcceptanceExecutionStarted = preflight.already_executed;
+    setText(
+      "#acceptanceProviderMode",
+      preflight.provider + " / " + preflight.mode,
+    );
+    setText("#acceptanceModel", preflight.model);
+    setText(
+      "#acceptanceFixture",
+      preflight.knowledge_id + " / fixture_mode=" + preflight.fixture_mode,
+    );
+    setText("#acceptanceApproval", preflight.approval_state);
+    setText(
+      "#acceptanceCounts",
+      preflight.claim_count + " / " + preflight.reference_count,
+    );
+    setText(
+      "#acceptanceLayout",
+      preflight.diagram_request_count + " / " + preflight.page_count,
+    );
+    setText(
+      "#acceptanceSafety",
+      check(preflight.data_egress_policy_result) +
+        " / " +
+        check(preflight.secret_scan_result),
+    );
+    setText(
+      "#acceptanceIntegrity",
+      check(preflight.stale_check_result) +
+        " / " +
+        check(preflight.fingerprint_result),
+    );
+    setText("#acceptanceCharacters", String(preflight.send_character_count));
+    setText("#acceptanceMaxTokens", String(preflight.max_output_tokens));
+    setText(
+      "#acceptanceLimits",
+      preflight.retry_limit + " / " + preflight.timeout_seconds + "秒",
+    );
+    setText(
+      "#acceptanceExternal",
+      "外部通信あり / API Key " +
+        (preflight.api_key_configured ? "設定済み" : "未設定"),
+    );
+    setText("#acceptanceFingerprint", preflight.payload_fingerprint);
+    geminiAcceptancePreflight.hidden = false;
+    const reason = document.querySelector("#geminiAcceptanceReason");
+    reason.textContent = preflight.can_execute
+      ? "全条件OKです。次のボタンを押すと、隔離FixtureをGeminiへ1回だけ送信します。"
+      : "停止理由：" + preflight.stop_reasons.join(" / ");
+    reason.className = preflight.can_execute
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    document.querySelector("#geminiAcceptanceMessage").textContent =
+      "送信前確認が完了しました。この時点では外部通信していません。";
+    executeGeminiAcceptanceButton.disabled = !preflight.can_execute;
+  } catch (error) {
+    document.querySelector("#geminiAcceptanceMessage").textContent =
+      error instanceof Error ? error.message : "送信前確認に失敗しました。";
+  } finally {
+    prepareGeminiAcceptanceButton.disabled = geminiAcceptanceExecutionStarted;
+  }
+}
+
+async function executeGeminiAcceptance() {
+  if (!geminiAcceptanceFingerprint || geminiAcceptanceExecutionStarted) {
+    return;
+  }
+  geminiAcceptanceExecutionStarted = true;
+  executeGeminiAcceptanceButton.disabled = true;
+  prepareGeminiAcceptanceButton.disabled = true;
+  document.querySelector("#geminiAcceptanceMessage").textContent =
+    "隔離FixtureをGeminiへ送信しています。この実行は1回だけです…";
+  try {
+    const response = await fetch("/api/gemini-acceptance/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        confirm_external_communication: true,
+        payload_fingerprint: geminiAcceptanceFingerprint,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload.errors?.[0]?.message || "実API受入テストを実行できませんでした。",
+      );
+    }
+    const result = payload.result;
+    const usage = result.token_usage;
+    const check = (value) => (value ? "OK" : "NG");
+    setText("#acceptanceResultStatus", result.status);
+    setText(
+      "#acceptanceResultTransport",
+      (result.http_status ?? "未取得") + " / " +
+        (result.provider_request_id ?? "未取得"),
+    );
+    setText("#acceptanceResultValidation", result.validation_result);
+    setText(
+      "#acceptanceResultTraceability",
+      check(result.claim_traceability_result) +
+        " / " +
+        check(result.reference_traceability_result),
+    );
+    setText(
+      "#acceptanceResultTokens",
+      (usage.prompt_tokens ?? "?") +
+        " + " +
+        (usage.completion_tokens ?? "?") +
+        " = " +
+        (usage.total_tokens ?? "?"),
+    );
+    setText(
+      "#acceptanceResultCost",
+      usage.cost_status === "calculated"
+        ? "$" + usage.estimated_cost_usd
+        : "未計算",
+    );
+    setText(
+      "#acceptanceResultTiming",
+      result.duration_ms + " ms / retry " + result.retry_count,
+    );
+    setText(
+      "#acceptanceResultRegistry",
+      result.production_registry_unchanged ? "変更なし" : "変更検出",
+    );
+    setText(
+      "#acceptanceResultStorage",
+      check(result.audit_saved) + " / " + check(result.response_metadata_saved),
+    );
+    setText(
+      "#acceptanceResultEnvironment",
+      result.execution_environment + " / fixture=" + result.fixture_mode,
+    );
+    const reason = document.querySelector("#geminiAcceptanceResultReason");
+    reason.textContent = result.error_code
+      ? "結果：" + result.error_code + " · " + result.error_message
+      : "実API通信とResponse Validationが完了しました。";
+    reason.className = result.status === "success"
+      ? "source-bundle-gate-reason allowed"
+      : "source-bundle-gate-reason blocked";
+    geminiAcceptanceResultPanel.hidden = false;
+    document.querySelector("#geminiAcceptanceMessage").textContent =
+      "受入テストは完了しました。再実行にはWorkbenchの再起動が必要です。";
+    geminiAcceptanceResultPanel.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } catch (error) {
+    document.querySelector("#geminiAcceptanceMessage").textContent =
+      error instanceof Error ? error.message : "実API受入テストに失敗しました。";
   }
 }
 

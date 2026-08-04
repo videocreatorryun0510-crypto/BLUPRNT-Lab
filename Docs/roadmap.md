@@ -45,6 +45,7 @@
 | Phase 5.16：Presentation Engine Adapter Contract MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.17：Provider Payload Preparation & Response Traceability MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.18：Presentation Prompt Builder & Gemini Adapter Sandbox MVP | 実装完了・実API受入確認待ち |
+| Phase 5.18.1：Gemini Sandbox Real API Acceptance Test | 実装完了・ユーザー明示実行待ち |
 
 Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止します。Phase 5.15ではAI非依存のPresentation Request、Phase 5.16ではProvider非依存のAdapter Interface、Phase 5.17では承認済み正本のProvider Payload解決、Data Egress Policy、Traceable Responseを追加しました。Phase 5.18ではProvider非依存Prompt BuilderとGemini固有Sandbox Adapterを分離し、既存Contractを変えずに実Provider接続境界を実装しました。
 
@@ -268,6 +269,17 @@ Exam Metadataは医学知識と独立した版付きコンポーネントとし�
 - WorkbenchのPrompt Preview、Gemini Sandbox、Response Preview
 - [Presentation Prompt & Gemini Sandbox](presentation_prompt_and_gemini_sandbox.md)
 - [ADR-0011](adr/0011-provider-neutral-prompt-builder-and-gemini-sandbox.md)
+
+### Phase 5.18.1成果物
+
+- 実Registryを変更しない隔離Test Fixtureと一時SQLite
+- Workbenchの実通信前Preflightと1回限りの明示実行
+- Provider Request ID、構造化JSON、Fingerprint、Claim、Reference、無変更本文の受入検証
+- 通信結果と受入結果を分ける`transport_result`／`validation_result`／`final_result`
+- Token、Duration、Retry、HTTP Status、Provider Request IDの安全な結果表示
+- 本文・Prompt・生Response・Secretを保存しない専用Audit
+- [Gemini Real API Acceptance](gemini_real_api_acceptance.md)
+- [ADR-0012](adr/0012-isolated-one-shot-gemini-api-acceptance.md)
 
 ---
 

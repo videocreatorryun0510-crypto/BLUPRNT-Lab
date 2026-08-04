@@ -95,6 +95,10 @@ from knowledge_workbench.exam_import_service import (
     import_exam_csv,
 )
 from knowledge_workbench.exam_metadata_provider import DummyExamMetadataProvider
+from knowledge_workbench.gemini_acceptance import (
+    GeminiAcceptanceError,
+    GeminiAcceptanceService,
+)
 from knowledge_workbench.knowledge_registry import KnowledgeRegistry
 from knowledge_workbench.knowledge_relation_repository import (
     KnowledgeRelationRepository,
@@ -271,6 +275,13 @@ class GeminiSandboxExecutionRequest(BaseModel):
     request_mode: Literal[RequestMode.EXTERNAL] = RequestMode.EXTERNAL
 
 
+class GeminiAcceptanceExecutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm_external_communication: Literal[True]
+    payload_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
 @dataclass(frozen=True)
 class _PendingCsvPreview:
     csv_text: str
@@ -392,10 +403,11 @@ def create_app(
     registry: KnowledgeRegistry | None = None,
     relation_repository: KnowledgeRelationRepository | None = None,
     gemini_adapter: GeminiSandboxAdapter | None = None,
+    gemini_acceptance_service: GeminiAcceptanceService | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.18.0",
+        version="5.18.1",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -539,23 +551,42 @@ def create_app(
         if temporary_registry_directory is not None
         else resolved_settings.gemini_sandbox_audit_log_path
     )
-    gemini_sandbox_adapter = gemini_adapter or GeminiSandboxAdapter.from_directories(
-        GeminiAdapterConfig(
-            api_key=resolved_settings.gemini_api_key,
-            model=resolved_settings.gemini_model,
-            endpoint=resolved_settings.gemini_endpoint,
-            timeout_seconds=resolved_settings.gemini_timeout_seconds,
-            retry_limit=1,
-            debug_prompt=resolved_settings.gemini_debug_prompt,
-            input_cost_per_million_tokens=(
-                resolved_settings.gemini_input_cost_per_million_tokens
-            ),
-            output_cost_per_million_tokens=(
-                resolved_settings.gemini_output_cost_per_million_tokens
-            ),
+    gemini_config = GeminiAdapterConfig(
+        api_key=resolved_settings.gemini_api_key,
+        model=resolved_settings.gemini_model,
+        endpoint=resolved_settings.gemini_endpoint,
+        timeout_seconds=resolved_settings.gemini_timeout_seconds,
+        retry_limit=1,
+        debug_prompt=resolved_settings.gemini_debug_prompt,
+        input_cost_per_million_tokens=(
+            resolved_settings.gemini_input_cost_per_million_tokens
         ),
+        output_cost_per_million_tokens=(
+            resolved_settings.gemini_output_cost_per_million_tokens
+        ),
+    )
+    gemini_sandbox_adapter = gemini_adapter or GeminiSandboxAdapter.from_directories(
+        gemini_config,
         gemini_response_output_directory,
         gemini_sandbox_audit_log_path,
+    )
+    gemini_acceptance_output_root = (
+        Path(temporary_registry_directory.name) / "gemini_acceptance"
+        if temporary_registry_directory is not None
+        else resolved_settings.gemini_sandbox_response_output_dir.parent
+        / "gemini_acceptance"
+    )
+    resolved_gemini_acceptance_service = (
+        gemini_acceptance_service
+        or GeminiAcceptanceService.from_config(
+            gemini_config,
+            gemini_acceptance_output_root,
+            Path(__file__).resolve().parents[2]
+            / "fixtures"
+            / "gemini_acceptance"
+            / "knowledge.json",
+            resolved_settings.presentation_profile_dir,
+        )
     )
     service = (
         GenerateKnowledge(provider, registry=resolved_registry) if provider is not None else None
@@ -693,7 +724,7 @@ def create_app(
             "presentation_prompt_audit_log": str(
                 presentation_prompt_audit_log_path
             ),
-            "gemini_sandbox_adapter_version": "1.0.0",
+            "gemini_sandbox_adapter_version": "1.0.1",
             "gemini_sandbox_model": gemini_sandbox_adapter.config.model,
             "gemini_sandbox_api_key_configured": bool(
                 gemini_sandbox_adapter.config.api_key
@@ -707,7 +738,102 @@ def create_app(
                 gemini_response_output_directory
             ),
             "gemini_sandbox_audit_log": str(gemini_sandbox_audit_log_path),
+            "gemini_acceptance_phase": "5.18.1",
+            "gemini_acceptance_fixture_id": (
+                resolved_gemini_acceptance_service.fixture_knowledge_id
+            ),
+            "gemini_acceptance_execution_limit": 1,
         }
+
+    @app.post("/api/gemini-acceptance/preflight")
+    def gemini_acceptance_preflight() -> JSONResponse:
+        """Prepare an isolated fixture without external communication."""
+
+        try:
+            fingerprint = _registry_fingerprint(resolved_registry.snapshot())
+            preflight = resolved_gemini_acceptance_service.prepare(fingerprint)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "ready" if preflight.can_execute else "blocked",
+                    "preflight": preflight.model_dump(mode="json"),
+                    "external_ai_called": False,
+                    "production_registry_mutated": False,
+                },
+            )
+        except (GeminiAcceptanceError, RegistryOperationError, ValidationError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "gemini_acceptance_preflight_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+
+    @app.post("/api/gemini-acceptance/execute")
+    def execute_gemini_acceptance(
+        request: GeminiAcceptanceExecutionRequest,
+    ) -> JSONResponse:
+        """Execute the explicitly confirmed, one-shot isolated acceptance fixture."""
+
+        try:
+            before = _registry_fingerprint(resolved_registry.snapshot())
+            result = resolved_gemini_acceptance_service.execute(
+                expected_payload_fingerprint=request.payload_fingerprint,
+                production_registry_fingerprint=before,
+            )
+            after = _registry_fingerprint(resolved_registry.snapshot())
+            if before != after:
+                result = result.model_copy(
+                    update={
+                        "status": "validation_failed",
+                        "production_registry_unchanged": False,
+                        "error_code": "production_registry_changed",
+                        "error_message": (
+                            "実API実行中にProduction RegistryのFingerprintが変化しました。"
+                        ),
+                    }
+                )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": result.status,
+                    "result": result.model_dump(mode="json"),
+                    "external_ai_called": result.transport_result != "not_called",
+                    "production_registry_mutated": before != after,
+                },
+            )
+        except GeminiAcceptanceError as error:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "blocked",
+                    "errors": [
+                        {
+                            "code": "gemini_acceptance_execution_blocked",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
+        except (RegistryOperationError, ValidationError, ValueError) as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": "gemini_acceptance_execution_failed",
+                            "message": str(error),
+                        }
+                    ],
+                },
+            )
 
     @app.get("/api/schema/knowledge-1.0")
     def schema_v10() -> dict[str, object]:

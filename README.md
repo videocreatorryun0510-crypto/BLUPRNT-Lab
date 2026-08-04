@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.18「Presentation Prompt Builder & Gemini Adapter Sandbox MVP」を実装しました。** Provider PayloadからGemini等に依存しないPresentation Promptを生成し、Gemini固有変換・認証・Timeout・Retry・Response MappingをAdapter内だけへ分離しました。Geminiは`store=false`で呼び出し、Resultと監査へ医学本文を保存しません。詳細は[Presentation Prompt & Gemini Sandbox](Docs/presentation_prompt_and_gemini_sandbox.md)に記録しています。
+> **Phase 5.18.1「Gemini Sandbox Real API Acceptance Test」を実装しました。** 実Knowledgeを承認・送信せず、隔離SQLite内の2 Claim Test Fixtureだけで、送信前確認、1回限りの明示実行、構造化Response、Claim・Reference追跡、本文なし監査を確認できます。詳細は[Gemini Real API Acceptance](Docs/gemini_real_api_acceptance.md)に記録しています。
 
 ---
 

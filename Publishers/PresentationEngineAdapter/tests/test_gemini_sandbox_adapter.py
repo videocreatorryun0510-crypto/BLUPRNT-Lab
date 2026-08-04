@@ -169,6 +169,62 @@ def _success(payload: Any, prompt: Any, *, fingerprint: str | None = None):
     return GeminiHttpResponse(200, json.dumps(body).encode())
 
 
+def _structured_success(
+    payload: Any,
+    prompt: Any,
+    *,
+    provider_request_id: str | None = "int_sandbox_structured",
+    title: str | None = None,
+    claim_ids: list[str] | None = None,
+    claim_texts: list[str] | None = None,
+    reference_ids: list[str] | None = None,
+) -> GeminiHttpResponse:
+    claims = list(payload.medical_content.selected_claims)
+    used_claim_ids = claim_ids or [item.claim_id for item in claims]
+    used_claim_texts = claim_texts or [item.exact_text for item in claims]
+    summary = {
+        "presentation_request_id": payload.request.presentation_request_id,
+        "payload_id": payload.identity.payload_id,
+        "payload_fingerprint": payload.metadata.payload_fingerprint,
+        "status": "completed",
+        "pages": payload.presentation.page_or_slide_count,
+        "title": title or prompt.title,
+        "sections": [
+            {
+                "heading": "要点1",
+                "exact_claim_texts": used_claim_texts,
+                "source_claim_ids": used_claim_ids,
+            }
+        ],
+        "source_claim_ids": used_claim_ids,
+        "source_reference_ids": reference_ids
+        if reference_ids is not None
+        else [item.reference_id for item in payload.medical_content.references],
+        "omitted_claim_ids": [],
+        "used_diagram_request_ids": [
+            item.diagram_request_id for item in payload.visual_content.diagram_requests
+        ],
+        "warnings": [],
+    }
+    body: dict[str, object] = {
+        "steps": [
+            {
+                "type": "model_output",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(summary, ensure_ascii=False),
+                    }
+                ],
+            }
+        ],
+        "usage": {"totalInputTokens": 100, "totalOutputTokens": 50},
+    }
+    if provider_request_id is not None:
+        body["id"] = provider_request_id
+    return GeminiHttpResponse(200, json.dumps(body).encode())
+
+
 def _adapter(
     tmp_path: Path,
     transport: FakeTransport,
@@ -357,5 +413,90 @@ def test_response_fingerprint_error_is_traceable(tmp_path: Path) -> None:
     result = _adapter(tmp_path, transport).execute(payload, prompt)
 
     assert result.report.error_code == "fingerprint_error"
+
+
+def test_acceptance_structured_response_is_validated_without_persisting_text(
+    tmp_path: Path,
+) -> None:
+    payload, prompt = _approved_payload_and_prompt(tmp_path)
+    result = _adapter(
+        tmp_path,
+        FakeTransport([_structured_success(payload, prompt)]),
+    ).execute(payload, prompt, fixture_mode=True)
+
+    assert result.report.final_result == "success"
+    assert result.report.validation_result == "passed"
+    assert result.report.fixture_mode is True
+    assert "fixture_mode=true" in result.response.warnings
+    persisted = Path(result.report.response_output_path).read_text(encoding="utf-8")
+    for claim in payload.medical_content.selected_claims:
+        assert claim.exact_text not in persisted
+
+
+def test_acceptance_requires_provider_request_id(tmp_path: Path) -> None:
+    payload, prompt = _approved_payload_and_prompt(tmp_path)
+    result = _adapter(
+        tmp_path,
+        FakeTransport(
+            [_structured_success(payload, prompt, provider_request_id=None)]
+        ),
+    ).execute(payload, prompt, fixture_mode=True)
+
+    assert result.report.final_result == "validation_failed"
+    assert result.report.error_code == "provider_request_id_error"
+
+
+def test_acceptance_rejects_unapproved_claim_id(tmp_path: Path) -> None:
+    payload, prompt = _approved_payload_and_prompt(tmp_path)
+    claims = list(payload.medical_content.selected_claims)
+    result = _adapter(
+        tmp_path,
+        FakeTransport(
+            [
+                _structured_success(
+                    payload,
+                    prompt,
+                    claim_ids=[claims[0].claim_id, "clm_not_in_payload"],
+                    claim_texts=[claims[0].exact_text, claims[0].exact_text],
+                )
+            ]
+        ),
+    ).execute(payload, prompt, fixture_mode=True)
+
+    assert result.report.final_result == "validation_failed"
+    assert result.report.error_code == "claim_traceability_error"
+
+
+def test_acceptance_rejects_rewritten_medical_text(tmp_path: Path) -> None:
+    payload, prompt = _approved_payload_and_prompt(tmp_path)
+    claims = list(payload.medical_content.selected_claims)
+    result = _adapter(
+        tmp_path,
+        FakeTransport(
+            [
+                _structured_success(
+                    payload,
+                    prompt,
+                    claim_texts=["追加された文章", *[item.exact_text for item in claims[1:]]],
+                )
+            ]
+        ),
+    ).execute(payload, prompt, fixture_mode=True)
+
+    assert result.report.final_result == "validation_failed"
+    assert result.report.error_code == "medical_addition_error"
+
+
+def test_acceptance_rejects_reference_mismatch(tmp_path: Path) -> None:
+    payload, prompt = _approved_payload_and_prompt(tmp_path)
+    result = _adapter(
+        tmp_path,
+        FakeTransport(
+            [_structured_success(payload, prompt, reference_ids=["src_unknown"])]
+        ),
+    ).execute(payload, prompt, fixture_mode=True)
+
+    assert result.report.final_result == "validation_failed"
+    assert result.report.error_code == "reference_traceability_error"
     assert result.response.execution.status == "failed"
     assert result.report.external_ai_called is True

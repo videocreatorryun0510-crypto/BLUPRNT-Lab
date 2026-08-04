@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from presentation_engine_adapter import DEFAULT_GEMINI_MODEL
+
 from knowledge_workbench.errors import ProviderConfigurationError
 from knowledge_workbench.providers.base import KnowledgeProvider
 from knowledge_workbench.providers.openai_provider import OpenAIKnowledgeProvider
@@ -87,7 +89,7 @@ class Settings:
     )
     gemini_sandbox_audit_log_path: Path = DEFAULT_GEMINI_SANDBOX_AUDIT_LOG_PATH
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.6-flash"
+    gemini_model: str = DEFAULT_GEMINI_MODEL
     gemini_endpoint: str = (
         "https://generativelanguage.googleapis.com/v1beta/interactions"
     )
@@ -231,7 +233,7 @@ class Settings:
                 else DEFAULT_GEMINI_SANDBOX_AUDIT_LOG_PATH
             ),
             gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
-            gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip(),
+            gemini_model=os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip(),
             gemini_endpoint=os.getenv(
                 "GEMINI_ENDPOINT",
                 "https://generativelanguage.googleapis.com/v1beta/interactions",

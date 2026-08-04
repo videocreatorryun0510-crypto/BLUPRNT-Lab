@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.18
+# Knowledge Workbench — Phase 5.18.1
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -9,6 +9,8 @@ Phase 5.16ではProvider非依存のPresentation Engine Adapter ContractとDummy
 Phase 5.17では、Presentation Requestの参照IDを承認済み正本へ解決するProvider Payload Resolverを追加しました。未承認Claim、Stale、Secret、ローカルパス、個人情報候補をPayload生成前に停止し、Dummy Responseでは使用Claim・図解・出典IDとFingerprintを追跡できます。Provider Payload Previewも安全側の初期Policyとして`approved`だけが対象です。
 
 Phase 5.18では、Provider非依存のPresentation Prompt BuilderとGemini Sandbox Adapterを追加しました。Prompt PreviewにはProvider固有情報を含めず、Gemini固有の変換・認証・通信・Response MappingはAdapter内部だけで処理します。未承認Knowledge、Stale、Fingerprint不一致、APIキー未設定では外部通信しません。
+
+Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを追加しました。画面上部の専用欄で「送信前確認を作成」を押し、隔離Test Fixture、承認、Egress、Secret、Stale、Fingerprint、件数、送信量、Token、Retry、Timeoutを確認します。すべてOKの場合だけ「Test FixtureをGeminiへ1回送信」を押せます。ページ読込やKnowledge保存では自動送信されません。
 
 ## できること
 
@@ -90,6 +92,10 @@ Phase 5.18では、Provider非依存のPresentation Prompt BuilderとGemini Sand
 76. Prompt内で承認済みClaim本文が言い換えられていないことを確認する
 77. Gemini Sandboxで認証・Timeout・Retry・構造化Response Mappingを確認する
 78. Token・任意Cost・Duration・Fingerprint・停止理由を本文なし監査で確認する
+79. 実Registryとは別の一時SQLiteで、2 Claimの承認済みGemini受入Fixtureを作る
+80. 外部通信前にFixture、承認、Egress、Secret、Stale、Fingerprint、送信量を確認する
+81. 明示操作1回だけでGemini実APIを呼び、構造化Responseを厳格に検証する
+82. 実Registry不変、Claim・Reference追跡、Token・Duration・Audit保存を確認する
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 

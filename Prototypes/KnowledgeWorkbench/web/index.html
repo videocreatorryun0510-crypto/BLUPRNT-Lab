@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=prompt-gemini-5.18" />
+    <link rel="stylesheet" href="/static/styles.css?v=gemini-acceptance-5.18.1" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.18</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.18.1</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">Provider非依存Promptを経由し、Gemini Sandboxへ安全に接続。</p>
+          <p class="lead">隔離Fixtureで、Gemini実APIへの1回限りの受入テストを安全に確認。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -20,6 +20,70 @@
           <span class="badge warning">医学監修前</span>
         </div>
       </header>
+
+      <section class="input-panel" aria-labelledby="gemini-acceptance-title">
+        <div class="panel-copy">
+          <p class="step">PHASE 5.18.1 · REAL API ACCEPTANCE</p>
+          <h2 id="gemini-acceptance-title">Gemini Sandbox 実API受入テスト</h2>
+          <p>
+            実際の医療Knowledgeではなく、隔離された承認済みTest Fixtureだけを送ります。
+            送信は下の確認結果を見た後、専用ボタンを押した1回だけです。
+          </p>
+        </div>
+        <div class="knowledge-editor-controls">
+          <div class="editor-actions">
+            <button id="prepareGeminiAcceptanceButton" class="secondary-action" type="button">
+              送信前確認を作成
+            </button>
+            <button id="executeGeminiAcceptanceButton" class="primary-action" type="button" disabled>
+              Test FixtureをGeminiへ1回送信
+            </button>
+          </div>
+          <p id="geminiAcceptanceMessage" class="source-bundle-message">
+            まだ外部通信は行われていません。
+          </p>
+          <div id="geminiAcceptancePreflight" class="presentation-engine-summary" hidden>
+            <div><span>Provider / Mode</span><strong id="acceptanceProviderMode">--</strong></div>
+            <div><span>Model</span><strong id="acceptanceModel">--</strong></div>
+            <div><span>Fixture</span><strong id="acceptanceFixture">--</strong></div>
+            <div><span>Approval</span><strong id="acceptanceApproval">--</strong></div>
+            <div><span>Claims / References</span><strong id="acceptanceCounts">--</strong></div>
+            <div><span>Diagrams / Pages</span><strong id="acceptanceLayout">--</strong></div>
+            <div><span>Egress / Secret</span><strong id="acceptanceSafety">--</strong></div>
+            <div><span>Stale / Fingerprint</span><strong id="acceptanceIntegrity">--</strong></div>
+            <div><span>Characters</span><strong id="acceptanceCharacters">--</strong></div>
+            <div><span>Max Tokens</span><strong id="acceptanceMaxTokens">--</strong></div>
+            <div><span>Retry / Timeout</span><strong id="acceptanceLimits">--</strong></div>
+            <div><span>External Call</span><strong id="acceptanceExternal">--</strong></div>
+          </div>
+          <p class="fingerprint-line">
+            <span>Payload Fingerprint</span>
+            <code id="acceptanceFingerprint">未作成</code>
+          </p>
+          <p id="geminiAcceptanceReason" class="source-bundle-gate-reason"></p>
+          <section id="geminiAcceptanceResultPanel" class="source-bundle-output" hidden>
+            <div class="source-bundle-heading">
+              <div>
+                <p class="step">SAFE METADATA RESULT</p>
+                <h3>API通信・追跡性・Registry不変の確認結果</h3>
+              </div>
+            </div>
+            <div class="presentation-engine-summary">
+              <div><span>Final</span><strong id="acceptanceResultStatus">--</strong></div>
+              <div><span>HTTP / Provider ID</span><strong id="acceptanceResultTransport">--</strong></div>
+              <div><span>Validation</span><strong id="acceptanceResultValidation">--</strong></div>
+              <div><span>Claim / Reference</span><strong id="acceptanceResultTraceability">--</strong></div>
+              <div><span>Tokens</span><strong id="acceptanceResultTokens">--</strong></div>
+              <div><span>Cost</span><strong id="acceptanceResultCost">--</strong></div>
+              <div><span>Duration / Retry</span><strong id="acceptanceResultTiming">--</strong></div>
+              <div><span>Production Registry</span><strong id="acceptanceResultRegistry">--</strong></div>
+              <div><span>Audit / Metadata</span><strong id="acceptanceResultStorage">--</strong></div>
+              <div><span>Environment</span><strong id="acceptanceResultEnvironment">--</strong></div>
+            </div>
+            <p id="geminiAcceptanceResultReason" class="source-bundle-gate-reason"></p>
+          </section>
+        </div>
+      </section>
 
       <section class="input-panel" aria-labelledby="input-title">
         <div class="panel-copy">
@@ -789,6 +853,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=provider-payload-5.17" defer></script>
+    <script src="/static/app.js?v=gemini-acceptance-5.18.1" defer></script>
   </body>
 </html>

@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
 from typing import ClassVar, Literal
+from uuid import uuid4
 
 from presentation_prompt_builder import (
     PresentationPrompt,
@@ -46,7 +47,7 @@ from presentation_engine_adapter.gemini_transport import (
 
 class GeminiSandboxAdapter:
     provider_name: ClassVar[Literal["gemini"]] = "gemini"
-    adapter_version: ClassVar[Literal["1.0.0"]] = "1.0.0"
+    adapter_version: ClassVar[Literal["1.0.1"]] = "1.0.1"
     mode: ClassVar[Literal["sandbox"]] = "sandbox"
 
     def __init__(
@@ -103,6 +104,7 @@ class GeminiSandboxAdapter:
                 "generation_config": {
                     "temperature": 0,
                     "thinking_level": "low",
+                    "max_output_tokens": self.config.max_output_tokens,
                 },
                 "response_format": {
                     "type": "text",
@@ -118,8 +120,10 @@ class GeminiSandboxAdapter:
         prompt: PresentationPrompt,
         *,
         started_at: datetime | None = None,
+        fixture_mode: bool = False,
     ) -> GeminiSandboxRunResult:
         started = started_at or datetime.now(UTC)
+        execution_id = f"gex_{uuid4().hex}"
         clock_start = monotonic()
         external_called = False
         attempts = 0
@@ -127,6 +131,7 @@ class GeminiSandboxAdapter:
         error_code: GeminiErrorCode | None = None
         error_message: str | None = None
         provider_request_id: str | None = None
+        http_status: int | None = None
 
         preflight = self._preflight(payload, prompt)
         if preflight is not None:
@@ -138,6 +143,7 @@ class GeminiSandboxAdapter:
                 message=error_message,
                 started_at=started,
                 completed_at=completed,
+                fixture_mode=fixture_mode,
             )
         else:
             request = self.build_provider_request(prompt)
@@ -164,26 +170,31 @@ class GeminiSandboxAdapter:
                         continue
                     break
                 if http_response.status_code in (401, 403):
+                    http_status = http_response.status_code
                     error_code = GeminiErrorCode.AUTHENTICATION
                     error_message = "Gemini APIの認証に失敗しました。"
                     break
                 if http_response.status_code == 429:
+                    http_status = http_response.status_code
                     error_code = GeminiErrorCode.RATE_LIMIT
                     error_message = "Gemini APIの利用上限に達しました。"
                     if attempt < self.config.retry_limit:
                         continue
                     break
                 if http_response.status_code >= 500:
+                    http_status = http_response.status_code
                     error_code = GeminiErrorCode.SERVER
                     error_message = "Gemini APIで一時的なサーバーエラーが発生しました。"
                     if attempt < self.config.retry_limit:
                         continue
                     break
                 if http_response.status_code >= 400:
+                    http_status = http_response.status_code
                     error_code = GeminiErrorCode.REQUEST
                     error_message = "Gemini APIがSandbox Requestを受け付けませんでした。"
                     break
                 try:
+                    http_status = http_response.status_code
                     response_data = parse_json_object(http_response.content)
                     raw_id = response_data.get("id")
                     provider_request_id = raw_id if isinstance(raw_id, str) else None
@@ -195,6 +206,7 @@ class GeminiSandboxAdapter:
                         started_at=started,
                         completed_at=completed,
                         config=self.config,
+                        fixture_mode=fixture_mode,
                     )
                     error_code = None
                     error_message = None
@@ -213,42 +225,74 @@ class GeminiSandboxAdapter:
                     started_at=started,
                     completed_at=completed,
                     provider_request_id=provider_request_id,
+                    fixture_mode=fixture_mode,
                 )
 
         assert response is not None
         duration_ms = max(0, int((monotonic() - clock_start) * 1000))
+        completed_at = response.execution.completed_at or datetime.now(UTC)
+        transport_result: Literal["success", "failed", "not_called"] = (
+            "not_called"
+            if not external_called
+            else "success"
+            if http_status is not None and 200 <= http_status < 300
+            else "failed"
+        )
+        validation_result: Literal["passed", "failed", "not_run"] = (
+            "passed"
+            if response.validation.is_valid
+            else "failed"
+            if transport_result == "success"
+            else "not_run"
+        )
+        final_result: Literal["success", "validation_failed", "failed"] = (
+            "success"
+            if response.execution.status.value == "completed"
+            and response.validation.is_valid
+            else "validation_failed"
+            if transport_result == "success"
+            else "failed"
+        )
         output_path = self._writer.write(response)
         self._audit.write(
             GeminiSandboxAuditRecord(
-                presentation_request_id=payload.request.presentation_request_id,
+                execution_id=execution_id,
+                request_id=payload.request.presentation_request_id,
                 payload_id=payload.identity.payload_id,
-                prompt_id=prompt.identity.prompt_id,
-                payload_fingerprint=payload.metadata.payload_fingerprint,
-                prompt_fingerprint=prompt.metadata.prompt_fingerprint,
-                prompt_builder_version=prompt.metadata.builder_version,
+                response_id=response.identity.response_id,
                 provider=self.provider_name,
                 model=self.config.model,
-                adapter_version=self.adapter_version,
-                mode=self.mode,
-                request_mode="external",
-                timestamp=started,
-                status=response.execution.status.value,
+                sandbox=True,
+                fixture_mode=fixture_mode,
+                started_at=started,
+                completed_at=completed_at,
+                duration=duration_ms,
+                token_usage=usage,
+                retry_count=max(0, attempts - 1),
+                transport_result=transport_result,
+                validation_result=validation_result,
+                final_result=final_result,
                 error_code=error_code,
-                external_ai_called=external_called,
-                attempt_count=attempts,
-                duration_ms=duration_ms,
-                usage=usage,
             )
         )
         report = GeminiSandboxExecutionReport(
+            execution_id=execution_id,
+            fixture_mode=fixture_mode,
             model=self.config.model,
             status=response.execution.status.value,
+            final_result=final_result,
+            transport_result=transport_result,
+            validation_result=validation_result,
             error_code=error_code,
             error_message=error_message,
             external_ai_called=external_called,
             attempt_count=attempts,
+            retry_count=max(0, attempts - 1),
+            http_status=http_status,
+            provider_request_id=provider_request_id,
             duration_ms=duration_ms,
             usage=usage,
+            max_output_tokens=self.config.max_output_tokens,
             payload_fingerprint=payload.metadata.payload_fingerprint,
             prompt_fingerprint=prompt.metadata.prompt_fingerprint,
             response_output_path=str(output_path),
@@ -326,7 +370,9 @@ def _gemini_prompt(prompt: PresentationPrompt) -> str:
             "Do not add or infer medical facts.",
             "Account for every selected claim as used or omitted.",
             "Use only supplied claim, diagram, and reference IDs.",
-            "Return metadata only; do not return presentation prose.",
+            "Use exact claim text only; do not create presentation prose.",
+            "Use only fixed headings named 要点1, 要点2, or 要点3.",
+            "Return the requested structured JSON and nothing else.",
         ],
         "presentation_prompt": provider_neutral,
     }
@@ -335,16 +381,23 @@ def _gemini_prompt(prompt: PresentationPrompt) -> str:
 
 def _trace_schema(prompt: PresentationPrompt) -> dict[str, object]:
     claim_ids = list(prompt.content_policy.selected_claim_ids)
+    exact_claim_texts = [item.exact_text for item in prompt.claims]
     diagram_ids = list(prompt.content_policy.diagram_request_ids)
     reference_ids = list(prompt.content_policy.reference_ids)
 
-    def id_array(ids: list[str], maximum: int) -> dict[str, object]:
+    def id_array(
+        ids: list[str],
+        maximum: int,
+        *,
+        minimum: int = 0,
+    ) -> dict[str, object]:
         items: dict[str, object] = {"type": "string"}
         if ids:
             items["enum"] = ids
         return {
             "type": "array",
             "items": items,
+            "minItems": minimum,
             "maxItems": maximum,
         }
 
@@ -370,14 +423,56 @@ def _trace_schema(prompt: PresentationPrompt) -> dict[str, object]:
                 "minimum": 1,
                 "maximum": prompt.layout_policy.page_or_slide_count,
             },
-            "used_claim_ids": id_array(claim_ids, len(claim_ids)),
+            "title": {
+                "type": "string",
+                "enum": [prompt.title],
+            },
+            "sections": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": min(3, prompt.layout_policy.page_or_slide_count),
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "heading": {
+                            "type": "string",
+                            "enum": ["要点1", "要点2", "要点3"],
+                        },
+                        "exact_claim_texts": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": len(claim_ids),
+                            "items": {
+                                "type": "string",
+                                "enum": exact_claim_texts,
+                            },
+                        },
+                        "source_claim_ids": id_array(
+                            claim_ids,
+                            len(claim_ids),
+                            minimum=1,
+                        ),
+                    },
+                    "required": [
+                        "heading",
+                        "exact_claim_texts",
+                        "source_claim_ids",
+                    ],
+                },
+            },
+            "source_claim_ids": id_array(
+                claim_ids,
+                len(claim_ids),
+                minimum=1,
+            ),
+            "source_reference_ids": id_array(reference_ids, len(reference_ids)),
             "omitted_claim_ids": id_array(claim_ids, len(claim_ids)),
             "used_diagram_request_ids": id_array(diagram_ids, len(diagram_ids)),
-            "used_reference_ids": id_array(reference_ids, len(reference_ids)),
             "warnings": {
                 "type": "array",
                 "items": {"type": "string"},
-                "maxItems": 30,
+                "maxItems": 0,
             },
         },
         "required": [
@@ -386,10 +481,12 @@ def _trace_schema(prompt: PresentationPrompt) -> dict[str, object]:
             "payload_fingerprint",
             "status",
             "pages",
-            "used_claim_ids",
+            "title",
+            "sections",
+            "source_claim_ids",
+            "source_reference_ids",
             "omitted_claim_ids",
             "used_diagram_request_ids",
-            "used_reference_ids",
             "warnings",
         ],
     }

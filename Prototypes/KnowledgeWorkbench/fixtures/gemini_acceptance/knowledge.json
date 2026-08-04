@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "knowledge_id": "knw_sandbox_fixture_001",
+  "content_revision": 1,
+  "term": {
+    "canonical_name": "Gemini Sandbox接続確認Fixture",
+    "english_name": "Gemini Sandbox Acceptance Fixture",
+    "aliases": []
+  },
+  "classification": {
+    "term_type": "laboratory_test_item",
+    "primary_exam_domain": "other",
+    "related_exam_domains": []
+  },
+  "core_facts": {
+    "definitions": [
+      {
+        "claim_id": "clm_sandbox_fixture_definition",
+        "assertion": "この項目はGemini Sandboxの接続確認だけに使用する隔離テストデータである。"
+      }
+    ]
+  },
+  "category_content": {
+    "template_id": "laboratory_test_item_v1.0",
+    "laboratory_test_item": {
+      "overview": [
+        {
+          "claim_id": "clm_sandbox_fixture_overview",
+          "assertion": "出力は承認済みIDと入力文章が対応していることの確認だけに使用する。"
+        }
+      ],
+      "measured_targets": [],
+      "clinical_significance": [],
+      "high_conditions": [],
+      "low_conditions": [],
+      "measurement_methods": []
+    }
+  },
+  "exam_metadata": {
+    "analysis_batch_id": null,
+    "importance": null,
+    "first_appearance_session": null,
+    "last_appearance_session": null,
+    "appearance_frequency": null,
+    "blueprint_references": [],
+    "related_questions": [],
+    "comparison_targets": [],
+    "related_knowledge": [],
+    "priority_claim_ids": [],
+    "keywords": []
+  },
+  "evidence": [
+    {
+      "source_id": "src_sandbox_fixture_public_001",
+      "source_priority_rank": 6,
+      "title": "BLUPRNT Lab Gemini Sandbox Acceptance Fixture",
+      "issuing_organization": "BLUPRNT Lab",
+      "edition": "1.0",
+      "publication_year": 2026,
+      "url": null,
+      "doi": null,
+      "pmid": null,
+      "accessed_at": "2026-08-04",
+      "chapter": "接続確認用公開識別子",
+      "pages": null,
+      "supported_claim_ids": [
+        "clm_sandbox_fixture_definition",
+        "clm_sandbox_fixture_overview"
+      ],
+      "evidence_role": "supporting"
+    }
+  ],
+  "publish_targets": {
+    "pdf": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "note": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "training_video": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    },
+    "national_exam": {
+      "priority_claim_ids": [],
+      "priority_exam_metadata": []
+    }
+  }
+}

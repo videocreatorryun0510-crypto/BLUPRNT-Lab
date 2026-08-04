@@ -244,6 +244,7 @@ flowchart LR
 | `Docs/presentation_engine_adapter_contract.md` | Phase 5.16のProvider非依存Adapter、Result、Validation、Approval Gate、監査 |
 | `Docs/provider_payload_and_response_traceability.md` | Phase 5.17の承認済みPayload解決、送信Policy、Fingerprint、Traceable Response |
 | `Docs/presentation_prompt_and_gemini_sandbox.md` | Phase 5.18のProvider非依存Prompt、Gemini Sandbox、Response Mapping、監査 |
+| `Docs/gemini_real_api_acceptance.md` | Phase 5.18.1の隔離Fixture、実通信前確認、1回実行、Response受入検証 |
 
 ### 3.3 実装時に追加するトップレベル
 
@@ -452,6 +453,8 @@ Phase 5.18では、Provider Payloadと実Providerの間へPresentation Prompt Bu
 `Presentation Payload → Provider非依存Prompt Builder → Presentation Prompt 1.0 → Gemini Sandbox Adapter（固有変換・API通信） → Response Mapper → 既存Traceable Response`
 
 Builderは学習目的、対象者、無変更Claim、Key Message、Diagram Request、Referenceと表示・検証方針だけを扱い、Provider名、API URL、認証、モデル固有命令を持ちません。Gemini固有処理はAdapter内部に閉じ込め、外部送信は従来のApproval Gate、Stale検知、Data Egress Policy、Fingerprint検証をすべて通過した場合だけ行います。Knowledge、Registry、Source Bundle、Presentation Request、Provider Payload、Traceable Response、Publisher Coreは変更しません。
+
+Phase 5.18.1の実API受入経路は、実Registryとは別の一時SQLiteで承認済みTest Fixtureを構築します。送信前確認までは外部通信せず、Workbenchの明示操作1回だけでGemini Sandbox Adapterを実行します。受信した構造化応答はProvider Request ID、Fingerprint、Claim、Reference、無変更本文を検証し、本文なしTraceable Responseと専用Auditへ保存します。実Knowledgeの承認状態・本文・履歴・Relationは変更しません。
 
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 

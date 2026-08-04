@@ -7,6 +7,7 @@ from presentation_engine_adapter.gemini import GeminiSandboxAdapter
 from presentation_engine_adapter.gemini_audit import JsonlGeminiSandboxAuditLogger
 from presentation_engine_adapter.gemini_mapper import GeminiResponseMapper
 from presentation_engine_adapter.gemini_models import (
+    DEFAULT_GEMINI_MODEL,
     GeminiAdapterConfig,
     GeminiErrorCode,
     GeminiSandboxExecutionReport,
@@ -40,6 +41,7 @@ __all__ = [
     "AdapterValidationIssue",
     "AdapterValidationReport",
     "DummyPresentationEngineAdapter",
+    "DEFAULT_GEMINI_MODEL",
     "EngineExecutionStatus",
     "GeneratedArtifact",
     "GeminiAdapterConfig",
