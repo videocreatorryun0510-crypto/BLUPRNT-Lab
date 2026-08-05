@@ -45,6 +45,8 @@ class ArtifactRegistryEntry(FrozenModel):
     presentation_request_id: str
     knowledge_id: str
     knowledge_version: int = Field(ge=1)
+    source_review_version: int = Field(ge=1)
+    source_claim_versions: dict[str, int]
     profile_id: str
     profile_version: str
     fingerprint: Fingerprint
@@ -55,6 +57,14 @@ class ArtifactRegistryEntry(FrozenModel):
     review_comment: str = Field(default="", max_length=4000)
     status: ArtifactRegistryStatus
     immutable: bool
+
+    @model_validator(mode="after")
+    def require_positive_claim_versions(self) -> Self:
+        if not self.source_claim_versions or any(
+            value < 1 for value in self.source_claim_versions.values()
+        ):
+            raise ValueError("source_claim_versions must contain positive versions")
+        return self
 
 
 class ArtifactVersionRecord(FrozenModel):
@@ -75,10 +85,23 @@ class ArtifactHistoryEvent(FrozenModel):
     to_approval_state: ArtifactApprovalState
 
 
+class ArtifactGateAuditRecord(FrozenModel):
+    audit_id: int = Field(ge=1)
+    artifact_id: ArtifactId
+    artifact_version: int = Field(ge=1)
+    action: Literal["approval_transition", "renderer_access"]
+    outcome: Literal["allowed", "blocked"]
+    reason_codes: tuple[str, ...]
+    evaluated_at: datetime
+    actor: NonEmptyText
+    review_comment: str = Field(default="", max_length=4000)
+
+
 class ArtifactRegistryView(FrozenModel):
     current: ArtifactRegistryEntry
     versions: tuple[ArtifactRegistryEntry, ...]
     history: tuple[ArtifactHistoryEvent, ...]
+    gate_audit: tuple[ArtifactGateAuditRecord, ...] = ()
 
 
 class HeadlineChange(FrozenModel):
@@ -130,9 +153,9 @@ class ArtifactCompletenessReport(FrozenModel):
     is_complete: bool
     sections: tuple[CompletenessSection, ...] = Field(min_length=8, max_length=8)
     improvement_candidates: tuple[str, ...]
-    disclaimer: Literal[
+    disclaimer: Literal["Completeness 100%は構造上の充足を示し、教育品質を保証しません。"] = (
         "Completeness 100%は構造上の充足を示し、教育品質を保証しません。"
-    ] = "Completeness 100%は構造上の充足を示し、教育品質を保証しません。"
+    )
 
 
 class RegistryValidationIssue(FrozenModel):

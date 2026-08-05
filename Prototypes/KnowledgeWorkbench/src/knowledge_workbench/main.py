@@ -60,6 +60,9 @@ from presentation_artifact_registry import (
     ArtifactApprovalState,
     ArtifactNotFoundError,
     ArtifactRegistryError,
+    ArtifactVersionRecord,
+    KnowledgeArtifactSourceSnapshot,
+    SourceClaimSnapshot,
     SQLitePresentationArtifactRegistry,
     artifact_registry_json_schema,
     evaluate_artifact_completeness,
@@ -441,7 +444,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.20.0",
+        version="5.20.1",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -599,6 +602,80 @@ def create_app(
             resolved_settings.presentation_artifact_registry_path
         )
     )
+
+    def artifact_source_snapshot(
+        version: ArtifactVersionRecord,
+    ) -> KnowledgeArtifactSourceSnapshot:
+        """Read current Knowledge state without mutating either Registry."""
+
+        knowledge_id = version.entry.knowledge_id
+        record = resolved_registry.record(knowledge_id)
+        if record is None:
+            raise RegistryOperationError(
+                f"Artifactの元Knowledgeが見つかりません: {knowledge_id}"
+            )
+        view = resolved_registry.view(knowledge_id)
+        exam_metadata = DummyExamMetadataProvider().build(
+            record.term.canonical_name,
+            record,
+        )
+        source_fingerprint = source_bundle_publisher.source_fingerprint(
+            record,
+            view,
+            exam_metadata,
+        )
+        redirects = {
+            item.source_claim_id: item.target_claim_id
+            for item in view.merge_redirects
+        }
+        claims_by_id = {item.claim_id: item for item in view.claims}
+
+        def canonical_claim_id(claim_id: str) -> tuple[str | None, bool]:
+            current = claim_id
+            seen: set[str] = set()
+            while current in redirects:
+                if current in seen:
+                    return None, False
+                seen.add(current)
+                current = redirects[current]
+            return (
+                (current, True)
+                if current in claims_by_id
+                else (None, False)
+            )
+
+        claim_snapshots = []
+        for claim in view.claims:
+            canonical, resolved = canonical_claim_id(claim.claim_id)
+            redirect_required = claim.status.value == "deprecated" or claim.is_deleted
+            claim_snapshots.append(
+                SourceClaimSnapshot(
+                    claim_id=claim.claim_id,
+                    claim_version=claim.claim_version,
+                    approval_state=claim.status.value,
+                    is_deleted=claim.is_deleted,
+                    updated_at=claim.updated_at,
+                    canonical_claim_id=canonical,
+                    redirect_resolved=(resolved if redirect_required else True),
+                )
+            )
+        change_times = [
+            view.knowledge.updated_at,
+            *(item.updated_at for item in view.claims),
+            *(item.merged_at for item in view.merge_redirects),
+        ]
+        approval = approval_snapshot_from_registry(view.knowledge)
+        return KnowledgeArtifactSourceSnapshot(
+            knowledge_id=knowledge_id,
+            knowledge_version=view.knowledge.knowledge_version,
+            approval_state=view.knowledge.status.value,
+            review_version=approval.review_version,
+            source_fingerprint=source_fingerprint,
+            knowledge_updated_at=view.knowledge.updated_at,
+            source_changed_at=max(change_times),
+            claims=tuple(claim_snapshots),
+        )
+
     gemini_response_output_directory = (
         Path(temporary_registry_directory.name) / "gemini_sandbox_response"
         if temporary_registry_directory is not None
@@ -794,7 +871,7 @@ def create_app(
             "presentation_artifact_audit_log": str(
                 presentation_artifact_audit_log_path
             ),
-            "presentation_artifact_registry_version": "1.0",
+            "presentation_artifact_registry_version": "1.0.1",
             "presentation_artifact_registry_storage": "sqlite",
             "presentation_artifact_registry_path": str(
                 presentation_artifact_registry.database_path
@@ -806,7 +883,9 @@ def create_app(
                 "approved",
                 "published",
             ],
-            "renderer_artifact_source_policy": "registry_approved_only",
+            "renderer_artifact_source_policy": (
+                "knowledge_and_artifact_dual_approval"
+            ),
             "gemini_sandbox_adapter_version": "1.0.1",
             "gemini_sandbox_model": gemini_sandbox_adapter.config.model,
             "gemini_sandbox_api_key_configured": bool(
@@ -1642,6 +1721,9 @@ def create_app(
                         "knowledge_mutated": False,
                     },
                 )
+            artifact_claim_ids = {
+                claim.claim_id for claim in artifact.claim_catalog
+            }
             registered = presentation_artifact_registry.register(
                 artifact,
                 owner=request.owner,
@@ -1650,6 +1732,12 @@ def create_app(
                 expected_knowledge_version=(
                     registry_view.knowledge.knowledge_version
                 ),
+                source_review_version=source_bundle.metadata.review_version,
+                source_claim_versions={
+                    item.claim_id: item.claim_version
+                    for item in registry_view.claims
+                    if item.claim_id in artifact_claim_ids
+                },
             )
             artifact = registered.artifact
             completeness = evaluate_artifact_completeness(artifact)
@@ -1870,13 +1958,11 @@ def create_app(
             for item in resolved_registry.snapshot().knowledge
         }
         return {
-            "registry": presentation_artifact_registry.list_artifacts().model_dump(
+            "registry": presentation_artifact_registry.list_artifacts().model_dump(mode="json"),
+            "validation": presentation_artifact_registry.validate(knowledge_versions).model_dump(
                 mode="json"
             ),
-            "validation": presentation_artifact_registry.validate(
-                knowledge_versions
-            ).model_dump(mode="json"),
-            "renderer_source_policy": "registry_approved_only",
+            "renderer_source_policy": "knowledge_and_artifact_dual_approval",
         }
 
     @app.get("/api/artifact-registry/{artifact_id}")
@@ -1887,15 +1973,21 @@ def create_app(
                 artifact_id,
                 view.current.artifact_version,
             )
+            eligibility = presentation_artifact_registry.renderer_eligibility(
+                artifact_id,
+                artifact_version=current.entry.artifact_version,
+                source_snapshot=artifact_source_snapshot(current),
+            )
             return JSONResponse(
                 status_code=200,
                 content={
                     "status": "success",
                     "registry": view.model_dump(mode="json"),
                     "artifact": current.artifact.model_dump(mode="json"),
-                    "completeness": evaluate_artifact_completeness(
-                        current.artifact
-                    ).model_dump(mode="json"),
+                    "completeness": evaluate_artifact_completeness(current.artifact).model_dump(
+                        mode="json"
+                    ),
+                    "renderer_eligibility": eligibility.model_dump(mode="json"),
                 },
             )
         except ArtifactNotFoundError as error:
@@ -1904,9 +1996,7 @@ def create_app(
                 content={"status": "not_found", "errors": [str(error)]},
             )
 
-    @app.get(
-        "/api/artifact-registry/{artifact_id}/versions/{artifact_version}"
-    )
+    @app.get("/api/artifact-registry/{artifact_id}/versions/{artifact_version}")
     def artifact_registry_version(
         artifact_id: str,
         artifact_version: int,
@@ -1916,14 +2006,20 @@ def create_app(
                 artifact_id,
                 artifact_version,
             )
+            eligibility = presentation_artifact_registry.renderer_eligibility(
+                artifact_id,
+                artifact_version=artifact_version,
+                source_snapshot=artifact_source_snapshot(version),
+            )
             return JSONResponse(
                 status_code=200,
                 content={
                     "status": "success",
                     "version": version.model_dump(mode="json"),
-                    "completeness": evaluate_artifact_completeness(
-                        version.artifact
-                    ).model_dump(mode="json"),
+                    "completeness": evaluate_artifact_completeness(version.artifact).model_dump(
+                        mode="json"
+                    ),
+                    "renderer_eligibility": eligibility.model_dump(mode="json"),
                 },
             )
         except ArtifactNotFoundError as error:
@@ -1932,27 +2028,36 @@ def create_app(
                 content={"status": "not_found", "errors": [str(error)]},
             )
 
-    @app.post(
-        "/api/artifact-registry/{artifact_id}/versions/{artifact_version}/approval"
-    )
+    @app.post("/api/artifact-registry/{artifact_id}/versions/{artifact_version}/approval")
     def artifact_registry_approval(
         artifact_id: str,
         artifact_version: int,
         request: ArtifactApprovalTransitionApiRequest,
     ) -> JSONResponse:
         try:
+            current = presentation_artifact_registry.version(
+                artifact_id,
+                artifact_version,
+            )
             updated = presentation_artifact_registry.transition_approval(
                 artifact_id,
                 artifact_version,
                 request.target_state,
                 actor=request.actor,
                 review_comment=request.review_comment,
+                source_snapshot=artifact_source_snapshot(current),
+            )
+            eligibility = presentation_artifact_registry.renderer_eligibility(
+                artifact_id,
+                artifact_version=artifact_version,
+                source_snapshot=artifact_source_snapshot(updated),
             )
             return JSONResponse(
                 status_code=200,
                 content={
                     "status": "success",
                     "version": updated.model_dump(mode="json"),
+                    "renderer_eligibility": eligibility.model_dump(mode="json"),
                     "knowledge_registry_mutated": False,
                 },
             )
@@ -1962,9 +2067,20 @@ def create_app(
                 content={"status": "not_found", "errors": [str(error)]},
             )
         except ArtifactRegistryError as error:
+            blocked_eligibility = getattr(error, "eligibility", None)
             return JSONResponse(
                 status_code=422,
-                content={"status": "invalid_transition", "errors": [str(error)]},
+                content={
+                    "status": "invalid_transition",
+                    "errors": [str(error)],
+                    "reason_codes": list(getattr(error, "reason_codes", ())),
+                    "renderer_eligibility": (
+                        blocked_eligibility.model_dump(mode="json")
+                        if blocked_eligibility is not None
+                        else None
+                    ),
+                    "knowledge_registry_mutated": False,
+                },
             )
 
     @app.get("/api/artifact-registry/{artifact_id}/diff")
@@ -1998,15 +2114,36 @@ def create_app(
         artifact_version: int | None = None,
     ) -> JSONResponse:
         try:
+            if artifact_version is None:
+                view = presentation_artifact_registry.view(artifact_id)
+                selected = next(
+                    (
+                        item.artifact_version
+                        for item in view.versions
+                        if item.approval_state == ArtifactApprovalState.APPROVED
+                    ),
+                    view.current.artifact_version,
+                )
+            else:
+                selected = artifact_version
+            version = presentation_artifact_registry.version(artifact_id, selected)
+            source_snapshot = artifact_source_snapshot(version)
             artifact = presentation_artifact_registry.get_approved_for_render(
                 artifact_id,
+                source_snapshot=source_snapshot,
                 artifact_version=artifact_version,
+            )
+            eligibility = presentation_artifact_registry.renderer_eligibility(
+                artifact_id,
+                artifact_version=artifact.identity.artifact_version,
+                source_snapshot=source_snapshot,
             )
             return JSONResponse(
                 status_code=200,
                 content={
                     "status": "approved",
-                    "renderer_source_policy": "registry_approved_only",
+                    "renderer_source_policy": ("knowledge_and_artifact_dual_approval"),
+                    "renderer_eligibility": eligibility.model_dump(mode="json"),
                     "artifact": artifact.model_dump(mode="json"),
                 },
             )
@@ -2016,9 +2153,19 @@ def create_app(
                 content={"status": "not_found", "errors": [str(error)]},
             )
         except ArtifactRegistryError as error:
+            blocked_eligibility = getattr(error, "eligibility", None)
             return JSONResponse(
                 status_code=403,
-                content={"status": "render_blocked", "errors": [str(error)]},
+                content={
+                    "status": "render_blocked",
+                    "errors": [str(error)],
+                    "reason_codes": list(getattr(error, "reason_codes", ())),
+                    "renderer_eligibility": (
+                        blocked_eligibility.model_dump(mode="json")
+                        if blocked_eligibility is not None
+                        else None
+                    ),
+                },
             )
 
     @app.post("/api/provider-payloads/{knowledge_id}")

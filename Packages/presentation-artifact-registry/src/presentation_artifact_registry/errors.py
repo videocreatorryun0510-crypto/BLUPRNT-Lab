@@ -10,7 +10,16 @@ class ArtifactNotFoundError(ArtifactRegistryError):
 
 
 class ArtifactApprovalError(ArtifactRegistryError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        reason_codes: tuple[str, ...] = (),
+        eligibility: object | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.reason_codes = reason_codes
+        self.eligibility = eligibility
 
 
 class ArtifactImmutableError(ArtifactRegistryError):

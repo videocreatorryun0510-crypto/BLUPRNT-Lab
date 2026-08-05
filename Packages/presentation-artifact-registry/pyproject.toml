@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bluprnt-presentation-artifact-registry"
-version = "1.0.0"
+version = "1.0.1"
 description = "Versioned approval registry for BLUPRNT Presentation Artifacts"
 readme = "README.md"
 requires-python = ">=3.11"

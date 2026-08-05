@@ -10,7 +10,7 @@
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.20</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.20.1</p>
           <h1>Knowledge Workbench</h1>
           <p class="lead">教材構成の版・教育承認・履歴を、Knowledgeとは独立して安全に管理。</p>
         </div>
@@ -748,10 +748,10 @@
 
       <section class="artifact-registry-browser" aria-labelledby="artifact-registry-title">
         <div>
-          <p class="step">PHASE 5.20 · ARTIFACT REGISTRY</p>
+          <p class="step">PHASE 5.20.1 · DUAL APPROVAL GATE</p>
           <h2 id="artifact-registry-title">教材成果物の版・承認・履歴</h2>
           <p>
-            Knowledgeとは独立して教材構成を管理します。Rendererはここで承認された版だけを利用します。
+            Artifact承認と元Knowledge承認を分けて管理します。Rendererは両方の条件を満たす版だけを利用します。
           </p>
         </div>
         <div class="artifact-registry-controls">
@@ -785,7 +785,16 @@
           <div><span>History</span><strong id="artifactHistoryCount">--</strong></div>
           <div><span>Owner</span><strong id="artifactOwner">--</strong></div>
           <div><span>Renderer</span><strong id="artifactRendererEligibility">未確認</strong></div>
+          <div><span>Artifact Review</span><strong id="artifactReviewResult">--</strong></div>
+          <div><span>Knowledge Approval</span><strong id="artifactKnowledgeApproval">--</strong></div>
+          <div><span>Knowledge Version一致</span><strong id="artifactKnowledgeVersionMatch">--</strong></div>
+          <div><span>Review Version一致</span><strong id="artifactReviewVersionMatch">--</strong></div>
+          <div><span>Source Fingerprint一致</span><strong id="artifactSourceFingerprintMatch">--</strong></div>
+          <div><span>Claim Approval</span><strong id="artifactClaimApproval">--</strong></div>
         </div>
+        <p class="fingerprint-line">
+          <span>Renderer停止理由</span><code id="artifactRendererBlockReasons">--</code>
+        </p>
         <p class="fingerprint-line">
           <span>Fingerprint</span><code id="artifactRegistryFingerprint">--</code>
         </p>
@@ -836,6 +845,10 @@
         <details open>
           <summary>承認・変更履歴</summary>
           <ul id="artifactHistoryList" class="registry-history"></ul>
+        </details>
+        <details open>
+          <summary>承認・Renderer判定監査</summary>
+          <ul id="artifactGateAuditList" class="registry-history"></ul>
         </details>
         <details>
           <summary>Registry保存済みArtifact JSON</summary>
@@ -995,6 +1008,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=artifact-registry-5.20" defer></script>
+    <script src="/static/app.js?v=dual-approval-gate-5.20.1" defer></script>
   </body>
 </html>

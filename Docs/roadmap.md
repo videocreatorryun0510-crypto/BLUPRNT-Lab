@@ -311,6 +311,18 @@ Exam Metadataは医学知識と独立した版付きコンポーネントとし�
 - [Presentation Artifact Registry & Approval MVP](presentation_artifact_registry.md)
 - [ADR-0014](adr/0014-presentation-artifact-registry-and-approval.md)
 
+### Phase 5.20.1成果物
+
+- KnowledgeとArtifactをAND条件で確認するDual Approval Gate
+- Artifact approved遷移時のKnowledge・Claim承認検証
+- Knowledge Version、Review Version、Source / Artifact Fingerprint検証
+- deprecated Claim Redirectと承認後変更の検出
+- Artifact承認を変更せず算出するRenderer Eligibility / stale判定
+- 承認拒否とRenderer判定のSQLite Gate Audit
+- WorkbenchのArtifact承認、Knowledge承認、Renderer利用可否の分離表示
+- 実フェリチンKnowledgeをdraftのまま維持し、Artifactを履歴付きでeducation_reviewへ是正
+- [Knowledge–Artifact Dual Approval Gate ADR](adr/0015-knowledge-artifact-dual-approval-gate.md)
+
 ---
 
 ## 1. 開発優先順位

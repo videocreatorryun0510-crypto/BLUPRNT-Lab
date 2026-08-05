@@ -2337,6 +2337,7 @@ async function loadSelectedArtifactRegistry() {
       payload.registry.current,
       payload.artifact,
       payload.completeness,
+      payload.renderer_eligibility,
     );
     renderArtifactRegistryHistory(payload.registry);
     artifactRegistryPanel.hidden = false;
@@ -2395,6 +2396,7 @@ async function loadSelectedArtifactVersion() {
       payload.version.entry,
       payload.version.artifact,
       payload.completeness,
+      payload.renderer_eligibility,
     );
   } catch (error) {
     setArtifactRegistryMessage(
@@ -2404,7 +2406,7 @@ async function loadSelectedArtifactVersion() {
   }
 }
 
-function renderArtifactRegistryVersion(entry, artifact, completeness) {
+function renderArtifactRegistryVersion(entry, artifact, completeness, eligibility) {
   artifactVersionSelect.value = String(entry.artifact_version);
   setText("#artifactRegistryVersion", "v" + entry.artifact_version);
   setText("#artifactRegistryKnowledgeVersion", "v" + entry.knowledge_version);
@@ -2414,7 +2416,35 @@ function renderArtifactRegistryVersion(entry, artifact, completeness) {
   setText("#artifactRegistryFingerprint", entry.fingerprint);
   setText(
     "#artifactRendererEligibility",
-    entry.approval_state === "approved" ? "利用可能" : "停止",
+    eligibility?.eligible ? "利用可能" : "停止",
+  );
+  setText(
+    "#artifactReviewResult",
+    eligibility?.artifact_review_result === "passed" ? "合格" : "停止",
+  );
+  setText(
+    "#artifactKnowledgeApproval",
+    eligibility?.source_knowledge_approval_state || "未確認",
+  );
+  setText(
+    "#artifactKnowledgeVersionMatch",
+    eligibility?.knowledge_version_matches ? "一致" : "不一致",
+  );
+  setText(
+    "#artifactReviewVersionMatch",
+    eligibility?.review_version_matches ? "一致" : "不一致",
+  );
+  setText(
+    "#artifactSourceFingerprintMatch",
+    eligibility?.source_fingerprint_matches ? "一致" : "不一致",
+  );
+  setText(
+    "#artifactClaimApproval",
+    eligibility?.claim_approval_valid ? "全件承認済み" : "未承認あり",
+  );
+  setText(
+    "#artifactRendererBlockReasons",
+    eligibility?.reasons?.length ? eligibility.reasons.join(" / ") : "なし",
   );
   const approvalBadge = document.querySelector("#artifactApprovalBadge");
   approvalBadge.textContent = artifactApprovalLabels[entry.approval_state] || entry.approval_state;
@@ -2457,6 +2487,22 @@ function renderArtifactRegistryHistory(registry) {
     comment.textContent = event.review_comment || "コメントなし";
     item.append(title, detail, comment);
     historyList.appendChild(item);
+  }
+  const auditList = document.querySelector("#artifactGateAuditList");
+  auditList.replaceChildren();
+  for (const audit of registry.gate_audit || []) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent =
+      "v" + audit.artifact_version + " · " + audit.action + " · " + audit.outcome;
+    const detail = document.createElement("span");
+    detail.textContent = audit.evaluated_at + " · " + audit.actor;
+    const reasons = document.createElement("code");
+    reasons.textContent = audit.reason_codes.length
+      ? audit.reason_codes.join(" / ")
+      : "停止理由なし";
+    item.append(title, detail, reasons);
+    auditList.appendChild(item);
   }
 }
 
@@ -2538,7 +2584,12 @@ async function checkRendererEligibility() {
     );
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.errors?.[0] || "Renderer利用不可です。");
-    setText("#artifactRendererEligibility", "利用可能");
+    const eligibility = payload.renderer_eligibility;
+    setText("#artifactRendererEligibility", eligibility?.eligible ? "利用可能" : "停止");
+    setText(
+      "#artifactRendererBlockReasons",
+      eligibility?.reasons?.length ? eligibility.reasons.join(" / ") : "なし",
+    );
     setArtifactRegistryMessage(
       "Registry経由でapproved Artifactを取得できました。Rendererへ渡せます。",
       "success",

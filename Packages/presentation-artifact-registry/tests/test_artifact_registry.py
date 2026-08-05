@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -22,8 +22,11 @@ from presentation_artifact_registry import (
     ArtifactRegistryError,
     ArtifactRendererGateway,
     ArtifactVersionRecord,
+    KnowledgeArtifactSourceSnapshot,
+    SourceClaimSnapshot,
     SQLitePresentationArtifactRegistry,
     evaluate_artifact_completeness,
+    evaluate_renderer_eligibility,
 )
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -35,11 +38,7 @@ NOW = datetime(2026, 8, 5, 9, 0, tzinfo=UTC)
 
 def _artifact(tmp_path: Path) -> PresentationArtifact:
     record = validate_knowledge_record(
-        json.loads(
-            (EXAMPLES / "laboratory-test-item.example.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        json.loads((EXAMPLES / "laboratory-test-item.example.json").read_text(encoding="utf-8"))
     )
     knowledge_registry = SQLiteKnowledgeRegistry(tmp_path / "knowledge.sqlite3")
     reconciled = knowledge_registry.reconcile(
@@ -94,7 +93,44 @@ def _register(
         actor="product_owner",
         review_comment="初版登録",
         expected_knowledge_version=artifact.source.knowledge_version,
+        source_claim_versions={item.claim_id: 1 for item in artifact.claim_catalog},
         registered_at=NOW,
+    )
+
+
+def _source_snapshot(
+    artifact: PresentationArtifact,
+    *,
+    approval_state: str = "approved",
+    knowledge_version: int | None = None,
+    review_version: int | None = None,
+    source_fingerprint: str | None = None,
+    claim_state: str = "approved",
+    claim_version: int = 1,
+    redirect_resolved: bool = True,
+    source_changed_at: datetime = NOW,
+) -> KnowledgeArtifactSourceSnapshot:
+    version = knowledge_version or artifact.source.knowledge_version
+    return KnowledgeArtifactSourceSnapshot(
+        knowledge_id=artifact.source.knowledge_id,
+        knowledge_version=version,
+        approval_state=approval_state,
+        review_version=review_version or version,
+        source_fingerprint=source_fingerprint or artifact.source.source_fingerprint,
+        knowledge_updated_at=source_changed_at,
+        source_changed_at=source_changed_at,
+        claims=tuple(
+            SourceClaimSnapshot(
+                claim_id=item.claim_id,
+                claim_version=claim_version,
+                approval_state=claim_state,
+                is_deleted=False,
+                updated_at=source_changed_at,
+                canonical_claim_id=(item.claim_id if redirect_resolved else None),
+                redirect_resolved=redirect_resolved,
+            )
+            for item in artifact.claim_catalog
+        ),
     )
 
 
@@ -131,6 +167,11 @@ def test_approval_flow_is_independent_and_records_history(tmp_path: Path) -> Non
             target,
             actor="education_reviewer",
             review_comment=f"{target.value}へ変更",
+            source_snapshot=(
+                _source_snapshot(record.artifact)
+                if target == ArtifactApprovalState.APPROVED
+                else None
+            ),
             changed_at=NOW,
         )
 
@@ -182,6 +223,12 @@ def test_approved_artifact_content_is_protected_by_sqlite_trigger(
             target,
             actor="reviewer",
             review_comment="承認",
+            source_snapshot=(
+                _source_snapshot(record.artifact)
+                if target == ArtifactApprovalState.APPROVED
+                else None
+            ),
+            changed_at=NOW,
         )
 
     with (
@@ -203,7 +250,17 @@ def test_renderer_gateway_rejects_draft_and_uses_latest_approved(
     registry = SQLitePresentationArtifactRegistry(tmp_path / "artifact.sqlite3")
     artifact = _artifact(tmp_path)
     first = _register(registry, artifact)
-    gateway = ArtifactRendererGateway(registry)
+
+    class StaticSourceProvider:
+        def snapshot_for(
+            self,
+            artifact_id: str,
+            artifact_version: int | None,
+        ) -> KnowledgeArtifactSourceSnapshot:
+            del artifact_id, artifact_version
+            return _source_snapshot(first.artifact)
+
+    gateway = ArtifactRendererGateway(registry, StaticSourceProvider())
 
     class RecordingRenderer:
         def render(self, source: PresentationArtifact) -> RenderResult:
@@ -214,7 +271,10 @@ def test_renderer_gateway_rejects_draft_and_uses_latest_approved(
             )
 
     with pytest.raises(ArtifactApprovalError, match="approved"):
-        gateway.render(first.entry.artifact_id, RecordingRenderer())
+        gateway.render(
+            first.entry.artifact_id,
+            RecordingRenderer(),
+        )
 
     for target in (
         ArtifactApprovalState.OWNER_REVIEW,
@@ -227,10 +287,19 @@ def test_renderer_gateway_rejects_draft_and_uses_latest_approved(
             target,
             actor="reviewer",
             review_comment="承認",
+            source_snapshot=(
+                _source_snapshot(first.artifact)
+                if target == ArtifactApprovalState.APPROVED
+                else None
+            ),
+            changed_at=NOW,
         )
     _register(registry, artifact)
 
-    rendered = gateway.render(first.entry.artifact_id, RecordingRenderer())
+    rendered = gateway.render(
+        first.entry.artifact_id,
+        RecordingRenderer(),
+    )
     assert rendered.output_paths == ("version-1",)
 
 
@@ -260,9 +329,7 @@ def test_diff_reports_required_educational_changes(tmp_path: Path) -> None:
                     if claim_id != removed_claim.claim_id
                 ),
                 "body_blocks": tuple(
-                    block
-                    for block in page.body_blocks
-                    if block.claim_id != removed_claim.claim_id
+                    block for block in page.body_blocks if block.claim_id != removed_claim.claim_id
                 ),
             }
         )
@@ -300,11 +367,7 @@ def test_completeness_scores_structure_not_educational_quality(tmp_path: Path) -
         }
     )
     unsigned = without_diagram.model_copy(
-        update={
-            "metadata": without_diagram.metadata.model_copy(
-                update={"fingerprint": "0" * 64}
-            )
-        }
+        update={"metadata": without_diagram.metadata.model_copy(update={"fingerprint": "0" * 64})}
     )
     without_diagram = unsigned.model_copy(
         update={
@@ -333,4 +396,184 @@ def test_registration_requires_current_knowledge_version(tmp_path: Path) -> None
             actor="owner",
             review_comment="不整合",
             expected_knowledge_version=2,
+            source_claim_versions={item.claim_id: 1 for item in artifact.claim_catalog},
         )
+
+
+@pytest.mark.parametrize(
+    "knowledge_state",
+    ["draft", "owner_review", "medical_review"],
+)
+def test_artifact_approval_rejects_unapproved_knowledge_and_audits_reason(
+    tmp_path: Path,
+    knowledge_state: str,
+) -> None:
+    registry = SQLitePresentationArtifactRegistry(tmp_path / "artifact.sqlite3")
+    record = _register(registry, _artifact(tmp_path))
+    for target in (
+        ArtifactApprovalState.OWNER_REVIEW,
+        ArtifactApprovalState.EDUCATION_REVIEW,
+    ):
+        registry.transition_approval(
+            record.entry.artifact_id,
+            1,
+            target,
+            actor="reviewer",
+            review_comment="承認前確認",
+        )
+
+    with pytest.raises(ArtifactApprovalError) as captured:
+        registry.transition_approval(
+            record.entry.artifact_id,
+            1,
+            ArtifactApprovalState.APPROVED,
+            actor="reviewer",
+            review_comment="Knowledge未承認のため停止",
+            source_snapshot=_source_snapshot(
+                record.artifact,
+                approval_state=knowledge_state,
+                claim_state="approved",
+            ),
+            changed_at=NOW,
+        )
+
+    assert "knowledge_not_approved" in captured.value.reason_codes
+    view = registry.view(record.entry.artifact_id)
+    assert view.current.approval_state == ArtifactApprovalState.EDUCATION_REVIEW
+    assert view.gate_audit[0].outcome == "blocked"
+    assert "knowledge_not_approved" in view.gate_audit[0].reason_codes
+
+
+def test_dual_gate_stops_after_knowledge_rollback_or_new_version(
+    tmp_path: Path,
+) -> None:
+    registry = SQLitePresentationArtifactRegistry(tmp_path / "artifact.sqlite3")
+    record = _register(registry, _artifact(tmp_path))
+    for target in (
+        ArtifactApprovalState.OWNER_REVIEW,
+        ArtifactApprovalState.EDUCATION_REVIEW,
+        ArtifactApprovalState.APPROVED,
+    ):
+        registry.transition_approval(
+            record.entry.artifact_id,
+            1,
+            target,
+            actor="reviewer",
+            review_comment="隔離Fixture承認",
+            source_snapshot=(
+                _source_snapshot(record.artifact)
+                if target == ArtifactApprovalState.APPROVED
+                else None
+            ),
+            changed_at=NOW,
+        )
+
+    eligible = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(record.artifact),
+    )
+    assert eligible.eligible is True
+
+    rolled_back = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(
+            record.artifact,
+            approval_state="medical_review",
+            source_changed_at=NOW + timedelta(seconds=1),
+        ),
+    )
+    assert rolled_back.eligible is False
+    assert rolled_back.artifact_review_result == "passed"
+    assert rolled_back.renderer_eligibility == "ineligible"
+    assert "knowledge_not_approved" in rolled_back.reasons
+    assert "knowledge_approval_changed_after_artifact_approval" in rolled_back.reasons
+
+    new_version = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(
+            record.artifact,
+            knowledge_version=2,
+            review_version=2,
+            source_changed_at=NOW + timedelta(seconds=2),
+        ),
+    )
+    assert "knowledge_version_mismatch" in new_version.reasons
+    assert "review_version_mismatch" in new_version.reasons
+    assert "artifact_stale" in new_version.reasons
+
+
+def test_dual_gate_stops_for_claim_or_source_fingerprint_change(
+    tmp_path: Path,
+) -> None:
+    registry = SQLitePresentationArtifactRegistry(tmp_path / "artifact.sqlite3")
+    record = _register(registry, _artifact(tmp_path))
+    for target in (
+        ArtifactApprovalState.OWNER_REVIEW,
+        ArtifactApprovalState.EDUCATION_REVIEW,
+        ArtifactApprovalState.APPROVED,
+    ):
+        registry.transition_approval(
+            record.entry.artifact_id,
+            1,
+            target,
+            actor="reviewer",
+            review_comment="隔離Fixture承認",
+            source_snapshot=(
+                _source_snapshot(record.artifact)
+                if target == ArtifactApprovalState.APPROVED
+                else None
+            ),
+            changed_at=NOW,
+        )
+
+    claim_blocked = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(
+            record.artifact,
+            claim_state="deprecated",
+            redirect_resolved=False,
+            source_changed_at=NOW + timedelta(seconds=1),
+        ),
+    )
+    assert "claim_not_approved" in claim_blocked.reasons
+    assert "deprecated_claim_redirect_unresolved" in claim_blocked.reasons
+
+    claim_version_blocked = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(
+            record.artifact,
+            claim_version=2,
+            source_changed_at=NOW + timedelta(seconds=1),
+        ),
+    )
+    assert "claim_not_approved" in claim_version_blocked.reasons
+
+    fingerprint_blocked = registry.renderer_eligibility(
+        record.entry.artifact_id,
+        artifact_version=1,
+        source_snapshot=_source_snapshot(
+            record.artifact,
+            source_fingerprint="f" * 64,
+        ),
+    )
+    assert "source_fingerprint_mismatch" in fingerprint_blocked.reasons
+
+    tampered_artifact = record.artifact.model_copy(
+        update={
+            "metadata": record.artifact.metadata.model_copy(
+                update={"fingerprint": "e" * 64}
+            )
+        }
+    )
+    artifact_fingerprint_blocked = evaluate_renderer_eligibility(
+        registry.version(record.entry.artifact_id, 1).entry,
+        tampered_artifact,
+        _source_snapshot(record.artifact),
+        artifact_approved_at=NOW,
+    )
+    assert "artifact_fingerprint_mismatch" in artifact_fingerprint_blocked.reasons
