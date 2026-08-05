@@ -211,6 +211,7 @@ flowchart LR
 | `README.md` | BLUPRNT Lab の目的、対象、上位設計 |
 | `Docs/` | 全システム共通の設計・開発・医学・AIルール |
 | `Packages/knowledge-contracts/` | Knowledge JSON、Exam Metadata、Exam Importの版付き共通契約と検証 |
+| `Packages/presentation-artifact-registry/` | Presentation Artifactの永続ID、Version、独立承認、履歴、差分、Completeness、Renderer取得Gate |
 | `Packages/publisher-core/` | Content・Education・Visual・Visual Grammar・Diagram Taxonomy・Diagram Intent・Claim Mapping・Semantic Blueprint・Layout・Theme・Template Registry |
 | `Prototypes/KnowledgeWorkbench/` | AI入力・JSON確認・国家試験CSV Importの試験画面 |
 | `Publishers/PDFPublisher/` | Publication PlanからA4 PDFを生成する媒体別Adapter、Layout・Theme・Placeholder処理 |
@@ -246,6 +247,7 @@ flowchart LR
 | `Docs/provider_payload_and_response_traceability.md` | Phase 5.17の承認済みPayload解決、送信Policy、Fingerprint、Traceable Response |
 | `Docs/presentation_prompt_and_gemini_sandbox.md` | Phase 5.18のProvider非依存Prompt、Gemini Sandbox、Response Mapping、監査 |
 | `Docs/gemini_real_api_acceptance.md` | Phase 5.18.1の隔離Fixture、実通信前確認、1回実行、Response受入検証 |
+| `Docs/presentation_artifact_registry.md` | Phase 5.20のArtifact専用台帳、独立承認、Immutable版、Diff、Renderer取得Policy |
 
 ### 3.3 実装時に追加するトップレベル
 
@@ -456,6 +458,12 @@ Phase 5.18では、Provider Payloadと実Providerの間へPresentation Prompt Bu
 Builderは学習目的、対象者、無変更Claim、Key Message、Diagram Request、Referenceと表示・検証方針だけを扱い、Provider名、API URL、認証、モデル固有命令を持ちません。Gemini固有処理はAdapter内部に閉じ込め、外部送信は従来のApproval Gate、Stale検知、Data Egress Policy、Fingerprint検証をすべて通過した場合だけ行います。Knowledge、Registry、Source Bundle、Presentation Request、Provider Payload、Traceable Response、Publisher Coreは変更しません。
 
 Phase 5.18.1の実API受入経路は、実Registryとは別の一時SQLiteで承認済みTest Fixtureを構築します。送信前確認までは外部通信せず、Workbenchの明示操作1回だけでGemini Sandbox Adapterを実行します。受信した構造化応答はProvider Request ID、Fingerprint、Claim、Reference、無変更本文を検証し、本文なしTraceable Responseと専用Auditへ保存します。実Knowledgeの承認状態・本文・履歴・Relationは変更しません。
+
+Phase 5.19〜5.20では、Provider・Rendererに依存しないPresentation Artifactを教育成果物Contractとし、その後段へ独立Registryを追加しました。
+
+`Knowledge + Source Bundle + Presentation Request → Artifact Builder → Artifact Registry（Version・教育承認・History・Diff） → approved限定Gateway → 将来Renderer`
+
+ArtifactはKnowledge承認と別に`draft → owner_review → education_review → approved`を進みます。approved版のPage本文、Claim・Reference対応、生成元、Profile、FingerprintはImmutableです。修正は同じ`artifact_id`の新Versionとして登録します。Renderer Interfaceは変更せず、正式経路ではBuilder出力JSONを直接読まず、Registryから`active + approved`の版だけを取得します。
 
 Phase 3.1のPDF AdapterはPublication Planと同じFingerprintを持つ読取専用Sourceだけから表示用本文を解決し、PDF Render Planへ固定します。PDF ExportはこのRender Plan、Layout、Themeのみを描画します。Visualは指定位置へプレースホルダーを置き、一枚へ収まらない内容は切り捨てずエラーにします。
 

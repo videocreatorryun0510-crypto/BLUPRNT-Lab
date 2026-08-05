@@ -58,6 +58,9 @@ DEFAULT_PRESENTATION_ARTIFACT_OUTPUT_DIR = (
 DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH = (
     REPOSITORY_ROOT / "Publisher Output" / "logs" / "presentation_artifact.jsonl"
 )
+DEFAULT_PRESENTATION_ARTIFACT_REGISTRY_PATH = (
+    DEFAULT_REGISTRY_PATH.parent / "presentation_artifact_registry.sqlite3"
+)
 DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR = (
     REPOSITORY_ROOT / "Publisher Output" / "gemini_sandbox_response"
 )
@@ -93,6 +96,9 @@ class Settings:
     presentation_artifact_output_dir: Path = DEFAULT_PRESENTATION_ARTIFACT_OUTPUT_DIR
     presentation_artifact_audit_log_path: Path = (
         DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH
+    )
+    presentation_artifact_registry_path: Path = (
+        DEFAULT_PRESENTATION_ARTIFACT_REGISTRY_PATH
     )
     gemini_sandbox_response_output_dir: Path = (
         DEFAULT_GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR
@@ -156,6 +162,9 @@ class Settings:
         ).strip()
         presentation_artifact_audit_log_path = os.getenv(
             "PRESENTATION_ARTIFACT_AUDIT_LOG_PATH", ""
+        ).strip()
+        presentation_artifact_registry_path = os.getenv(
+            "PRESENTATION_ARTIFACT_REGISTRY_PATH", ""
         ).strip()
         gemini_response_output_path = os.getenv(
             "GEMINI_SANDBOX_RESPONSE_OUTPUT_DIR", ""
@@ -247,6 +256,11 @@ class Settings:
                 Path(presentation_artifact_audit_log_path).expanduser()
                 if presentation_artifact_audit_log_path
                 else DEFAULT_PRESENTATION_ARTIFACT_AUDIT_LOG_PATH
+            ),
+            presentation_artifact_registry_path=(
+                Path(presentation_artifact_registry_path).expanduser()
+                if presentation_artifact_registry_path
+                else DEFAULT_PRESENTATION_ARTIFACT_REGISTRY_PATH
             ),
             gemini_sandbox_response_output_dir=(
                 Path(gemini_response_output_path).expanduser()

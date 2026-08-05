@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=presentation-artifact-5.19" />
+    <link rel="stylesheet" href="/static/styles.css?v=artifact-registry-5.20.1" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.19</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.20</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">Providerや描画先に依存しない教材構成の正本を安全に確認。</p>
+          <p class="lead">教材構成の版・教育承認・履歴を、Knowledgeとは独立して安全に管理。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -746,6 +746,106 @@
         </details>
       </section>
 
+      <section class="artifact-registry-browser" aria-labelledby="artifact-registry-title">
+        <div>
+          <p class="step">PHASE 5.20 · ARTIFACT REGISTRY</p>
+          <h2 id="artifact-registry-title">教材成果物の版・承認・履歴</h2>
+          <p>
+            Knowledgeとは独立して教材構成を管理します。Rendererはここで承認された版だけを利用します。
+          </p>
+        </div>
+        <div class="artifact-registry-controls">
+          <label for="artifactRegistrySelect">Artifact</label>
+          <select id="artifactRegistrySelect"></select>
+          <button id="loadArtifactRegistryButton" class="primary-action" type="button">表示</button>
+          <button id="refreshArtifactRegistryButton" class="secondary-action" type="button">一覧更新</button>
+        </div>
+      </section>
+
+      <section
+        id="artifactRegistryPanel"
+        class="artifact-registry-panel"
+        hidden
+        aria-labelledby="artifact-registry-detail-title"
+      >
+        <div class="registry-heading">
+          <div>
+            <p class="step">PRESENTATION ARTIFACT REGISTRY 1.0</p>
+            <h2 id="artifact-registry-detail-title">Artifact Registry</h2>
+          </div>
+          <div class="status-stack">
+            <span id="artifactRegistryValidationBadge" class="badge neutral">検証中</span>
+            <span id="artifactApprovalBadge" class="badge neutral">draft</span>
+          </div>
+        </div>
+        <div class="artifact-registry-metrics">
+          <div><span>Artifact Version</span><strong id="artifactRegistryVersion">--</strong></div>
+          <div><span>Knowledge Version</span><strong id="artifactRegistryKnowledgeVersion">--</strong></div>
+          <div><span>Completeness</span><strong id="artifactCompletenessScore">--%</strong></div>
+          <div><span>History</span><strong id="artifactHistoryCount">--</strong></div>
+          <div><span>Owner</span><strong id="artifactOwner">--</strong></div>
+          <div><span>Renderer</span><strong id="artifactRendererEligibility">未確認</strong></div>
+        </div>
+        <p class="fingerprint-line">
+          <span>Fingerprint</span><code id="artifactRegistryFingerprint">--</code>
+        </p>
+        <p id="artifactRegistryMessage" class="operation-message" role="status"></p>
+
+        <div class="artifact-registry-workspace">
+          <section class="registry-operation-panel">
+            <p class="step">INDEPENDENT APPROVAL</p>
+            <h3>Artifact承認</h3>
+            <label for="artifactVersionSelect">対象Version</label>
+            <select id="artifactVersionSelect"></select>
+            <label for="artifactApprovalTarget">次の状態</label>
+            <select id="artifactApprovalTarget">
+              <option value="owner_review">owner_review</option>
+              <option value="education_review">education_review</option>
+              <option value="approved">approved</option>
+              <option value="published">published（将来）</option>
+              <option value="draft">draftへ差し戻す</option>
+            </select>
+            <label for="artifactApprovalActor">操作者</label>
+            <input id="artifactApprovalActor" maxlength="120" value="product_owner" />
+            <label for="artifactReviewComment">Review Comment</label>
+            <textarea id="artifactReviewComment" rows="3" maxlength="1000">教材構成を確認</textarea>
+            <div class="artifact-action-row">
+              <button id="changeArtifactApprovalButton" class="primary-action" type="button">状態を変更</button>
+              <button id="checkRendererEligibilityButton" class="secondary-action" type="button">Renderer利用可否</button>
+            </div>
+          </section>
+
+          <section class="registry-operation-panel">
+            <p class="step">VERSION DIFF</p>
+            <h3>Version差分</h3>
+            <div class="artifact-diff-selects">
+              <label for="artifactDiffFrom">変更前</label>
+              <select id="artifactDiffFrom"></select>
+              <label for="artifactDiffTo">変更後</label>
+              <select id="artifactDiffTo"></select>
+            </div>
+            <button id="compareArtifactVersionsButton" class="secondary-action" type="button">差分を表示</button>
+            <pre id="artifactDiffOutput">Versionを2つ選択してください。</pre>
+          </section>
+        </div>
+
+        <details open>
+          <summary>Version一覧</summary>
+          <ul id="artifactVersionList" class="registry-history"></ul>
+        </details>
+        <details open>
+          <summary>承認・変更履歴</summary>
+          <ul id="artifactHistoryList" class="registry-history"></ul>
+        </details>
+        <details>
+          <summary>Registry保存済みArtifact JSON</summary>
+          <div class="artifact-json-toolbar">
+            <button id="copyArtifactRegistryJsonButton" class="copy-button" type="button">JSONをコピー</button>
+          </div>
+          <pre id="artifactRegistryJson"></pre>
+        </details>
+      </section>
+
       <section class="backup-panel" aria-labelledby="backup-title">
         <div>
           <p class="step">SQLITE GENERATION BACKUP</p>
@@ -895,6 +995,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=presentation-artifact-5.19" defer></script>
+    <script src="/static/app.js?v=artifact-registry-5.20" defer></script>
   </body>
 </html>

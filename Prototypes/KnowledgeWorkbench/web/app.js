@@ -74,6 +74,10 @@ const presentationArtifactOutput = document.querySelector(
 const presentationArtifactPages = document.querySelector(
   "#presentationArtifactPages",
 );
+const artifactRegistrySelect = document.querySelector("#artifactRegistrySelect");
+const artifactRegistryPanel = document.querySelector("#artifactRegistryPanel");
+const artifactVersionSelect = document.querySelector("#artifactVersionSelect");
+const artifactRegistryJson = document.querySelector("#artifactRegistryJson");
 const presentationEnginePanel = document.querySelector(
   "#presentationEnginePanel",
 );
@@ -126,6 +130,7 @@ let currentPreviewId = null;
 let currentPreviewCanCommit = false;
 let geminiAcceptanceFingerprint = null;
 let geminiAcceptanceExecutionStarted = false;
+let currentArtifactRegistry = null;
 
 const termTypeLabels = {
   test_item: "検査項目",
@@ -157,6 +162,14 @@ const registryStatusLabels = {
   approved: "承認済み",
   published: "公開済み",
   deprecated: "廃止",
+};
+
+const artifactApprovalLabels = {
+  draft: "下書き",
+  owner_review: "オーナー確認中",
+  education_review: "教育設計確認中",
+  approved: "承認済み",
+  published: "公開済み",
 };
 
 document.querySelectorAll("[data-term]").forEach((button) => {
@@ -207,6 +220,53 @@ document.querySelector("#loadRegistryButton").addEventListener("click", async ()
 document.querySelector("#refreshRegistryButton").addEventListener("click", async () => {
   await refreshRegistryList(true);
 });
+
+document.querySelector("#loadArtifactRegistryButton").addEventListener("click", async () => {
+  await loadSelectedArtifactRegistry();
+});
+
+document.querySelector("#refreshArtifactRegistryButton").addEventListener(
+  "click",
+  async () => {
+    await refreshArtifactRegistryList(true);
+  },
+);
+
+artifactVersionSelect.addEventListener("change", async () => {
+  await loadSelectedArtifactVersion();
+});
+
+document.querySelector("#changeArtifactApprovalButton").addEventListener(
+  "click",
+  async () => {
+    await changeArtifactApproval();
+  },
+);
+
+document.querySelector("#compareArtifactVersionsButton").addEventListener(
+  "click",
+  async () => {
+    await compareArtifactVersions();
+  },
+);
+
+document.querySelector("#checkRendererEligibilityButton").addEventListener(
+  "click",
+  async () => {
+    await checkRendererEligibility();
+  },
+);
+
+document.querySelector("#copyArtifactRegistryJsonButton").addEventListener(
+  "click",
+  async (event) => {
+    await navigator.clipboard.writeText(artifactRegistryJson.textContent);
+    event.currentTarget.textContent = "コピー済み";
+    window.setTimeout(() => {
+      event.currentTarget.textContent = "JSONをコピー";
+    }, 1300);
+  },
+);
 
 document.querySelector("#changeClaimStatusButton").addEventListener("click", async () => {
   await changeSelectedClaimStatus();
@@ -875,6 +935,8 @@ async function generatePresentationArtifact() {
     return;
   }
   const mode = presentationRequestMode.value;
+  const actor = document.querySelector("#knowledgeEditorActor").value.trim();
+  const reviewComment = document.querySelector("#knowledgeEditorComment").value.trim();
   generatePresentationArtifactButton.disabled = true;
   presentationArtifactPanel.hidden = true;
   knowledgeEditorMessage.textContent =
@@ -885,7 +947,12 @@ async function generatePresentationArtifact() {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ request_mode: mode }),
+        body: JSON.stringify({
+          request_mode: mode,
+          owner: actor || "product_owner",
+          actor: actor || "product_owner",
+          review_comment: reviewComment || "Presentation Artifact登録",
+        }),
       },
     );
     const payload = await response.json();
@@ -907,8 +974,8 @@ async function generatePresentationArtifact() {
     setText("#artifactFingerprint", context.fingerprint || "--");
     setText(
       "#presentationArtifactPath",
-      payload.output_path
-        ? "保存先：" + payload.output_path
+      payload.artifact_registry_path
+        ? "正本台帳：" + payload.artifact_registry_path
         : "Validation失敗のため保存していません。",
     );
     const artifact = payload.artifact;
@@ -933,13 +1000,14 @@ async function generatePresentationArtifact() {
     setText(
       "#presentationArtifactMessage",
       payload.validation.is_valid
-        ? "Validation OK · 教材構成を保存しました。Knowledge・Registry・Providerには触れていません。"
+        ? "Validation OK · Artifact Registryへdraftとして保存しました。Knowledge Registryは変更していません。"
         : "Validation NG · Artifactは保存していません。",
     );
     presentationArtifactPanel.hidden = false;
     knowledgeEditorMessage.textContent = payload.validation.is_valid
-      ? "Presentation Artifact Version 1.0を生成・保存しました。"
+      ? "Presentation Artifactを生成し、専用RegistryへVersion保存しました。"
       : "Artifact Validationが失敗しました。";
+    await refreshArtifactRegistryList(false, context.artifact_id);
     presentationArtifactPanel.scrollIntoView({
       behavior: "smooth",
       block: "center",
@@ -2216,6 +2284,280 @@ function renderImportedMetadata(records, mappings) {
   });
 }
 
+async function refreshArtifactRegistryList(autoLoad, preferredArtifactId = null) {
+  try {
+    const response = await fetch("/api/artifact-registry");
+    const payload = await response.json();
+    if (!response.ok) throw new Error("Artifact Registry一覧を取得できませんでした。");
+    const previous = preferredArtifactId || artifactRegistrySelect.value;
+    const artifacts = payload.registry?.artifacts || [];
+    artifactRegistrySelect.replaceChildren();
+    if (artifacts.length === 0) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "Artifactはまだありません";
+      artifactRegistrySelect.appendChild(option);
+      artifactRegistryPanel.hidden = true;
+      return;
+    }
+    for (const artifact of artifacts) {
+      const option = document.createElement("option");
+      option.value = artifact.artifact_id;
+      option.textContent =
+        artifact.knowledge_id + " · v" + artifact.artifact_version + " · " +
+        (artifactApprovalLabels[artifact.approval_state] || artifact.approval_state);
+      artifactRegistrySelect.appendChild(option);
+    }
+    if ([...artifactRegistrySelect.options].some((item) => item.value === previous)) {
+      artifactRegistrySelect.value = previous;
+    }
+    if (autoLoad || preferredArtifactId) await loadSelectedArtifactRegistry();
+  } catch (error) {
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "Artifact Registry一覧を表示できません。",
+      "error",
+    );
+  }
+}
+
+async function loadSelectedArtifactRegistry() {
+  const artifactId = artifactRegistrySelect.value;
+  if (!artifactId) return;
+  try {
+    const response = await fetch(
+      "/api/artifact-registry/" + encodeURIComponent(artifactId),
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.errors?.[0] || "Artifact Registryを表示できません。");
+    }
+    currentArtifactRegistry = payload.registry;
+    populateArtifactVersions(payload.registry.versions);
+    renderArtifactRegistryVersion(
+      payload.registry.current,
+      payload.artifact,
+      payload.completeness,
+    );
+    renderArtifactRegistryHistory(payload.registry);
+    artifactRegistryPanel.hidden = false;
+    setArtifactRegistryMessage(
+      "保存済みArtifactを読み込みました。Completeness 100%は教育品質の保証ではありません。",
+      "success",
+    );
+    artifactRegistryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "Artifact Registryの通信に失敗しました。",
+      "error",
+    );
+  }
+}
+
+function populateArtifactVersions(versions) {
+  const selects = [
+    artifactVersionSelect,
+    document.querySelector("#artifactDiffFrom"),
+    document.querySelector("#artifactDiffTo"),
+  ];
+  for (const select of selects) select.replaceChildren();
+  for (const version of versions) {
+    for (const select of selects) {
+      const option = document.createElement("option");
+      option.value = String(version.artifact_version);
+      option.textContent =
+        "v" + version.artifact_version + " · " +
+        (artifactApprovalLabels[version.approval_state] || version.approval_state);
+      select.appendChild(option);
+    }
+  }
+  if (versions.length > 1) {
+    document.querySelector("#artifactDiffFrom").value = String(
+      versions[versions.length - 1].artifact_version,
+    );
+    document.querySelector("#artifactDiffTo").value = String(
+      versions[0].artifact_version,
+    );
+  }
+}
+
+async function loadSelectedArtifactVersion() {
+  const artifactId = artifactRegistrySelect.value;
+  const version = artifactVersionSelect.value;
+  if (!artifactId || !version) return;
+  try {
+    const response = await fetch(
+      "/api/artifact-registry/" + encodeURIComponent(artifactId) +
+        "/versions/" + encodeURIComponent(version),
+    );
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.errors?.[0] || "Versionを表示できません。");
+    renderArtifactRegistryVersion(
+      payload.version.entry,
+      payload.version.artifact,
+      payload.completeness,
+    );
+  } catch (error) {
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "Versionの通信に失敗しました。",
+      "error",
+    );
+  }
+}
+
+function renderArtifactRegistryVersion(entry, artifact, completeness) {
+  artifactVersionSelect.value = String(entry.artifact_version);
+  setText("#artifactRegistryVersion", "v" + entry.artifact_version);
+  setText("#artifactRegistryKnowledgeVersion", "v" + entry.knowledge_version);
+  setText("#artifactCompletenessScore", completeness.score + "%");
+  setText("#artifactHistoryCount", String(currentArtifactRegistry?.history?.length || 0));
+  setText("#artifactOwner", entry.owner);
+  setText("#artifactRegistryFingerprint", entry.fingerprint);
+  setText(
+    "#artifactRendererEligibility",
+    entry.approval_state === "approved" ? "利用可能" : "停止",
+  );
+  const approvalBadge = document.querySelector("#artifactApprovalBadge");
+  approvalBadge.textContent = artifactApprovalLabels[entry.approval_state] || entry.approval_state;
+  approvalBadge.className =
+    entry.approval_state === "approved" ? "badge success" : "badge warning";
+  const validationBadge = document.querySelector("#artifactRegistryValidationBadge");
+  validationBadge.textContent = completeness.is_complete ? "Completeness OK" : "要改善";
+  validationBadge.className = completeness.is_complete ? "badge success" : "badge warning";
+  artifactRegistryJson.textContent = JSON.stringify(artifact, null, 2);
+}
+
+function renderArtifactRegistryHistory(registry) {
+  const versionList = document.querySelector("#artifactVersionList");
+  versionList.replaceChildren();
+  for (const version of registry.versions) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent =
+      "v" + version.artifact_version + " · " +
+      (artifactApprovalLabels[version.approval_state] || version.approval_state);
+    const detail = document.createElement("span");
+    detail.textContent =
+      "Knowledge v" + version.knowledge_version + " · " + version.updated_at;
+    const fingerprint = document.createElement("code");
+    fingerprint.textContent = version.fingerprint;
+    item.append(title, detail, fingerprint);
+    versionList.appendChild(item);
+  }
+  const historyList = document.querySelector("#artifactHistoryList");
+  historyList.replaceChildren();
+  for (const event of registry.history) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent =
+      "v" + event.artifact_version + " · " + event.event_type + " · " +
+      event.to_approval_state;
+    const detail = document.createElement("span");
+    detail.textContent = event.changed_at + " · " + event.changed_by;
+    const comment = document.createElement("code");
+    comment.textContent = event.review_comment || "コメントなし";
+    item.append(title, detail, comment);
+    historyList.appendChild(item);
+  }
+}
+
+async function changeArtifactApproval() {
+  const artifactId = artifactRegistrySelect.value;
+  const version = artifactVersionSelect.value;
+  const actor = document.querySelector("#artifactApprovalActor").value.trim();
+  const reviewComment = document.querySelector("#artifactReviewComment").value.trim();
+  const targetState = document.querySelector("#artifactApprovalTarget").value;
+  if (!artifactId || !version || !actor || !reviewComment) {
+    setArtifactRegistryMessage("Version、操作者、Review Commentが必要です。", "error");
+    return;
+  }
+  try {
+    const response = await fetch(
+      "/api/artifact-registry/" + encodeURIComponent(artifactId) +
+        "/versions/" + encodeURIComponent(version) + "/approval",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target_state: targetState,
+          actor,
+          review_comment: reviewComment,
+        }),
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.errors?.[0] || "承認状態を変更できません。");
+    await refreshArtifactRegistryList(false, artifactId);
+    artifactVersionSelect.value = version;
+    await loadSelectedArtifactVersion();
+    setArtifactRegistryMessage(
+      "Artifact v" + version + "を" + targetState + "へ変更し、履歴を保存しました。",
+      "success",
+    );
+  } catch (error) {
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "承認操作に失敗しました。",
+      "error",
+    );
+  }
+}
+
+async function compareArtifactVersions() {
+  const artifactId = artifactRegistrySelect.value;
+  const fromVersion = document.querySelector("#artifactDiffFrom").value;
+  const toVersion = document.querySelector("#artifactDiffTo").value;
+  if (!artifactId || !fromVersion || !toVersion) return;
+  try {
+    const response = await fetch(
+      "/api/artifact-registry/" + encodeURIComponent(artifactId) +
+        "/diff?from_version=" + encodeURIComponent(fromVersion) +
+        "&to_version=" + encodeURIComponent(toVersion),
+    );
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.errors?.[0] || "差分を表示できません。");
+    document.querySelector("#artifactDiffOutput").textContent = JSON.stringify(
+      payload.diff,
+      null,
+      2,
+    );
+  } catch (error) {
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "差分比較に失敗しました。",
+      "error",
+    );
+  }
+}
+
+async function checkRendererEligibility() {
+  const artifactId = artifactRegistrySelect.value;
+  const version = artifactVersionSelect.value;
+  if (!artifactId || !version) return;
+  try {
+    const response = await fetch(
+      "/api/artifact-registry/" + encodeURIComponent(artifactId) +
+        "/render-source?artifact_version=" + encodeURIComponent(version),
+    );
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.errors?.[0] || "Renderer利用不可です。");
+    setText("#artifactRendererEligibility", "利用可能");
+    setArtifactRegistryMessage(
+      "Registry経由でapproved Artifactを取得できました。Rendererへ渡せます。",
+      "success",
+    );
+  } catch (error) {
+    setText("#artifactRendererEligibility", "停止");
+    setArtifactRegistryMessage(
+      error instanceof Error ? error.message : "Renderer利用判定に失敗しました。",
+      "error",
+    );
+  }
+}
+
+function setArtifactRegistryMessage(message, kind) {
+  const panel = document.querySelector("#artifactRegistryMessage");
+  panel.textContent = message;
+  panel.dataset.kind = kind;
+}
+
 async function refreshRegistryList(autoLoad) {
   try {
     const response = await fetch("/api/registry");
@@ -3439,5 +3781,6 @@ fetch("/api/status")
   .catch(() => {});
 
 refreshRegistryList(true);
+refreshArtifactRegistryList(true);
 refreshBackups();
 loadDiseaseRelationVocabulary();
