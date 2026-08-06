@@ -1,0 +1,161 @@
+{
+  "contract_version": "1.0",
+  "review_record_id": "mrv_example_0001",
+  "knowledge_id": "knw_example_staining_method",
+  "knowledge_version": 3,
+  "knowledge_fingerprint": "sha256:example-not-a-production-fingerprint",
+  "review_version": 2,
+  "review_scope": {
+    "scope_type": "knowledge_and_claims",
+    "category": "staining_method",
+    "purpose": "national_exam_education",
+    "target_audience": "clinical_laboratory_technologist_candidates",
+    "included_claim_ids": [
+      "clm_example_definition",
+      "clm_example_procedure"
+    ],
+    "excluded_claims": [],
+    "relation_ids": [],
+    "exam_metadata_version": null
+  },
+  "claim_snapshots": [
+    {
+      "claim_id": "clm_example_definition",
+      "claim_key": "example.stain.definition",
+      "claim_version": 1,
+      "claim_fingerprint": "sha256:example-claim-definition",
+      "decision": "approved",
+      "evidence_assessment_ids": [
+        "eva_example_001"
+      ],
+      "reviewer_id": "usr_example_medical_reviewer",
+      "reviewed_at": "2026-08-06T01:00:00Z",
+      "comments": "Example only. No real Knowledge is approved by this file."
+    },
+    {
+      "claim_id": "clm_example_procedure",
+      "claim_key": "example.stain.procedure",
+      "claim_version": 1,
+      "claim_fingerprint": "sha256:example-claim-procedure",
+      "decision": "revision_required",
+      "evidence_assessment_ids": [
+        "eva_example_002"
+      ],
+      "reviewer_id": "usr_example_medical_reviewer",
+      "reviewed_at": "2026-08-06T01:00:00Z",
+      "comments": "The procedure locator must be made more specific."
+    }
+  ],
+  "checklist": {
+    "checklist_id": "medical_review_checklist_v1",
+    "checklist_version": "1.0",
+    "results": [
+      {
+        "item_id": "COMMON-001",
+        "severity": "blocker",
+        "result": "pass",
+        "reviewer_id": "system",
+        "comments": "Versions and fingerprints match the example snapshot."
+      },
+      {
+        "item_id": "STAIN-004",
+        "severity": "blocker",
+        "result": "fail",
+        "reviewer_id": "usr_example_medical_reviewer",
+        "comments": "A precise source locator is missing."
+      }
+    ]
+  },
+  "evidence_policy": {
+    "policy_id": "medical_evidence_policy_v1",
+    "policy_version": "1.0"
+  },
+  "evidence_assessments": [
+    {
+      "assessment_id": "eva_example_001",
+      "claim_id": "clm_example_definition",
+      "claim_version": 1,
+      "evidence_id": "src_example_standard",
+      "evidence_version": 1,
+      "level": "A",
+      "role": "primary",
+      "support": "supports",
+      "locator": "Section 1",
+      "jurisdiction": "JP",
+      "population_scope": "not_applicable",
+      "method_or_product_scope": "general_method",
+      "verified_by": "usr_example_medical_reviewer",
+      "verified_at": "2026-08-06T00:30:00Z",
+      "comments": "Synthetic example."
+    },
+    {
+      "assessment_id": "eva_example_002",
+      "claim_id": "clm_example_procedure",
+      "claim_version": 1,
+      "evidence_id": "src_example_standard",
+      "evidence_version": 1,
+      "level": "A",
+      "role": "primary",
+      "support": "partially_supports",
+      "locator": null,
+      "jurisdiction": "JP",
+      "population_scope": "not_applicable",
+      "method_or_product_scope": "general_method",
+      "verified_by": "usr_example_medical_reviewer",
+      "verified_at": "2026-08-06T00:30:00Z",
+      "comments": "A chapter, page, or procedure step must be recorded."
+    }
+  ],
+  "temporal_assessment": {
+    "temporal_class": "periodic",
+    "valid_from": null,
+    "valid_until": null,
+    "reviewed_at": "2026-08-06T01:00:00Z",
+    "review_due_at": "2027-08-06T01:00:00Z",
+    "jurisdiction": "JP",
+    "method_or_product_scope": "general_method",
+    "superseded_by": null
+  },
+  "reviewers": [
+    {
+      "user_id": "usr_example_medical_reviewer",
+      "display_name": "Example Reviewer",
+      "roles_performed": [
+        "medical_reviewer"
+      ],
+      "professional_credentials": [
+        {
+          "credential_type": "clinical_laboratory_technologist",
+          "verification_status": "example_only",
+          "verified_at": null
+        }
+      ],
+      "specialty_scope": [
+        "microbiology",
+        "staining_method"
+      ],
+      "organization": "Example Organization",
+      "conflict_of_interest": {
+        "declared": false,
+        "details": null
+      },
+      "identity_verified_at": null
+    }
+  ],
+  "decision": "revision_required",
+  "conditions": [
+    {
+      "condition_id": "cond_example_001",
+      "description": "Add a precise evidence locator for the procedure claim.",
+      "due_at": null,
+      "resolved_at": null
+    }
+  ],
+  "comments": "This is a non-production contract example and does not change any Registry state.",
+  "reviewed_at": "2026-08-06T01:00:00Z",
+  "valid_from": null,
+  "review_due_at": "2027-08-06T01:00:00Z",
+  "supersedes_review_version": 1,
+  "created_at": "2026-08-06T01:00:00Z",
+  "created_by": "usr_example_medical_reviewer"
+}
