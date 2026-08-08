@@ -3807,6 +3807,320 @@ async function loadDiseaseRelationVocabulary() {
   }
 }
 
+const authoringWizardForm = document.querySelector("#authoringWizardForm");
+const authoringDraftSelect = document.querySelector("#authoringDraftSelect");
+const authoringEditor = document.querySelector("#authoringEditor");
+const authoringMessage = document.querySelector("#authoringMessage");
+const authoringClaimList = document.querySelector("#authoringClaimList");
+const authoringReferenceList = document.querySelector("#authoringReferenceList");
+const authoringReferenceClaims = document.querySelector("#authoringReferenceClaims");
+let currentAuthoringDraft = null;
+let currentAuthoringValidation = null;
+let editingAuthoringReferenceId = null;
+
+async function authoringApi(path, options = {}) {
+  const response = await fetch(path, options);
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.errors?.[0]?.message || "Authoring操作に失敗しました。");
+  }
+  return payload;
+}
+
+function authoringJsonOptions(method, body) {
+  return {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
+async function refreshAuthoringDrafts(preferredId = null) {
+  const payload = await authoringApi("/api/authoring/drafts");
+  const selected = preferredId || currentAuthoringDraft?.draft_id || "";
+  authoringDraftSelect.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = payload.drafts.length ? "下書きを選択" : "下書きはありません";
+  authoringDraftSelect.appendChild(placeholder);
+  payload.drafts.forEach((draft) => {
+    const option = document.createElement("option");
+    option.value = draft.draft_id;
+    option.textContent = `${draft.title} · ${termTypeLabels[draft.category] || draft.category} · Claim ${draft.claim_count}`;
+    option.selected = draft.draft_id === selected;
+    authoringDraftSelect.appendChild(option);
+  });
+}
+
+async function openAuthoringDraft(draftId) {
+  if (!draftId) return;
+  const payload = await authoringApi(`/api/authoring/drafts/${draftId}`);
+  currentAuthoringDraft = payload.draft;
+  currentAuthoringValidation = payload.validation;
+  renderAuthoringDraft();
+  authoringMessage.textContent = `${payload.draft.metadata.title} の下書きを開きました。正式Registryは変更していません。`;
+}
+
+function renderAuthoringDraft() {
+  const draft = currentAuthoringDraft;
+  const validation = currentAuthoringValidation;
+  if (!draft || !validation) return;
+  authoringEditor.hidden = false;
+  document.querySelector("#authoringSchemaStatus").textContent =
+    validation.schema_valid && validation.knowledge_schema_valid ? "OK" : "要修正";
+  document.querySelector("#authoringCompleteness").textContent = `${validation.completeness_score}%`;
+  document.querySelector("#authoringClaimCount").textContent = draft.claims.length;
+  document.querySelector("#authoringReferenceCount").textContent = draft.references.length;
+  document.querySelector("#authoringReviewState").textContent = draft.review.state;
+  renderAuthoringClaims();
+  renderAuthoringReferences();
+  renderAuthoringValidation();
+}
+
+function renderAuthoringClaims() {
+  authoringClaimList.replaceChildren();
+  authoringReferenceClaims.replaceChildren();
+  if (!currentAuthoringDraft.claims.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Claimはまだありません。";
+    authoringClaimList.appendChild(empty);
+  }
+  currentAuthoringDraft.claims.forEach((claim, index) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const id = document.createElement("code");
+    id.textContent = `${claim.position}. ${claim.claim_id}`;
+    const textarea = document.createElement("textarea");
+    textarea.rows = 3;
+    textarea.maxLength = 800;
+    textarea.value = claim.assertion;
+    const actions = document.createElement("div");
+    actions.className = "authoring-item-actions";
+    const save = authoringButton("保存", async () => {
+      await mutateAuthoring(`/claims/${claim.claim_id}`, "PUT", { assertion: textarea.value });
+    });
+    const up = authoringButton("↑", () => reorderAuthoringClaim(index, -1));
+    const down = authoringButton("↓", () => reorderAuthoringClaim(index, 1));
+    up.disabled = index === 0;
+    down.disabled = index === currentAuthoringDraft.claims.length - 1;
+    const remove = authoringButton("削除", async () => {
+      await mutateAuthoring(`/claims/${claim.claim_id}`, "DELETE");
+    }, "danger-action");
+    actions.append(save, up, down, remove);
+    card.append(id, textarea, actions);
+    authoringClaimList.appendChild(card);
+
+    const option = document.createElement("option");
+    option.value = claim.claim_id;
+    option.textContent = `${claim.position}. ${claim.assertion}`;
+    authoringReferenceClaims.appendChild(option);
+  });
+}
+
+function authoringButton(label, handler, className = "secondary-action") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `${className} compact`;
+  button.textContent = label;
+  button.addEventListener("click", async () => {
+    try {
+      await handler();
+    } catch (error) {
+      authoringMessage.textContent = error instanceof Error ? error.message : "操作に失敗しました。";
+    }
+  });
+  return button;
+}
+
+async function reorderAuthoringClaim(index, offset) {
+  const ids = currentAuthoringDraft.claims.map((item) => item.claim_id);
+  const target = index + offset;
+  if (target < 0 || target >= ids.length) return;
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  await mutateAuthoring("/claims/reorder", "POST", { claim_ids: ids });
+}
+
+function renderAuthoringReferences() {
+  authoringReferenceList.replaceChildren();
+  if (!currentAuthoringDraft.references.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Referenceはまだありません。";
+    authoringReferenceList.appendChild(empty);
+    return;
+  }
+  currentAuthoringDraft.references.forEach((reference) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const title = document.createElement("strong");
+    title.textContent = `[${reference.evidence_level}] ${reference.title}`;
+    const detail = document.createElement("small");
+    detail.textContent = `${reference.source_id} · Claim ${reference.supported_claim_ids.length}件`;
+    const actions = document.createElement("div");
+    actions.className = "authoring-item-actions";
+    actions.append(
+      authoringButton("編集", () => beginAuthoringReferenceEdit(reference)),
+      authoringButton("削除", async () => {
+        await mutateAuthoring(`/references/${reference.source_id}`, "DELETE");
+      }, "danger-action"),
+    );
+    card.append(title, detail, actions);
+    authoringReferenceList.appendChild(card);
+  });
+}
+
+function beginAuthoringReferenceEdit(reference) {
+  editingAuthoringReferenceId = reference.source_id;
+  document.querySelector("#authoringEvidenceLevel").value = reference.evidence_level;
+  document.querySelector("#authoringEvidenceRole").value = reference.evidence_role;
+  document.querySelector("#authoringReferenceTitle").value = reference.title;
+  document.querySelector("#authoringReferenceOrganization").value = reference.issuing_organization || "";
+  document.querySelector("#authoringReferenceYear").value = reference.publication_year || "";
+  document.querySelector("#authoringReferenceEdition").value = reference.edition || "";
+  document.querySelector("#authoringReferenceUrl").value = reference.url || "";
+  document.querySelector("#authoringReferenceDoi").value = reference.doi || "";
+  document.querySelector("#authoringReferencePmid").value = reference.pmid || "";
+  document.querySelector("#authoringReferenceChapter").value = reference.chapter || "";
+  document.querySelector("#authoringReferencePages").value = reference.pages || "";
+  [...authoringReferenceClaims.options].forEach((option) => {
+    option.selected = reference.supported_claim_ids.includes(option.value);
+  });
+  document.querySelector("#saveAuthoringReferenceButton").textContent = "Reference更新";
+  document.querySelector("#cancelAuthoringReferenceButton").hidden = false;
+}
+
+function clearAuthoringReferenceForm() {
+  editingAuthoringReferenceId = null;
+  ["Title", "Organization", "Year", "Edition", "Url", "Doi", "Pmid", "Chapter", "Pages"].forEach((name) => {
+    document.querySelector(`#authoringReference${name}`).value = "";
+  });
+  [...authoringReferenceClaims.options].forEach((option) => { option.selected = false; });
+  document.querySelector("#saveAuthoringReferenceButton").textContent = "＋ Reference追加";
+  document.querySelector("#cancelAuthoringReferenceButton").hidden = true;
+}
+
+function authoringReferencePayload() {
+  const optional = (selector) => document.querySelector(selector).value.trim() || null;
+  const year = document.querySelector("#authoringReferenceYear").value;
+  return {
+    evidence_level: document.querySelector("#authoringEvidenceLevel").value,
+    evidence_role: document.querySelector("#authoringEvidenceRole").value,
+    title: document.querySelector("#authoringReferenceTitle").value.trim(),
+    issuing_organization: optional("#authoringReferenceOrganization"),
+    publication_year: year ? Number(year) : null,
+    edition: optional("#authoringReferenceEdition"),
+    url: optional("#authoringReferenceUrl"),
+    doi: optional("#authoringReferenceDoi"),
+    pmid: optional("#authoringReferencePmid"),
+    accessed_at: null,
+    chapter: optional("#authoringReferenceChapter"),
+    pages: optional("#authoringReferencePages"),
+    supported_claim_ids: [...authoringReferenceClaims.selectedOptions].map((option) => option.value),
+  };
+}
+
+function renderAuthoringValidation() {
+  const list = document.querySelector("#authoringValidationIssues");
+  list.replaceChildren();
+  currentAuthoringValidation.issues.forEach((issue) => {
+    const item = document.createElement("li");
+    item.dataset.severity = issue.severity;
+    const title = document.createElement("strong");
+    title.textContent = issue.code;
+    const message = document.createElement("span");
+    message.textContent = issue.message;
+    item.append(title, message);
+    list.appendChild(item);
+  });
+  if (!currentAuthoringValidation.issues.length) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent = "Validation OK";
+    item.appendChild(title);
+    list.appendChild(item);
+  }
+}
+
+async function mutateAuthoring(suffix, method, body = null) {
+  if (!currentAuthoringDraft) throw new Error("先に下書きを開いてください。");
+  const options = body === null ? { method } : authoringJsonOptions(method, body);
+  const payload = await authoringApi(`/api/authoring/drafts/${currentAuthoringDraft.draft_id}${suffix}`, options);
+  currentAuthoringDraft = payload.draft;
+  currentAuthoringValidation = payload.validation;
+  renderAuthoringDraft();
+  await refreshAuthoringDrafts(currentAuthoringDraft.draft_id);
+  authoringMessage.textContent = "下書きを保存しました。正式Registryは変更していません。";
+}
+
+authoringWizardForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    const aliases = document.querySelector("#authoringAliases").value
+      .split(/[、,\n]/).map((item) => item.trim()).filter(Boolean);
+    const payload = await authoringApi("/api/authoring/drafts", authoringJsonOptions("POST", {
+      category: document.querySelector("#authoringCategory").value,
+      title: document.querySelector("#authoringTitle").value.trim(),
+      aliases,
+      difficulty: document.querySelector("#authoringDifficulty").value,
+      exam_importance: document.querySelector("#authoringImportance").value,
+    }));
+    currentAuthoringDraft = payload.draft;
+    currentAuthoringValidation = payload.validation;
+    renderAuthoringDraft();
+    await refreshAuthoringDrafts(payload.draft.draft_id);
+    authoringMessage.textContent = "Skeletonを作成しました。ClaimとReferenceを追加できます。";
+  } catch (error) {
+    authoringMessage.textContent = error instanceof Error ? error.message : "Skeletonを作成できませんでした。";
+  }
+});
+
+document.querySelector("#loadAuthoringDraftButton").addEventListener("click", async () => {
+  try { await openAuthoringDraft(authoringDraftSelect.value); }
+  catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "開けませんでした。"; }
+});
+
+document.querySelector("#addAuthoringClaimButton").addEventListener("click", async () => {
+  const field = document.querySelector("#authoringClaimText");
+  if (!field.value.trim()) { authoringMessage.textContent = "Claim本文を入力してください。"; return; }
+  try { await mutateAuthoring("/claims", "POST", { assertion: field.value.trim() }); field.value = ""; }
+  catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "追加できませんでした。"; }
+});
+
+document.querySelector("#saveAuthoringReferenceButton").addEventListener("click", async () => {
+  try {
+    const suffix = editingAuthoringReferenceId ? `/references/${editingAuthoringReferenceId}` : "/references";
+    const method = editingAuthoringReferenceId ? "PUT" : "POST";
+    await mutateAuthoring(suffix, method, authoringReferencePayload());
+    clearAuthoringReferenceForm();
+  } catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "Referenceを保存できませんでした。"; }
+});
+
+document.querySelector("#cancelAuthoringReferenceButton").addEventListener("click", clearAuthoringReferenceForm);
+
+document.querySelector("#authoringImportFile").addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const draft = JSON.parse(await file.text());
+    const payload = await authoringApi("/api/authoring/import", authoringJsonOptions("POST", { draft }));
+    currentAuthoringDraft = payload.draft;
+    currentAuthoringValidation = payload.validation;
+    renderAuthoringDraft();
+    await refreshAuthoringDrafts(payload.draft.draft_id);
+    authoringMessage.textContent = "JSONを新しい下書きとしてImportしました。";
+  } catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "Importできませんでした。"; }
+  event.target.value = "";
+});
+
+function exportAuthoring(format) {
+  if (!currentAuthoringDraft) { authoringMessage.textContent = "先に下書きを開いてください。"; return; }
+  window.location.assign(`/api/authoring/drafts/${currentAuthoringDraft.draft_id}/export?format=${format}`);
+}
+
+document.querySelector("#exportAuthoringJsonButton").addEventListener("click", () => exportAuthoring("json"));
+document.querySelector("#exportAuthoringMarkdownButton").addEventListener("click", () => exportAuthoring("markdown"));
+
 fetch("/api/status")
   .then((response) => response.json())
   .then((status) => {
@@ -3835,3 +4149,6 @@ refreshRegistryList(true);
 refreshArtifactRegistryList(true);
 refreshBackups();
 loadDiseaseRelationVocabulary();
+refreshAuthoringDrafts().catch(() => {
+  authoringMessage.textContent = "保存済み下書きを読み込めませんでした。";
+});

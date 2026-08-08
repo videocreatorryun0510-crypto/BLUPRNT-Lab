@@ -11,7 +11,7 @@ from typing import Any, Literal, Self
 from uuid import uuid4
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from knowledge_contracts.approval_v10 import (
     approval_contract,
@@ -102,6 +102,22 @@ from source_bundle_publisher import (
 )
 
 from knowledge_workbench.application import GenerateKnowledge
+from knowledge_workbench.authoring_models import (
+    AddAuthoringClaimRequest,
+    AddAuthoringReferenceRequest,
+    CreateAuthoringDraftRequest,
+    ImportAuthoringDraftRequest,
+    KnowledgeAuthoringDraft,
+    ReorderAuthoringClaimsRequest,
+    UpdateAuthoringClaimRequest,
+    UpdateAuthoringReferenceRequest,
+)
+from knowledge_workbench.authoring_repository import (
+    AuthoringDraftNotFoundError,
+    AuthoringDraftStorageError,
+    FileAuthoringDraftRepository,
+)
+from knowledge_workbench.authoring_service import KnowledgeAuthoringService
 from knowledge_workbench.errors import RegistryOperationError, WorkbenchError
 from knowledge_workbench.exam_import_mapping import load_exam_csv_mapping
 from knowledge_workbench.exam_import_service import (
@@ -444,7 +460,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.20.1",
+        version="5.22.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -472,6 +488,50 @@ def create_app(
         else None
     )
     app.state.registry_tempdir = temporary_registry_directory
+    authoring_output_directory = (
+        Path(temporary_registry_directory.name) / "authoring_drafts"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent / "authoring_drafts"
+    )
+    authoring_service = KnowledgeAuthoringService(
+        FileAuthoringDraftRepository(authoring_output_directory)
+    )
+
+    def _authoring_response(draft: KnowledgeAuthoringDraft) -> JSONResponse:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "draft": draft.model_dump(mode="json"),
+                "validation": authoring_service.validate(draft).model_dump(mode="json"),
+                "registry_mutated": False,
+                "medical_review_performed": False,
+                "external_ai_called": False,
+            },
+        )
+
+    def _authoring_error(
+        error: Exception,
+        status_code: int,
+        code: str,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": "error",
+                "errors": [{"code": code, "message": str(error)}],
+                "registry_mutated": False,
+            },
+        )
+
+    def _run_authoring_operation(operation: Any) -> JSONResponse:
+        try:
+            return _authoring_response(operation())
+        except AuthoringDraftNotFoundError as error:
+            return _authoring_error(error, 404, "authoring_draft_not_found")
+        except (AuthoringDraftStorageError, ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "authoring_validation_failed")
+
     backup_directory = (
         Path(temporary_registry_directory.name) / "backups"
         if temporary_registry_directory is not None
@@ -905,7 +965,132 @@ def create_app(
                 resolved_gemini_acceptance_service.fixture_knowledge_id
             ),
             "gemini_acceptance_execution_limit": 1,
+            "knowledge_authoring_version": "1.0",
+            "knowledge_authoring_storage": "independent_json_drafts",
+            "knowledge_authoring_output": str(authoring_output_directory),
+            "knowledge_authoring_registry_write_enabled": False,
+            "knowledge_authoring_ai_generation_enabled": False,
         }
+
+    @app.get("/api/schema/knowledge-authoring-1.0")
+    def authoring_schema_v10() -> dict[str, object]:
+        return KnowledgeAuthoringDraft.model_json_schema()
+
+    @app.get("/api/authoring/drafts")
+    def list_authoring_drafts() -> dict[str, object]:
+        return {
+            "status": "success",
+            "drafts": [item.model_dump(mode="json") for item in authoring_service.list_drafts()],
+            "registry_mutated": False,
+        }
+
+    @app.post("/api/authoring/drafts")
+    def create_authoring_draft(
+        request: CreateAuthoringDraftRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.create(request))
+
+    @app.get("/api/authoring/drafts/{draft_id}")
+    def get_authoring_draft(draft_id: str) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.get(draft_id))
+
+    @app.get("/api/authoring/drafts/{draft_id}/validation")
+    def validate_authoring_draft(draft_id: str) -> JSONResponse:
+        try:
+            draft = authoring_service.get(draft_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "validation": authoring_service.validate(draft).model_dump(mode="json"),
+                    "registry_mutated": False,
+                    "medical_review_performed": False,
+                },
+            )
+        except AuthoringDraftNotFoundError as error:
+            return _authoring_error(error, 404, "authoring_draft_not_found")
+
+    @app.post("/api/authoring/drafts/{draft_id}/claims")
+    def add_authoring_claim(
+        draft_id: str,
+        request: AddAuthoringClaimRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.add_claim(draft_id, request))
+
+    @app.put("/api/authoring/drafts/{draft_id}/claims/{claim_id}")
+    def update_authoring_claim(
+        draft_id: str,
+        claim_id: str,
+        request: UpdateAuthoringClaimRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(
+            lambda: authoring_service.update_claim(draft_id, claim_id, request)
+        )
+
+    @app.delete("/api/authoring/drafts/{draft_id}/claims/{claim_id}")
+    def delete_authoring_claim(draft_id: str, claim_id: str) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.delete_claim(draft_id, claim_id))
+
+    @app.post("/api/authoring/drafts/{draft_id}/claims/reorder")
+    def reorder_authoring_claims(
+        draft_id: str,
+        request: ReorderAuthoringClaimsRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.reorder_claims(draft_id, request))
+
+    @app.post("/api/authoring/drafts/{draft_id}/references")
+    def add_authoring_reference(
+        draft_id: str,
+        request: AddAuthoringReferenceRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.add_reference(draft_id, request))
+
+    @app.put("/api/authoring/drafts/{draft_id}/references/{source_id}")
+    def update_authoring_reference(
+        draft_id: str,
+        source_id: str,
+        request: UpdateAuthoringReferenceRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(
+            lambda: authoring_service.update_reference(draft_id, source_id, request)
+        )
+
+    @app.delete("/api/authoring/drafts/{draft_id}/references/{source_id}")
+    def delete_authoring_reference(draft_id: str, source_id: str) -> JSONResponse:
+        return _run_authoring_operation(
+            lambda: authoring_service.delete_reference(draft_id, source_id)
+        )
+
+    @app.post("/api/authoring/import")
+    def import_authoring_draft(
+        request: ImportAuthoringDraftRequest,
+    ) -> JSONResponse:
+        return _run_authoring_operation(lambda: authoring_service.import_json(request))
+
+    @app.get("/api/authoring/drafts/{draft_id}/export")
+    def export_authoring_draft(
+        draft_id: str,
+        format: Literal["json", "markdown"] = "json",
+    ) -> Response:
+        try:
+            draft = authoring_service.get(draft_id)
+            if format == "markdown":
+                body = authoring_service.export_markdown(draft)
+                suffix = "md"
+                media_type = "text/markdown; charset=utf-8"
+            else:
+                body = authoring_service.export_json(draft)
+                suffix = "json"
+                media_type = "application/json"
+            return Response(
+                content=body,
+                media_type=media_type,
+                headers={
+                    "Content-Disposition": (f'attachment; filename="{draft.draft_id}.{suffix}"')
+                },
+            )
+        except AuthoringDraftNotFoundError as error:
+            return _authoring_error(error, 404, "authoring_draft_not_found")
 
     @app.post("/api/gemini-acceptance/preflight")
     def gemini_acceptance_preflight() -> JSONResponse:

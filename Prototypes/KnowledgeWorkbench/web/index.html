@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=artifact-registry-5.20.1" />
+    <link rel="stylesheet" href="/static/styles.css?v=authoring-5.22.0" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.20.1</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.22</p>
           <h1>Knowledge Workbench</h1>
-          <p class="lead">教材構成の版・教育承認・履歴を、Knowledgeとは独立して安全に管理。</p>
+          <p class="lead">未完成のKnowledgeを安全な下書きで素早く作り、正式登録前に内容を整える。</p>
         </div>
         <div class="status-stack">
           <span id="providerBadge" class="badge neutral">接続確認中</span>
@@ -106,6 +106,124 @@
             <button type="button" data-term="HbA1c">HbA1c</button>
           </div>
         </form>
+      </section>
+
+      <section class="authoring-panel" aria-labelledby="authoring-title">
+        <div class="panel-copy">
+          <p class="step">PHASE 5.22 · KNOWLEDGE AUTHORING</p>
+          <h2 id="authoring-title">Knowledge Wizard</h2>
+          <p>
+            5項目だけで安全な下書きを作成します。ここでの保存は正式Registryへの登録や
+            医学的承認ではありません。
+          </p>
+        </div>
+        <div class="authoring-workspace">
+          <form id="authoringWizardForm" class="authoring-form-grid">
+            <label>Category
+              <select id="authoringCategory" required>
+                <option value="test_item">検査項目（詳細）</option>
+                <option value="laboratory_test_item">臨床検査項目</option>
+                <option value="disease">疾患</option>
+                <option value="staining_method">染色法</option>
+                <option value="specimen">検体・標本</option>
+                <option value="reagent">試薬</option>
+                <option value="biological_structure">生体構造</option>
+              </select>
+            </label>
+            <label>Title
+              <input id="authoringTitle" maxlength="180" placeholder="例：血清鉄" required />
+            </label>
+            <label>Alias（任意・読点区切り）
+              <input id="authoringAliases" maxlength="600" placeholder="例：Serum iron、Fe" />
+            </label>
+            <label>Difficulty
+              <select id="authoringDifficulty">
+                <option value="basic">Basic</option>
+                <option value="standard" selected>Standard</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
+            <label>Exam Importance
+              <select id="authoringImportance">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="very_high">Very High</option>
+              </select>
+            </label>
+            <button class="primary-action" type="submit">Skeletonを作成</button>
+          </form>
+          <div class="authoring-open-row">
+            <label for="authoringDraftSelect">保存済み下書き</label>
+            <select id="authoringDraftSelect"><option value="">下書きはありません</option></select>
+            <button id="loadAuthoringDraftButton" class="secondary-action" type="button">開く</button>
+            <label class="file-action">JSON Import
+              <input id="authoringImportFile" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+          <p id="authoringMessage" class="control-note" role="status"></p>
+
+          <div id="authoringEditor" class="authoring-editor" hidden>
+            <div class="authoring-metrics">
+              <div><span>Schema</span><strong id="authoringSchemaStatus">--</strong></div>
+              <div><span>Completeness</span><strong id="authoringCompleteness">--</strong></div>
+              <div><span>Claims</span><strong id="authoringClaimCount">0</strong></div>
+              <div><span>References</span><strong id="authoringReferenceCount">0</strong></div>
+              <div><span>Review</span><strong id="authoringReviewState">draft</strong></div>
+            </div>
+
+            <div class="authoring-column-grid">
+              <section class="authoring-card">
+                <h3>Claim Authoring</h3>
+                <label for="authoringClaimText">医学的事実</label>
+                <textarea id="authoringClaimText" rows="3" maxlength="800" placeholder="1つの確認可能な事実を入力"></textarea>
+                <button id="addAuthoringClaimButton" class="primary-action" type="button">＋ Claim追加</button>
+                <div id="authoringClaimList" class="authoring-item-list"></div>
+              </section>
+
+              <section class="authoring-card">
+                <h3>Reference Authoring</h3>
+                <div class="authoring-reference-form">
+                  <label>Evidence Level
+                    <select id="authoringEvidenceLevel"><option>A</option><option>B</option><option>C</option></select>
+                  </label>
+                  <label>Role
+                    <select id="authoringEvidenceRole"><option value="primary">Primary</option><option value="supporting" selected>Supporting</option></select>
+                  </label>
+                  <label class="wide">資料名<input id="authoringReferenceTitle" maxlength="180" /></label>
+                  <label class="wide">発行団体・書誌情報<input id="authoringReferenceOrganization" maxlength="300" /></label>
+                  <label>発行年<input id="authoringReferenceYear" type="number" min="1800" max="2200" /></label>
+                  <label>版<input id="authoringReferenceEdition" maxlength="300" /></label>
+                  <label class="wide">URL<input id="authoringReferenceUrl" type="url" maxlength="1000" /></label>
+                  <label>DOI<input id="authoringReferenceDoi" maxlength="300" /></label>
+                  <label>PMID<input id="authoringReferencePmid" maxlength="12" /></label>
+                  <label>章<input id="authoringReferenceChapter" maxlength="300" /></label>
+                  <label>ページ<input id="authoringReferencePages" maxlength="300" /></label>
+                  <label class="wide">支えるClaim
+                    <select id="authoringReferenceClaims" multiple size="4"></select>
+                  </label>
+                </div>
+                <div class="editor-actions">
+                  <button id="saveAuthoringReferenceButton" class="primary-action" type="button">＋ Reference追加</button>
+                  <button id="cancelAuthoringReferenceButton" class="secondary-action" type="button" hidden>編集を中止</button>
+                </div>
+                <div id="authoringReferenceList" class="authoring-item-list"></div>
+              </section>
+            </div>
+
+            <section class="authoring-validation">
+              <div>
+                <h3>保存前Validation</h3>
+                <p>Schema・必須項目・Claim数・Reference整合性だけを確認します。医学監修は行いません。</p>
+              </div>
+              <ul id="authoringValidationIssues" class="report-list issues"></ul>
+            </section>
+            <div class="authoring-export-row">
+              <button id="exportAuthoringJsonButton" class="secondary-action" type="button">JSON Export</button>
+              <button id="exportAuthoringMarkdownButton" class="secondary-action" type="button">Markdown Export</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="knowledge-editor" aria-labelledby="knowledge-editor-title">
@@ -1008,6 +1126,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=dual-approval-gate-5.20.1" defer></script>
+    <script src="/static/app.js?v=authoring-5.22.0" defer></script>
   </body>
 </html>

@@ -70,6 +70,36 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .secondary-action { border: 1px solid #cbbd9f; color: #744317; background: white; }
 .danger-action { border: 1px solid #d59e99; color: var(--danger); background: white; }
 .primary-action:disabled, .secondary-action:disabled, .danger-action:disabled { cursor: not-allowed; opacity: .5; }
+.authoring-panel { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(0, 1.7fr); gap: 28px; margin-top: 20px; border: 1px solid #aac9bd; border-radius: 20px; padding: 26px; background: linear-gradient(145deg, #f1f9f5, #fff); box-shadow: 0 16px 50px rgba(27,46,39,.06); }
+.authoring-workspace { min-width: 0; }
+.authoring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.authoring-form-grid label, .authoring-reference-form label { margin: 0; }
+.authoring-form-grid button { align-self: end; min-height: 43px; }
+.authoring-open-row { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto auto; gap: 9px; align-items: end; margin-top: 16px; border-top: 1px solid #d6e5df; padding-top: 16px; }
+.authoring-open-row label { margin: 0; }
+.file-action { display: grid; gap: 5px; border: 1px solid #cbbd9f; border-radius: 10px; padding: 8px 11px; color: #744317; background: white; font-size: 10px; font-weight: 800; cursor: pointer; }
+.file-action input { max-width: 160px; padding: 0; border: 0; font-size: 9px; }
+.authoring-editor[hidden] { display: none; }
+.authoring-metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin-top: 18px; border: 1px solid #c9dcd5; border-radius: 11px; overflow: hidden; background: #c9dcd5; }
+.authoring-metrics div { padding: 10px 12px; background: white; }
+.authoring-metrics span, .authoring-metrics strong { display: block; }
+.authoring-metrics span { color: var(--muted); font-size: 9px; }
+.authoring-metrics strong { margin-top: 4px; font-size: 14px; }
+.authoring-column-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.authoring-card { min-width: 0; border: 1px solid #c9dcd5; border-radius: 13px; padding: 16px; background: #fbfefd; }
+.authoring-card h3, .authoring-validation h3 { margin: 0 0 12px; color: var(--green); font-size: 15px; }
+.authoring-card > button { margin-top: 9px; }
+.authoring-item-list { display: grid; gap: 8px; margin-top: 13px; }
+.authoring-item { display: grid; gap: 7px; border: 1px solid #d9e4e0; border-radius: 10px; padding: 11px; background: white; }
+.authoring-item code, .authoring-item small { color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+.authoring-item textarea { width: 100%; resize: vertical; }
+.authoring-item-actions, .authoring-export-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.authoring-reference-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.authoring-reference-form .wide { grid-column: 1 / -1; }
+.authoring-reference-form select[multiple] { min-height: 92px; }
+.authoring-validation { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr); gap: 14px; margin-top: 12px; border: 1px solid #dbcda9; border-radius: 13px; padding: 15px; background: #fffaf1; }
+.authoring-validation p { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.authoring-export-row { margin-top: 12px; }
 .compact { padding: 7px 10px; font-size: 10px; }
 .control-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .resolution-report-summary { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-top: 10px; border: 1px solid #b9d4ca; border-radius: 10px; padding: 10px 12px; color: var(--muted); background: white; font-size: 11px; }
@@ -325,7 +355,7 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: cen
 
 @media (max-width: 850px) {
   .shell { width: min(100% - 24px, 720px); padding-top: 28px; }
-  .masthead, .input-panel, .import-panel, .knowledge-editor, .result-grid { grid-template-columns: 1fr; }
+  .masthead, .input-panel, .import-panel, .knowledge-editor, .authoring-panel, .result-grid { grid-template-columns: 1fr; }
   .masthead { display: grid; }
   .status-stack { justify-content: flex-start; }
   .input-panel { gap: 18px; padding: 22px; }
@@ -334,6 +364,7 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: cen
   .preview-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .registry-browser, .backup-panel, .artifact-registry-browser, .artifact-registry-workspace { grid-template-columns: 1fr; }
   .relation-vocabulary-list { grid-template-columns: 1fr; }
+  .authoring-column-grid { grid-template-columns: 1fr; }
   .result-grid { display: grid; }
   .json-panel { position: static; }
 }
@@ -364,4 +395,7 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: cen
   .import-metrics { grid-template-columns: repeat(2, 1fr); }
   .preview-metrics { grid-template-columns: repeat(2, 1fr); }
   .validation-list div { grid-template-columns: 1fr; gap: 3px; }
+  .authoring-form-grid, .authoring-reference-form, .authoring-validation, .authoring-open-row { grid-template-columns: 1fr; }
+  .authoring-reference-form .wide { grid-column: auto; }
+  .authoring-metrics { grid-template-columns: repeat(2, 1fr); }
 }

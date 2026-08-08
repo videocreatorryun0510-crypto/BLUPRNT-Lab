@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.18.1
+# Knowledge Workbench — Phase 5.22
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -11,6 +11,8 @@ Phase 5.17では、Presentation Requestの参照IDを承認済み正本へ解決
 Phase 5.18では、Provider非依存のPresentation Prompt BuilderとGemini Sandbox Adapterを追加しました。Prompt PreviewにはProvider固有情報を含めず、Gemini固有の変換・認証・通信・Response MappingはAdapter内部だけで処理します。未承認Knowledge、Stale、Fingerprint不一致、APIキー未設定では外部通信しません。
 
 Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを追加しました。画面上部の専用欄で「送信前確認を作成」を押し、隔離Test Fixture、承認、Egress、Secret、Stale、Fingerprint、件数、送信量、Token、Retry、Timeoutを確認します。すべてOKの場合だけ「Test FixtureをGeminiへ1回送信」を押せます。ページ読込やKnowledge保存では自動送信されません。
+
+Phase 5.22では、AIを使わず人がKnowledgeを素早く作るKnowledge Wizardを追加しました。Category、Title、Alias、Difficulty、Exam Importanceの5項目から、既存Knowledge Contract 1.0に適合する空のSkeletonを作ります。ClaimとReferenceを追加・編集し、JSONまたはMarkdownへ出力できます。未完成データは正式Registryから分離したAuthoring Draftとして保存され、Approval、Artifact、Publisherは変更しません。
 
 ## できること
 
@@ -96,6 +98,12 @@ Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを�
 80. 外部通信前にFixture、承認、Egress、Secret、Stale、Fingerprint、送信量を確認する
 81. 明示操作1回だけでGemini実APIを呼び、構造化Responseを厳格に検証する
 82. 実Registry不変、Claim・Reference追跡、Token・Duration・Audit保存を確認する
+83. 5項目のKnowledge Wizardから全7 Categoryの空Skeletonを作る
+84. Claimを安定ID付きで追加・編集・削除・並び替えする
+85. Evidence Level、URL、書誌情報、ページ、DOI、PMIDとClaim対応を保存する
+86. Schema、作成時Completeness、必須項目、Claim数、Reference整合性を保存前に確認する
+87. 下書きをJSON・Markdownへ出力し、JSONを新しい下書きとして取り込む
+88. 未完成下書きの保存で正式Registry・Approval・Publisherが変わらないことを保証する
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 
@@ -124,6 +132,17 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 ```
 
 ブラウザで `http://127.0.0.1:8000` を開きます。終了するときはターミナルで `Control + C` を押します。
+
+## Knowledge Wizardで新しい下書きを作る
+
+1. 「Knowledge Wizard」でCategory、Title、Difficulty、Exam Importanceを選びます。Aliasは任意です。
+2. 「Skeletonを作成」を押します。Claim、Reference、Relationが空で、Reviewが`draft`の下書きが保存されます。
+3. 「Claim Authoring」で、確認可能な医学的事実を1件ずつ追加します。文章の編集、順番変更、削除ができます。
+4. 「Reference Authoring」で資料名、Evidence Level、URL、書誌情報、ページ、DOIなどを入力し、その資料が支えるClaimを選びます。
+5. 「保存前Validation」で形式、入力数、ReferenceとClaimの対応を確認します。これは医学的正確性の判定や医学監修ではありません。
+6. 続きは「保存済み下書き」から開きます。JSON Exportは再取込用、Markdown Exportは人が読みやすい確認・共有用です。
+
+下書きは`data/authoring_drafts/`へ1件ずつ保存されます。このフォルダはGit管理対象外です。正式Registryへの登録はPhase 5.22の対象外であり、誤って未完成Knowledgeが承認経路へ入ることはありません。詳しい責務と運用は[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)を参照してください。
 
 ## 国家試験CSVをPreviewして取り込む
 
