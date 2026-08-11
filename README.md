@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.24「AI Knowledge Pipeline MVP」を実装しました。** テーマ・医療用語からEvidence、Claim、Reference、Knowledge Builderを通してAuthoring Draft Previewを作るProvider非依存経路です。MVPでは外部検索とLLMを呼ばず、確認後にAuthoring Draftへだけ保存します。Promotion、Registry、Review、Approvalは自動実行しません。詳細は[AI Knowledge Pipeline](Docs/ai_knowledge_pipeline.md)に記録しています。
+> **Phase 5.25「Evidence Intelligence Layer MVP」を実装しました。** 検索元固有のRaw Evidenceを共通形式へ標準化し、DOI・PMID・URL・資料名で重複排除し、Evidence Level A→B→Cで順位付けしてEvidence Bundleを作ります。WorkbenchとClaim BuilderはBundleだけを受け取り、Raw Evidenceは公開しません。実検索APIとLLMは未接続です。詳細は[Evidence Intelligence Layer](Docs/evidence_intelligence_layer.md)に記録しています。
 
 ---
 

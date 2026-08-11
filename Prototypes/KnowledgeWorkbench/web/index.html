@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=ai-pipeline-5.24.0" />
+    <link rel="stylesheet" href="/static/styles.css?v=evidence-intelligence-5.25.0" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.24</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.25</p>
           <h1>Knowledge Workbench</h1>
           <p class="lead">未完成のKnowledgeを安全な下書きで素早く作り、正式登録前に内容を整える。</p>
         </div>
@@ -110,10 +110,11 @@
 
       <section class="authoring-panel ai-pipeline-panel" aria-labelledby="ai-knowledge-title">
         <div class="panel-copy">
-          <p class="step">PHASE 5.24 · AI KNOWLEDGE PIPELINE</p>
+          <p class="step">PHASE 5.25 · EVIDENCE INTELLIGENCE</p>
           <h2 id="ai-knowledge-title">AI Knowledge Wizard</h2>
           <p>
-            用語だけからEvidence・Claim・Referenceを通してAuthoring Draftを組み立てます。
+            検索元ごとのEvidenceを共通形式へ整え、重複を除き、根拠レベル順に並べた
+            Evidence BundleからAuthoring Draftを組み立てます。
             今回は安全なローカルFixtureで経路を確認し、外部検索とLLMは呼びません。
           </p>
           <div class="pipeline-safety-note">
@@ -145,10 +146,13 @@
             <div class="ai-pipeline-metrics">
               <div><span>Knowledge</span><strong id="aiPipelineSubject">--</strong></div>
               <div><span>Category</span><strong id="aiPipelineCategory">--</strong></div>
-              <div><span>Evidence</span><strong id="aiPipelineEvidenceCount">0</strong></div>
+              <div><span>Input Evidence</span><strong id="aiPipelineInputCount">0</strong></div>
+              <div><span>Accepted</span><strong id="aiPipelineEvidenceCount">0</strong></div>
+              <div><span>Excluded</span><strong id="aiPipelineExcludedCount">0</strong></div>
               <div><span>Claims</span><strong id="aiPipelineClaimCount">0</strong></div>
               <div><span>References</span><strong id="aiPipelineReferenceCount">0</strong></div>
-              <div><span>Provider</span><strong id="aiPipelineProvider">--</strong></div>
+              <div><span>Providers</span><strong id="aiPipelineProvider">--</strong></div>
+              <div><span>Search Audit</span><strong id="aiPipelineSearchAudit">--</strong></div>
               <div><span>External / LLM</span><strong id="aiPipelineExternal">No / No</strong></div>
               <div><span>Registry / Promotion</span><strong>No / No</strong></div>
             </div>
@@ -156,6 +160,10 @@
               <section class="authoring-card">
                 <h3>Evidence Preview</h3>
                 <div id="aiPipelineEvidenceList" class="authoring-item-list"></div>
+              </section>
+              <section class="authoring-card">
+                <h3>Evidence Ranking</h3>
+                <div id="aiPipelineRankingList" class="authoring-item-list"></div>
               </section>
               <section class="authoring-card">
                 <h3>Claim Preview</h3>
@@ -166,6 +174,19 @@
                 <div id="aiPipelineReferenceList" class="authoring-item-list"></div>
               </section>
             </div>
+            <section class="ai-pipeline-json-panel evidence-bundle-panel">
+              <div class="promotion-heading">
+                <div>
+                  <p class="step">PROVIDER-NEUTRAL CONTRACT</p>
+                  <h3>Evidence Bundle</h3>
+                </div>
+                <span class="badge success">Raw Evidence 非公開</span>
+              </div>
+              <p class="fingerprint-line">
+                <span>Bundle Fingerprint</span><code id="aiPipelineBundleFingerprint">--</code>
+              </p>
+              <pre id="aiPipelineBundleJson"></pre>
+            </section>
             <section class="ai-pipeline-json-panel">
               <div class="promotion-heading">
                 <div>
@@ -1258,6 +1279,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=ai-pipeline-5.24.0" defer></script>
+    <script src="/static/app.js?v=evidence-intelligence-5.25.0" defer></script>
   </body>
 </html>

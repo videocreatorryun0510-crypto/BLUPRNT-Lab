@@ -1,12 +1,15 @@
-"""Exchangeable provider and builder boundaries for Knowledge creation."""
+"""Exchangeable boundaries for Evidence Intelligence and Knowledge creation."""
 
 from typing import Protocol, runtime_checkable
 
 from knowledge_workbench.knowledge_pipeline_models import (
     ClaimBuildResult,
+    EvidenceBundle,
+    EvidenceDeduplicationResult,
+    EvidenceNormalizationResult,
     EvidenceRankingResult,
     EvidenceSearchRequest,
-    EvidenceSearchResult,
+    RawEvidenceSearchResult,
 )
 
 
@@ -15,16 +18,36 @@ class EvidenceSearchProvider(Protocol):
     provider_name: str
     provider_version: str
 
-    def search(self, request: EvidenceSearchRequest) -> EvidenceSearchResult:
-        """Return evidence without creating Claims or writing Knowledge."""
+    def search(self, request: EvidenceSearchRequest) -> RawEvidenceSearchResult:
+        """Return Provider-owned Raw Evidence without exposing it downstream."""
+
+
+@runtime_checkable
+class EvidenceNormalizer(Protocol):
+    normalizer_name: str
+    normalizer_version: str
+
+    def normalize(self, result: RawEvidenceSearchResult) -> EvidenceNormalizationResult:
+        """Convert Provider payloads into the common Evidence Contract."""
+
+
+@runtime_checkable
+class EvidenceDeduplicator(Protocol):
+    deduplicator_version: str
+
+    def deduplicate(
+        self,
+        result: EvidenceNormalizationResult,
+    ) -> EvidenceDeduplicationResult:
+        """Merge matching DOI, PMID, URL, or highly similar title records."""
 
 
 @runtime_checkable
 class EvidenceRanker(Protocol):
     ranking_version: str
 
-    def rank(self, result: EvidenceSearchResult) -> EvidenceRankingResult:
-        """Rank evidence independently from search and Claim generation."""
+    def rank(self, result: EvidenceDeduplicationResult) -> EvidenceRankingResult:
+        """Rank by Evidence Level before independent Information Priority."""
 
 
 @runtime_checkable
@@ -35,6 +58,6 @@ class ClaimBuilder(Protocol):
     def build(
         self,
         subject_key: str,
-        evidence: EvidenceRankingResult,
+        evidence: EvidenceBundle,
     ) -> ClaimBuildResult:
-        """Build traceable Claim candidates; an LLM adapter can implement this later."""
+        """Build Claim candidates from the only allowed downstream Evidence object."""

@@ -53,8 +53,9 @@
 | Phase 5.22：Knowledge Authoring Workflow MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.23：Knowledge Promotion Workflow MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.24：AI Knowledge Pipeline MVP | 実装完了・プロダクトオーナー確認待ち |
+| Phase 5.25：Evidence Intelligence Layer MVP | 実装完了・プロダクトオーナー確認待ち |
 
-Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止します。Phase 5.15ではAI非依存のPresentation Request、Phase 5.16ではProvider非依存のAdapter Interface、Phase 5.17では承認済み正本のProvider Payload解決、Data Egress Policy、Traceable Responseを追加しました。Phase 5.18ではProvider非依存Prompt BuilderとGemini固有Sandbox Adapterを分離し、Phase 5.19ではProvider・Rendererに依存しないPresentation Artifactを教育成果物の唯一の正本Contractとして追加しました。Phase 5.20ではArtifact専用Registry、独立承認、Immutable approved版、History、Diff、Completeness、approved限定Renderer Gatewayを追加しました。Phase 5.20.1ではKnowledgeとArtifactの両方を確認するDual Approval Gateへ強化し、Phase 5.21ではそのKnowledge `approved`が保証する人の医学レビュー基準、Role、Evidence、Checklist、独立Review Versionを設計しました。Phase 5.22では未完成Knowledgeを正式Registryから分離して、人が5項目からSkeleton、Claim、Referenceを短時間で作成・検証・入出力できるAuthoring Workflowを追加しました。Phase 5.23ではSchema・Category・Claim・Reference・Registry重複・ID・FingerprintをPreviewで確認し、明示確定時だけ安定IDとVersionを維持して正式Registryへ`draft`登録するPromotion Workflowを追加しました。Phase 5.24では、Theme、Evidence、Claim、Reference、Knowledge BuilderをProvider非依存のPipelineとして分離し、実検索・LLMなしのSandboxからAuthoring Draft Previewと明示保存まで接続しました。
+Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止します。Phase 5.15ではAI非依存のPresentation Request、Phase 5.16ではProvider非依存のAdapter Interface、Phase 5.17では承認済み正本のProvider Payload解決、Data Egress Policy、Traceable Responseを追加しました。Phase 5.18ではProvider非依存Prompt BuilderとGemini固有Sandbox Adapterを分離し、Phase 5.19ではProvider・Rendererに依存しないPresentation Artifactを教育成果物の唯一の正本Contractとして追加しました。Phase 5.20ではArtifact専用Registry、独立承認、Immutable approved版、History、Diff、Completeness、approved限定Renderer Gatewayを追加しました。Phase 5.20.1ではKnowledgeとArtifactの両方を確認するDual Approval Gateへ強化し、Phase 5.21ではそのKnowledge `approved`が保証する人の医学レビュー基準、Role、Evidence、Checklist、独立Review Versionを設計しました。Phase 5.22では未完成Knowledgeを正式Registryから分離して、人が5項目からSkeleton、Claim、Referenceを短時間で作成・検証・入出力できるAuthoring Workflowを追加しました。Phase 5.23ではSchema・Category・Claim・Reference・Registry重複・ID・FingerprintをPreviewで確認し、明示確定時だけ安定IDとVersionを維持して正式Registryへ`draft`登録するPromotion Workflowを追加しました。Phase 5.24では、Theme、Evidence、Claim、Reference、Knowledge BuilderをProvider非依存のPipelineとして分離し、実検索・LLMなしのSandboxからAuthoring Draft Previewと明示保存まで接続しました。Phase 5.25では、Provider固有のRaw Evidenceを内部へ閉じ、標準化、重複排除、A/B/C順位付けを経たEvidence BundleだけをWorkbenchとClaim Builderへ渡す境界を追加しました。
 
 ### Phase 5.0成果物
 
@@ -382,6 +383,18 @@ Exam Metadataは医学知識と独立した版付きコンポーネントとし�
 - WorkbenchのAI Knowledge Wizard、Evidence / Claim / Reference / Draft Preview
 - [AI Knowledge Pipeline MVP](ai_knowledge_pipeline.md)
 - [ADR-0019](adr/0019-provider-neutral-ai-knowledge-pipeline.md)
+
+### Phase 5.25成果物
+
+- Raw EvidenceをProvider / Normalizer内部へ限定するProvider非依存境界
+- 資料名、発行団体、種別、Level、日付、URL、DOI、PMID、言語、Snippet、取得日時、Providerを持つ共通Evidence Contract 1.0
+- DOI、PMID、正規化URL、資料名類似度による重複排除とProvider Provenance保持
+- Evidence Level A→B→Cを第一基準、Information Priorityを独立補助基準とするRanker
+- Claim BuilderとWorkbenchが受け取る唯一のEvidence Bundle 1.0
+- 検索語、Provider、件数、採用・除外ID、日時、Durationだけを保存する本文なしSearch Audit
+- WorkbenchのEvidence Preview、Evidence Ranking、Evidence Bundle表示
+- [Evidence Intelligence Layer MVP](evidence_intelligence_layer.md)
+- [ADR-0020](adr/0020-evidence-bundle-only-boundary.md)
 
 ---
 

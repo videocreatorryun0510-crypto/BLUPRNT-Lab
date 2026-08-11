@@ -119,6 +119,13 @@ from knowledge_workbench.authoring_repository import (
 )
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
 from knowledge_workbench.errors import RegistryOperationError, WorkbenchError
+from knowledge_workbench.evidence_intelligence import (
+    DefaultEvidenceDeduplicator,
+    DefaultEvidenceRanker,
+    EvidenceBundleBuilder,
+    EvidenceIntelligenceError,
+    JsonlEvidenceSearchAuditLog,
+)
 from knowledge_workbench.exam_import_mapping import load_exam_csv_mapping
 from knowledge_workbench.exam_import_service import (
     SAMPLE_CSV_PATH,
@@ -128,6 +135,7 @@ from knowledge_workbench.exam_import_service import (
 from knowledge_workbench.exam_metadata_provider import DummyExamMetadataProvider
 from knowledge_workbench.fixture_knowledge_pipeline import (
     FixtureClaimBuilder,
+    FixtureEvidenceNormalizer,
     FixtureEvidenceSearchProvider,
     FixturePipelineCatalog,
     FixturePipelineThemeError,
@@ -139,11 +147,11 @@ from knowledge_workbench.gemini_acceptance import (
 from knowledge_workbench.knowledge_pipeline_builders import (
     AuthoringKnowledgeBuilder,
     AuthoringReferenceBuilder,
-    DefaultEvidenceRanker,
 )
 from knowledge_workbench.knowledge_pipeline_models import (
-    EvidenceSearchResult,
+    EvidenceBundle,
     KnowledgePipelinePreview,
+    NormalizedEvidence,
 )
 from knowledge_workbench.knowledge_pipeline_service import (
     KnowledgePipelineError,
@@ -496,7 +504,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.24.0",
+        version="5.25.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -538,9 +546,25 @@ def create_app(
     evidence_search_provider = FixtureEvidenceSearchProvider(
         fixture_pipeline_catalog
     )
+    evidence_search_audit_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "evidence_search.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "evidence_search.jsonl"
+    )
+    evidence_search_audit = JsonlEvidenceSearchAuditLog(
+        evidence_search_audit_path
+    )
     knowledge_pipeline_service = KnowledgePipelineService(
         search_provider=evidence_search_provider,
+        evidence_normalizer=FixtureEvidenceNormalizer(),
+        evidence_deduplicator=DefaultEvidenceDeduplicator(),
         evidence_ranker=DefaultEvidenceRanker(),
+        evidence_bundle_builder=EvidenceBundleBuilder(),
+        search_audit=evidence_search_audit,
         claim_builder=FixtureClaimBuilder(fixture_pipeline_catalog),
         reference_builder=AuthoringReferenceBuilder(),
         knowledge_builder=AuthoringKnowledgeBuilder(authoring_service),
@@ -1037,7 +1061,7 @@ def create_app(
             "knowledge_promotion_registry_write_enabled": True,
             "knowledge_promotion_approval_state": "draft",
             "knowledge_promotion_log": str(promotion_log_path),
-            "ai_knowledge_pipeline_version": "1.0",
+            "ai_knowledge_pipeline_version": "1.1",
             "ai_knowledge_pipeline_mode": "local_fixture_sandbox",
             "ai_knowledge_pipeline_external_search_enabled": False,
             "ai_knowledge_pipeline_llm_enabled": False,
@@ -1045,11 +1069,24 @@ def create_app(
             "ai_knowledge_pipeline_supported_themes": (
                 fixture_pipeline_catalog.supported_themes()
             ),
+            "evidence_intelligence_version": "1.0",
+            "evidence_bundle_version": "1.0",
+            "evidence_raw_exposed_to_workbench": False,
+            "evidence_ranking_primary_rule": "evidence_level_a_b_c",
+            "evidence_search_audit": str(evidence_search_audit_path),
         }
 
     @app.get("/api/schema/evidence-search-1.0")
     def evidence_search_schema_v10() -> dict[str, object]:
-        return EvidenceSearchResult.model_json_schema()
+        return EvidenceBundle.model_json_schema()
+
+    @app.get("/api/schema/evidence-contract-1.0")
+    def evidence_contract_schema_v10() -> dict[str, object]:
+        return NormalizedEvidence.model_json_schema()
+
+    @app.get("/api/schema/evidence-bundle-1.0")
+    def evidence_bundle_schema_v10() -> dict[str, object]:
+        return EvidenceBundle.model_json_schema()
 
     @app.get("/api/schema/knowledge-pipeline-preview-1.0")
     def knowledge_pipeline_preview_schema_v10() -> dict[str, object]:
@@ -1059,15 +1096,55 @@ def create_app(
     def knowledge_pipeline_status() -> dict[str, object]:
         return {
             "status": "ready",
-            "pipeline_version": "1.0",
+            "pipeline_version": "1.1",
             "mode": "local_fixture_sandbox",
             "search_provider": evidence_search_provider.provider_name,
             "search_provider_version": evidence_search_provider.provider_version,
             "claim_builder": "local_fixture_claim_builder",
             "external_search_enabled": False,
             "llm_enabled": False,
+            "evidence_intelligence_version": "1.0",
+            "raw_evidence_exposed": False,
+            "evidence_bundle_only_downstream": True,
             "supported_themes": fixture_pipeline_catalog.supported_themes(),
         }
+
+    @app.get("/api/evidence-intelligence")
+    def evidence_intelligence_status() -> dict[str, object]:
+        return {
+            "status": "ready",
+            "version": "1.0",
+            "flow": [
+                "raw_evidence",
+                "normalize",
+                "deduplicate",
+                "rank",
+                "evidence_bundle",
+            ],
+            "raw_evidence_exposed_to_workbench": False,
+            "ranking_primary_rule": "evidence_level_a_b_c",
+            "information_priority_is_independent": True,
+            "audit_path": str(evidence_search_audit_path),
+            "external_provider_enabled": False,
+        }
+
+    @app.get("/api/evidence-intelligence/audit")
+    def evidence_intelligence_audit(limit: int = 20) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 100))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "events": [
+                        item.model_dump(mode="json")
+                        for item in evidence_search_audit.list(limit=bounded_limit)
+                    ],
+                    "medical_body_stored": False,
+                },
+            )
+        except EvidenceIntelligenceError as error:
+            return _authoring_error(error, 422, "evidence_search_audit_failed")
 
     @app.post("/api/ai-knowledge-pipeline/previews")
     def preview_ai_knowledge_pipeline(
@@ -1085,7 +1162,12 @@ def create_app(
                     "promotion_performed": False,
                 },
             )
-        except (KnowledgePipelineError, FixturePipelineThemeError, ValidationError) as error:
+        except (
+            KnowledgePipelineError,
+            EvidenceIntelligenceError,
+            FixturePipelineThemeError,
+            ValidationError,
+        ) as error:
             return _authoring_error(error, 422, "knowledge_pipeline_preview_failed")
 
     @app.post("/api/ai-knowledge-pipeline/previews/{pipeline_id}/save")

@@ -5,14 +5,20 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from pytest import mark
 
+from knowledge_workbench.evidence_intelligence import (
+    DefaultEvidenceDeduplicator,
+    DefaultEvidenceRanker,
+)
 from knowledge_workbench.fixture_knowledge_pipeline import (
     FixtureClaimBuilder,
+    FixtureEvidenceNormalizer,
     FixtureEvidenceSearchProvider,
     FixturePipelineCatalog,
 )
-from knowledge_workbench.knowledge_pipeline_builders import DefaultEvidenceRanker
 from knowledge_workbench.knowledge_pipeline_interfaces import (
     ClaimBuilder,
+    EvidenceDeduplicator,
+    EvidenceNormalizer,
     EvidenceRanker,
     EvidenceSearchProvider,
 )
@@ -52,12 +58,13 @@ def test_theme_builds_traceable_preview_without_external_calls_or_writes(
     assert response.status_code == 200
     payload = response.json()
     preview = payload["preview"]
-    evidence = preview["evidence_search"]["evidence"]
+    bundle = preview["evidence_bundle"]
+    evidence = bundle["evidence"]
     claims = preview["claim_build"]["claims"]
     references = preview["references"]
-    evidence_ids = {item["evidence_id"] for item in evidence}
+    evidence_ids = {item["evidence"]["evidence_id"] for item in evidence}
     claim_ids = {item["claim_id"] for item in claims}
-    assert preview["evidence_search"]["subject"]["category"] == category
+    assert bundle["subject"]["category"] == category
     assert len(evidence) >= 1
     assert len(claims) >= minimum_claims
     assert len(references) >= 1
@@ -114,15 +121,21 @@ def test_unknown_theme_stops_without_inventing_evidence_or_draft() -> None:
 def test_fixture_components_satisfy_provider_neutral_protocols_and_rank_deterministically() -> None:
     catalog = FixturePipelineCatalog(REPOSITORY_ROOT)
     provider = FixtureEvidenceSearchProvider(catalog)
+    normalizer = FixtureEvidenceNormalizer()
+    deduplicator = DefaultEvidenceDeduplicator()
     ranker = DefaultEvidenceRanker()
     builder = FixtureClaimBuilder(catalog)
     assert isinstance(provider, EvidenceSearchProvider)
+    assert isinstance(normalizer, EvidenceNormalizer)
+    assert isinstance(deduplicator, EvidenceDeduplicator)
     assert isinstance(ranker, EvidenceRanker)
     assert isinstance(builder, ClaimBuilder)
 
     search = provider.search(EvidenceSearchRequest(theme="フェリチン"))
-    first = ranker.rank(search)
-    second = ranker.rank(search)
+    normalized = normalizer.normalize(search)
+    unique = deduplicator.deduplicate(normalized)
+    first = ranker.rank(unique)
+    second = ranker.rank(unique)
     assert first == second
     assert [item.rank for item in first.ranked_evidence] == list(
         range(1, len(first.ranked_evidence) + 1)
@@ -140,17 +153,23 @@ def test_workbench_and_contracts_expose_pipeline_boundaries() -> None:
     assert page.status_code == 200
     assert "AI Knowledge Wizard" in page.text
     assert "Evidence Preview" in page.text
+    assert "Evidence Ranking" in page.text
+    assert "Evidence Bundle" in page.text
+    assert "Raw Evidence 非公開" in page.text
     assert "Claim Preview" in page.text
     assert "Reference Preview" in page.text
     assert "Authoring Draftへ保存" in page.text
-    assert status["ai_knowledge_pipeline_version"] == "1.0"
+    assert status["ai_knowledge_pipeline_version"] == "1.1"
+    assert status["evidence_intelligence_version"] == "1.0"
+    assert status["evidence_raw_exposed_to_workbench"] is False
     assert status["ai_knowledge_pipeline_external_search_enabled"] is False
     assert status["ai_knowledge_pipeline_llm_enabled"] is False
     assert status["ai_knowledge_pipeline_registry_write_enabled"] is False
     assert pipeline["mode"] == "local_fixture_sandbox"
     assert pipeline["external_search_enabled"] is False
     assert pipeline["llm_enabled"] is False
+    assert pipeline["evidence_bundle_only_downstream"] is True
     assert evidence_schema.status_code == 200
-    assert evidence_schema.json()["title"] == "EvidenceSearchResult"
+    assert evidence_schema.json()["title"] == "EvidenceBundle"
     assert preview_schema.status_code == 200
     assert preview_schema.json()["title"] == "KnowledgePipelinePreview"

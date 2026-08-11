@@ -18,51 +18,8 @@ from knowledge_workbench.authoring_models import (
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
 from knowledge_workbench.knowledge_pipeline_models import (
     ClaimBuildResult,
-    EvidenceRankingResult,
-    EvidenceSearchResult,
-    PipelineEvidenceLevel,
-    RankedEvidence,
+    EvidenceBundle,
 )
-
-
-class DefaultEvidenceRanker:
-    ranking_version = "1.0"
-
-    def rank(self, result: EvidenceSearchResult) -> EvidenceRankingResult:
-        level_bonus = {
-            PipelineEvidenceLevel.A: 12,
-            PipelineEvidenceLevel.B: 6,
-            PipelineEvidenceLevel.C: 0,
-        }
-        ordered = sorted(
-            result.evidence,
-            key=lambda item: (
-                item.source_priority_rank,
-                -level_bonus[item.evidence_level],
-                item.title,
-            ),
-        )
-        ranked = [
-            RankedEvidence(
-                evidence=item,
-                rank=index,
-                rank_score=max(
-                    0,
-                    min(
-                        100,
-                        100
-                        - ((item.source_priority_rank - 1) * 12)
-                        + level_bonus[item.evidence_level],
-                    ),
-                ),
-                ranking_reasons=[
-                    f"情報源優先順位 {item.source_priority_rank}",
-                    f"Evidence Level {item.evidence_level.value}",
-                ],
-            )
-            for index, item in enumerate(ordered, start=1)
-        ]
-        return EvidenceRankingResult(ranked_evidence=ranked)
 
 
 class AuthoringReferenceBuilder:
@@ -70,11 +27,11 @@ class AuthoringReferenceBuilder:
 
     def build(
         self,
-        ranking: EvidenceRankingResult,
+        bundle: EvidenceBundle,
         claims: ClaimBuildResult,
     ) -> list[AuthoringReference]:
         references: list[AuthoringReference] = []
-        for ranked in ranking.ranked_evidence:
+        for ranked in bundle.evidence:
             evidence = ranked.evidence
             supported_claim_ids = [
                 claim.claim_id
@@ -89,10 +46,14 @@ class AuthoringReferenceBuilder:
                     evidence_level=EvidenceLevel(evidence.evidence_level.value),
                     evidence_role=(
                         ReferenceRole.PRIMARY
-                        if evidence.source_priority_rank <= 3
+                        if evidence.information_priority_rank <= 3
                         else ReferenceRole.SUPPORTING
                     ),
-                    source_priority_rank=evidence.source_priority_rank,
+                    source_priority_rank=(
+                        evidence.information_priority_rank
+                        if evidence.information_priority_rank <= 6
+                        else None
+                    ),
                     title=evidence.title,
                     issuing_organization=evidence.publisher,
                     edition=evidence.citation.edition,
@@ -102,8 +63,8 @@ class AuthoringReferenceBuilder:
                         else None
                     ),
                     url=evidence.url,
-                    doi=evidence.citation.doi,
-                    pmid=evidence.citation.pmid,
+                    doi=evidence.doi,
+                    pmid=evidence.pmid,
                     accessed_at=None,
                     chapter=evidence.citation.chapter,
                     pages=evidence.citation.pages,
@@ -121,15 +82,15 @@ class AuthoringKnowledgeBuilder:
 
     def build(
         self,
-        search: EvidenceSearchResult,
+        bundle: EvidenceBundle,
         claims: ClaimBuildResult,
         references: list[AuthoringReference],
     ) -> KnowledgeAuthoringDraft:
         skeleton = self.authoring.build_skeleton(
             CreateAuthoringDraftRequest(
-                category=search.subject.category,
-                title=search.subject.canonical_name,
-                aliases=search.subject.aliases,
+                category=bundle.subject.category,
+                title=bundle.subject.canonical_name,
+                aliases=bundle.subject.aliases,
                 difficulty=DifficultyLevel.STANDARD,
                 exam_importance=AuthoringExamImportance.MEDIUM,
             )

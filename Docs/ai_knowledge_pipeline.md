@@ -1,5 +1,7 @@
 # Phase 5.24 AI Knowledge Pipeline MVP
 
+> Phase 5.25でEvidence境界は、Raw Evidence → Normalizer → Deduplicator → Ranker → Evidence Bundleへ発展しました。現在の後段入力とWorkbench表示は[Evidence Intelligence Layer](evidence_intelligence_layer.md)を正とします。本書はPhase 5.24時点のPipeline判断を記録します。
+
 ## 目的
 
 AI Knowledge Pipelineは、利用者が入力した「テーマ・医療用語」を、確認・修正できるAuthoring Draftへ変換するための共通経路です。

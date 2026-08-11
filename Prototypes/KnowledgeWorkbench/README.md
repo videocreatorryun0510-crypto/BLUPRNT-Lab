@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.24
+# Knowledge Workbench — Phase 5.25
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -17,6 +17,8 @@ Phase 5.22では、AIを使わず人がKnowledgeを素早く作るKnowledge Wiza
 Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflowを追加しました。Claimごとの保存先、Schema、Category、Reference、ID、重複、Fingerprintを読み取り専用Previewで確認し、確定した場合だけ既存Registryへ保存します。Promotion後のApproval Stateは必ず`draft`で、自動承認は行いません。
 
 Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search、Ranking、Claim、Reference、Knowledge Builderを通してAuthoring Draft Previewを作るProvider非依存Pipelineを追加しました。今回は外部検索とLLMを呼ばず、既存ローカルKnowledge例を使うSandboxです。保存先はAuthoring Draftだけで、Promotion、Registry、Review、Approvalは自動実行しません。
+
+Phase 5.25では、検索元固有のRaw EvidenceをWorkbenchへ渡さず、共通Evidence Contractへ標準化し、重複排除、Evidence Level A→B→Cの順位付け、Evidence Bundle化を行う独立層を追加しました。Information PriorityはEvidence Levelと混ぜず、同Level内の補助基準として扱います。検索監査には件数とIDだけを保存し、医学本文は保存しません。
 
 ## できること
 
@@ -116,6 +118,11 @@ Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search�
 94. Evidenceを既存Knowledge Contract互換Referenceへ変換する
 95. Knowledge Draft、Claim、Referenceを保存前Previewで確認する
 96. Authoring Draft保存後もRegistry・Promotion・Review・Approvalを変更しない
+97. Provider固有のRaw EvidenceをNormalizerの外へ出さない
+98. DOI、PMID、URL、資料名類似度で同じEvidenceを統合し、取得元を保持する
+99. Evidence Level A、B、Cを第一基準、Information Priorityを独立した補助基準として順位付けする
+100. Evidence BundleだけをWorkbenchとClaim Builderへ渡す
+101. 検索語、Provider、採用・除外ID、件数、時刻、所要時間を本文なしで監査する
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 
@@ -149,12 +156,13 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 
 1. 「AI Knowledge Wizard」へ医療用語を入力します。
 2. 「Draft Preview生成」を押します。
-3. Knowledge名・Category、Evidence、Claim、Reference、Fingerprintを確認します。
-4. `External / LLM`と`Registry / Promotion`がいずれも`No`であることを確認します。
-5. 保存する場合だけ「Authoring Draftへ保存」を押します。
-6. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
+3. Knowledge名・Category、Evidence Preview、Evidence Ranking、Evidence Bundleを確認します。
+4. BundleのInput、Accepted、Excluded、Provider、Fingerprintを確認し、Raw Evidenceが表示されていないことを確認します。
+5. `External / LLM`と`Registry / Promotion`がいずれも`No`であることを確認します。
+6. 保存する場合だけ「Authoring Draftへ保存」を押します。
+7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.24のSandbox対応テーマは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`です。外部検索とLLMは未接続のため、その他の用語では医学情報を推測せず停止します。詳しくは[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
+Phase 5.25のSandbox対応テーマは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`です。外部検索とLLMは未接続のため、その他の用語では医学情報を推測せず停止します。詳しくは[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)と[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
 
 ## Knowledge Wizardで新しい下書きを作る
 

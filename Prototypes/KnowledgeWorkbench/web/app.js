@@ -3833,33 +3833,50 @@ function renderAiPipelineItems(targetSelector, items, renderItem) {
 
 function renderAiKnowledgePreview(preview) {
   currentAiKnowledgePreview = preview;
+  const bundle = preview.evidence_bundle;
   aiKnowledgePreview.hidden = false;
   document.querySelector("#aiPipelineSubject").textContent =
-    preview.evidence_search.subject.canonical_name;
+    bundle.subject.canonical_name;
   document.querySelector("#aiPipelineCategory").textContent =
-    termTypeLabels[preview.evidence_search.subject.category]
-      || preview.evidence_search.subject.category;
+    termTypeLabels[bundle.subject.category] || bundle.subject.category;
+  document.querySelector("#aiPipelineInputCount").textContent =
+    bundle.input_record_count;
   document.querySelector("#aiPipelineEvidenceCount").textContent =
-    preview.evidence_search.evidence.length;
+    bundle.accepted_evidence_count;
+  document.querySelector("#aiPipelineExcludedCount").textContent =
+    bundle.excluded_evidence_count;
   document.querySelector("#aiPipelineClaimCount").textContent =
     preview.claim_build.claims.length;
   document.querySelector("#aiPipelineReferenceCount").textContent =
     preview.references.length;
   document.querySelector("#aiPipelineProvider").textContent =
-    `${preview.evidence_search.provider_name} v${preview.evidence_search.provider_version}`;
+    bundle.providers.join(", ") || "--";
+  document.querySelector("#aiPipelineSearchAudit").textContent =
+    preview.search_audit_recorded ? "Recorded" : "Not recorded";
   document.querySelector("#aiPipelineExternal").textContent =
     `${preview.external_search_called ? "Yes" : "No"} / ${preview.external_ai_called ? "Yes" : "No"}`;
   document.querySelector("#aiPipelineFingerprint").textContent = preview.fingerprint;
+  document.querySelector("#aiPipelineBundleFingerprint").textContent = bundle.fingerprint;
+  document.querySelector("#aiPipelineBundleJson").textContent =
+    JSON.stringify(bundle, null, 2);
   document.querySelector("#aiPipelineDraftJson").textContent =
     JSON.stringify(preview.authoring_draft, null, 2);
   saveAiKnowledgeDraftButton.disabled = false;
 
   renderAiPipelineItems(
     "#aiPipelineEvidenceList",
-    preview.evidence_ranking.ranked_evidence,
+    bundle.evidence,
     (entry) => ({
-      title: `${entry.rank}. ${entry.evidence.title}`,
-      detail: `${entry.evidence.publisher} · 優先順位 ${entry.evidence.source_priority_rank} · Evidence ${entry.evidence.evidence_level}`,
+      title: entry.evidence.title,
+      detail: `${entry.evidence.publisher} · ${entry.evidence.evidence_type} · ${entry.evidence.publication_date || "発行日未登録"}`,
+    }),
+  );
+  renderAiPipelineItems(
+    "#aiPipelineRankingList",
+    bundle.evidence,
+    (entry) => ({
+      title: `${entry.rank}. Evidence Level ${entry.evidence.evidence_level}`,
+      detail: `${entry.evidence.title} · Information Priority ${entry.information_priority_rank}（同Level内補助）`,
     }),
   );
   renderAiPipelineItems(
@@ -3891,7 +3908,7 @@ aiKnowledgeWizardForm.addEventListener("submit", async (event) => {
     );
     renderAiKnowledgePreview(payload.preview);
     aiKnowledgeMessage.textContent =
-      "Previewを生成しました。外部検索・LLM・Registry・Promotionは動作していません。";
+      "Evidence BundleとDraft Previewを生成しました。Raw Evidenceは画面へ渡していません。外部検索・LLM・Registry・Promotionは動作していません。";
   } catch (error) {
     currentAiKnowledgePreview = null;
     aiKnowledgePreview.hidden = true;

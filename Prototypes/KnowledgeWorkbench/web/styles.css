@@ -82,9 +82,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .ai-pipeline-metrics span, .ai-pipeline-metrics strong { display: block; }
 .ai-pipeline-metrics span { color: var(--muted); font-size: 9px; }
 .ai-pipeline-metrics strong { margin-top: 4px; overflow-wrap: anywhere; font-size: 12px; }
-.ai-pipeline-column-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.ai-pipeline-column-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 .ai-pipeline-json-panel { margin-top: 12px; border: 1px solid #9bbfb2; border-radius: 13px; padding: 15px; background: #fbfefd; }
 .ai-pipeline-json-panel pre { max-height: 380px; overflow: auto; border-radius: 10px; padding: 14px; color: #dcefe8; background: var(--code); font: 10px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.evidence-bundle-panel { border-color: #759f90; background: #f4faf7; }
 .authoring-workspace { min-width: 0; }
 .authoring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
 .authoring-form-grid label, .authoring-reference-form label { margin: 0; }

@@ -7,23 +7,29 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
+from time import perf_counter
 
 from knowledge_contracts.v10 import KnowledgeRecord
+from pydantic import HttpUrl, ValidationError
 
 from knowledge_workbench.authoring_models import AuthoringCategory, AuthoringSemanticSlot
+from knowledge_workbench.evidence_intelligence import stable_evidence_id
 from knowledge_workbench.knowledge_pipeline_models import (
     ClaimBuildResult,
+    EvidenceBundle,
     EvidenceCitation,
-    EvidenceItem,
     EvidenceLanguage,
-    EvidenceRankingResult,
+    EvidenceNormalizationResult,
+    EvidenceProviderReference,
     EvidenceSearchRequest,
-    EvidenceSearchResult,
     EvidenceSubject,
     EvidenceType,
+    NormalizedEvidence,
     PipelineClaim,
     PipelineClaimType,
     PipelineEvidenceLevel,
+    RawEvidenceRecord,
+    RawEvidenceSearchResult,
 )
 
 
@@ -128,13 +134,14 @@ class FixtureEvidenceSearchProvider:
     def __init__(self, catalog: FixturePipelineCatalog) -> None:
         self.catalog = catalog
 
-    def search(self, request: EvidenceSearchRequest) -> EvidenceSearchResult:
+    def search(self, request: EvidenceSearchRequest) -> RawEvidenceSearchResult:
+        started_at = perf_counter()
+        searched_at = datetime.now(UTC)
         subject = self.catalog.resolve(request.theme)
         reference_by_id = {item.source_id: item for item in subject.record.evidence}
-        evidence: list[EvidenceItem] = []
+        records: list[RawEvidenceRecord] = []
         for source_id, claims in subject.evidence_claims.items():
             reference = reference_by_id[source_id]
-            evidence_id = f"evd_{_digest(subject.key + ':' + source_id)[:16]}"
             formatted = " · ".join(
                 item
                 for item in (
@@ -144,48 +151,142 @@ class FixtureEvidenceSearchProvider:
                 )
                 if item
             )
-            evidence.append(
-                EvidenceItem(
-                    evidence_id=evidence_id,
-                    title=reference.title,
-                    url=reference.url,
-                    publisher=reference.issuing_organization or "発行団体未登録",
-                    source_priority_rank=reference.source_priority_rank,
-                    evidence_level=PipelineEvidenceLevel.C,
-                    publication_date=(
-                        date(reference.publication_year, 1, 1)
-                        if reference.publication_year
-                        else None
-                    ),
-                    language=EvidenceLanguage.JA,
-                    evidence_type=_evidence_type(reference.title, reference.issuing_organization),
-                    snippet="\n".join(claim.assertion for claim in claims),
-                    citation=EvidenceCitation(
-                        formatted=formatted,
-                        doi=reference.doi,
-                        pmid=reference.pmid,
-                        edition=reference.edition,
-                        chapter=reference.chapter,
-                        pages=reference.pages,
-                    ),
+            records.append(
+                RawEvidenceRecord(
+                    provider_name=self.provider_name,
+                    provider_version=self.provider_version,
+                    provider_record_id=f"fixture:{source_id}",
+                    retrieved_at=searched_at,
+                    payload={
+                        "title": reference.title,
+                        "url": str(reference.url) if reference.url else None,
+                        "publisher": (
+                            reference.issuing_organization or "発行団体未登録"
+                        ),
+                        "information_priority_rank": reference.source_priority_rank,
+                        "evidence_level": PipelineEvidenceLevel.C.value,
+                        "publication_date": (
+                            date(reference.publication_year, 1, 1).isoformat()
+                            if reference.publication_year
+                            else None
+                        ),
+                        "language": EvidenceLanguage.JA.value,
+                        "evidence_type": _evidence_type(
+                            reference.title,
+                            reference.issuing_organization,
+                        ).value,
+                        "abstract_or_snippet": "\n".join(
+                            claim.assertion for claim in claims
+                        ),
+                        "doi": reference.doi,
+                        "pmid": reference.pmid,
+                        "citation": {
+                            "formatted": formatted,
+                            "edition": reference.edition,
+                            "chapter": reference.chapter,
+                            "pages": reference.pages,
+                        },
+                    },
                 )
             )
-        return EvidenceSearchResult(
-            provider_name=self.provider_name,
-            provider_version=self.provider_version,
-            searched_at=datetime.now(UTC),
+        return RawEvidenceSearchResult(
+            search_provider_name=self.provider_name,
+            search_provider_version=self.provider_version,
+            searched_at=searched_at,
+            duration_ms=max(0, round((perf_counter() - started_at) * 1000)),
             query=request,
             subject=EvidenceSubject(
                 canonical_name=subject.record.term.canonical_name,
                 aliases=subject.record.term.aliases,
                 category=AuthoringCategory(subject.record.classification.term_type),
             ),
-            evidence=evidence,
+            records=records,
             external_search_performed=False,
             warnings=[
                 "外部検索は実行していません。既存のローカルKnowledge例をPipeline確認用に使用しています。",
                 "Evidence Levelは医学監修前のため保守的にCとしています。",
             ],
+        )
+
+
+class FixtureEvidenceNormalizer:
+    """Provider-specific mapping kept behind the common Normalizer interface."""
+
+    normalizer_name = "local_fixture_normalizer"
+    normalizer_version = "1.0"
+
+    def normalize(
+        self,
+        result: RawEvidenceSearchResult,
+    ) -> EvidenceNormalizationResult:
+        evidence: list[NormalizedEvidence] = []
+        rejected: list[str] = []
+        for record in result.records:
+            try:
+                payload = record.payload
+                publication_date = (
+                    date.fromisoformat(str(payload["publication_date"]))
+                    if payload.get("publication_date")
+                    else None
+                )
+                title = str(payload["title"])
+                publisher = str(payload["publisher"])
+                doi = str(payload["doi"]) if payload.get("doi") else None
+                pmid = str(payload["pmid"]) if payload.get("pmid") else None
+                url = str(payload["url"]) if payload.get("url") else None
+                evidence.append(
+                    NormalizedEvidence(
+                        evidence_id=stable_evidence_id(
+                            doi=doi,
+                            pmid=pmid,
+                            url=url,
+                            title=title,
+                            publisher=publisher,
+                            publication_date=(
+                                publication_date.isoformat()
+                                if publication_date
+                                else None
+                            ),
+                        ),
+                        title=title,
+                        publisher=publisher,
+                        evidence_type=EvidenceType(str(payload["evidence_type"])),
+                        evidence_level=PipelineEvidenceLevel(
+                            str(payload["evidence_level"])
+                        ),
+                        publication_date=publication_date,
+                        url=HttpUrl(url) if url else None,
+                        doi=doi,
+                        pmid=pmid,
+                        language=EvidenceLanguage(str(payload["language"])),
+                        abstract_or_snippet=str(payload["abstract_or_snippet"]),
+                        retrieved_at=record.retrieved_at,
+                        provider=EvidenceProviderReference(
+                            provider_name=record.provider_name,
+                            provider_version=record.provider_version,
+                            provider_record_id=record.provider_record_id,
+                            retrieved_at=record.retrieved_at,
+                        ),
+                        information_priority_rank=int(
+                            str(payload["information_priority_rank"])
+                        ),
+                        citation=EvidenceCitation.model_validate(payload["citation"]),
+                    )
+                )
+            except (KeyError, TypeError, ValueError, ValidationError):
+                rejected.append(record.provider_record_id)
+        warnings = list(result.warnings)
+        if rejected:
+            warnings.append(f"Normalizerで{len(rejected)}件を除外しました。")
+        return EvidenceNormalizationResult(
+            normalized_at=datetime.now(UTC),
+            query=result.query,
+            subject=result.subject,
+            evidence=evidence,
+            rejected_provider_record_ids=rejected,
+            external_search_performed=result.external_search_performed,
+            search_duration_ms=result.duration_ms,
+            warnings=warnings,
         )
 
 
@@ -199,12 +300,12 @@ class FixtureClaimBuilder:
     def build(
         self,
         subject_key: str,
-        evidence: EvidenceRankingResult,
+        evidence: EvidenceBundle,
     ) -> ClaimBuildResult:
         subject = self.catalog.resolve(subject_key)
-        available_evidence = {item.evidence.evidence_id for item in evidence.ranked_evidence}
+        available_evidence = {item.evidence.evidence_id for item in evidence.evidence}
         source_to_evidence = {
-            source_id: f"evd_{_digest(subject.key + ':' + source_id)[:16]}"
+            source_id: _reference_evidence_id(subject, source_id)
             for source_id in subject.evidence_claims
         }
         claims: list[PipelineClaim] = []
@@ -248,6 +349,24 @@ def _evidence_type(title: str, publisher: str | None) -> EvidenceType:
     if "jstage" in combined or "性能評価" in combined:
         return EvidenceType.JOURNAL_ARTICLE
     return EvidenceType.OTHER
+
+
+def _reference_evidence_id(subject: _FixtureSubject, source_id: str) -> str:
+    reference = next(
+        item for item in subject.record.evidence if item.source_id == source_id
+    )
+    return stable_evidence_id(
+        doi=reference.doi,
+        pmid=reference.pmid,
+        url=str(reference.url) if reference.url else None,
+        title=reference.title,
+        publisher=reference.issuing_organization or "発行団体未登録",
+        publication_date=(
+            date(reference.publication_year, 1, 1).isoformat()
+            if reference.publication_year
+            else None
+        ),
+    )
 
 
 def _normalized(value: str) -> str:
