@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.25「Evidence Intelligence Layer MVP」を実装しました。** 検索元固有のRaw Evidenceを共通形式へ標準化し、DOI・PMID・URL・資料名で重複排除し、Evidence Level A→B→Cで順位付けしてEvidence Bundleを作ります。WorkbenchとClaim BuilderはBundleだけを受け取り、Raw Evidenceは公開しません。実検索APIとLLMは未接続です。詳細は[Evidence Intelligence Layer](Docs/evidence_intelligence_layer.md)に記録しています。
+> **Phase 5.26「Gemini Grounded Evidence Search Provider MVP」を実装しました。** 医療用語から最大4つの検索Intentを作り、Google Search Groundingの外部CitationだけをPhase 5.25の標準化・重複排除・順位付けへ渡します。Gemini回答本文はEvidenceにせず、明示ボタン操作なしの外部検索、Claim生成、Knowledge Draft、Registry変更、Promotion、Approvalは行いません。詳細は[Gemini Grounded Evidence Search](Docs/gemini_grounded_evidence_search.md)に記録しています。
 
 ---
 

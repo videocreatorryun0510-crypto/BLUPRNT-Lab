@@ -144,6 +144,19 @@ from knowledge_workbench.gemini_acceptance import (
     GeminiAcceptanceError,
     GeminiAcceptanceService,
 )
+from knowledge_workbench.gemini_grounded_search import (
+    GeminiGroundedSearchConfig,
+    GeminiGroundedSearchError,
+    GeminiGroundedSearchProvider,
+)
+from knowledge_workbench.grounded_evidence_models import (
+    GroundedEvidenceSearchPreview,
+)
+from knowledge_workbench.grounded_evidence_service import (
+    GeminiGroundedEvidenceNormalizer,
+    GroundedEvidenceSearchService,
+    JsonlGroundedEvidenceSearchAuditLog,
+)
 from knowledge_workbench.knowledge_pipeline_builders import (
     AuthoringKnowledgeBuilder,
     AuthoringReferenceBuilder,
@@ -501,10 +514,11 @@ def create_app(
     gemini_adapter: GeminiSandboxAdapter | None = None,
     gemini_acceptance_service: GeminiAcceptanceService | None = None,
     artifact_registry: SQLitePresentationArtifactRegistry | None = None,
+    grounded_search_provider: GeminiGroundedSearchProvider | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.25.0",
+        version="5.26.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -569,6 +583,37 @@ def create_app(
         reference_builder=AuthoringReferenceBuilder(),
         knowledge_builder=AuthoringKnowledgeBuilder(authoring_service),
         authoring=authoring_service,
+    )
+    grounded_search_audit_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "gemini_grounded_search.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "gemini_grounded_search.jsonl"
+    )
+    resolved_grounded_search_provider = (
+        grounded_search_provider
+        if grounded_search_provider is not None
+        else GeminiGroundedSearchProvider(
+            GeminiGroundedSearchConfig(
+                api_key=resolved_settings.gemini_api_key,
+                model=resolved_settings.gemini_search_model,
+                endpoint=resolved_settings.gemini_search_endpoint,
+                timeout_seconds=resolved_settings.gemini_search_timeout_seconds,
+                max_queries=resolved_settings.gemini_search_max_queries,
+                max_sources=resolved_settings.gemini_search_max_sources,
+            )
+        )
+    )
+    grounded_search_audit = JsonlGroundedEvidenceSearchAuditLog(
+        grounded_search_audit_path
+    )
+    grounded_search_service = GroundedEvidenceSearchService(
+        resolved_grounded_search_provider,
+        GeminiGroundedEvidenceNormalizer(),
+        grounded_search_audit,
     )
     promotion_log_path = (
         Path(temporary_registry_directory.name) / "promotion_logs" / "promotion.jsonl"
@@ -1074,6 +1119,15 @@ def create_app(
             "evidence_raw_exposed_to_workbench": False,
             "evidence_ranking_primary_rule": "evidence_level_a_b_c",
             "evidence_search_audit": str(evidence_search_audit_path),
+            "gemini_grounded_search_version": "1.0",
+            "gemini_grounded_search_enabled": bool(
+                resolved_grounded_search_provider.config.api_key.strip()
+            ),
+            "gemini_grounded_search_model": (
+                resolved_grounded_search_provider.config.model
+            ),
+            "gemini_grounded_search_audit": str(grounded_search_audit_path),
+            "gemini_grounded_search_claim_generation_enabled": False,
         }
 
     @app.get("/api/schema/evidence-search-1.0")
@@ -1091,6 +1145,10 @@ def create_app(
     @app.get("/api/schema/knowledge-pipeline-preview-1.0")
     def knowledge_pipeline_preview_schema_v10() -> dict[str, object]:
         return KnowledgePipelinePreview.model_json_schema()
+
+    @app.get("/api/schema/grounded-evidence-search-preview-1.0")
+    def grounded_evidence_search_preview_schema_v10() -> dict[str, object]:
+        return GroundedEvidenceSearchPreview.model_json_schema()
 
     @app.get("/api/ai-knowledge-pipeline")
     def knowledge_pipeline_status() -> dict[str, object]:
@@ -1145,6 +1203,89 @@ def create_app(
             )
         except EvidenceIntelligenceError as error:
             return _authoring_error(error, 422, "evidence_search_audit_failed")
+
+    @app.get("/api/evidence-search/gemini")
+    def gemini_grounded_search_status() -> dict[str, object]:
+        return {
+            "status": "ready",
+            "phase": "5.26",
+            "provider": resolved_grounded_search_provider.provider_name,
+            "provider_version": resolved_grounded_search_provider.provider_version,
+            "model": resolved_grounded_search_provider.config.model,
+            "api_key_configured": bool(
+                resolved_grounded_search_provider.config.api_key.strip()
+            ),
+            "external_search_requires_explicit_action": True,
+            "request_limit_per_term": 1,
+            "retry_limit": resolved_grounded_search_provider.config.retry_limit,
+            "max_search_intents": resolved_grounded_search_provider.config.max_queries,
+            "max_sources": resolved_grounded_search_provider.config.max_sources,
+            "store": False,
+            "generated_answer_stored": False,
+            "claim_generation_enabled": False,
+            "knowledge_draft_generation_enabled": False,
+            "registry_write_enabled": False,
+            "promotion_enabled": False,
+        }
+
+    @app.get("/api/evidence-search/gemini/audit")
+    def gemini_grounded_search_audit(limit: int = 20) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 100))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "events": [
+                        item.model_dump(mode="json")
+                        for item in grounded_search_audit.list(limit=bounded_limit)
+                    ],
+                    "generated_answer_stored": False,
+                    "medical_body_stored": False,
+                    "http_headers_stored": False,
+                },
+            )
+        except EvidenceIntelligenceError as error:
+            return _authoring_error(
+                error,
+                422,
+                "gemini_grounded_search_audit_failed",
+            )
+
+    @app.post("/api/evidence-search/gemini/previews")
+    def preview_gemini_grounded_search(
+        request: KnowledgePipelinePreviewRequest,
+    ) -> JSONResponse:
+        try:
+            preview = grounded_search_service.preview(request.theme)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "preview": preview.model_dump(mode="json"),
+                    "knowledge_draft_generated": False,
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except GeminiGroundedSearchError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [
+                        {
+                            "code": error.code.value,
+                            "message": str(error),
+                        }
+                    ],
+                    "knowledge_draft_generated": False,
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
 
     @app.post("/api/ai-knowledge-pipeline/previews")
     def preview_ai_knowledge_pipeline(

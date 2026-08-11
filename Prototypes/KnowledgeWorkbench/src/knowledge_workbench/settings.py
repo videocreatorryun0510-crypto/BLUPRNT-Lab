@@ -113,6 +113,13 @@ class Settings:
     gemini_debug_prompt: bool = False
     gemini_input_cost_per_million_tokens: float | None = None
     gemini_output_cost_per_million_tokens: float | None = None
+    gemini_search_model: str = DEFAULT_GEMINI_MODEL
+    gemini_search_endpoint: str = (
+        "https://generativelanguage.googleapis.com/v1beta/interactions"
+    )
+    gemini_search_timeout_seconds: float = 30.0
+    gemini_search_max_queries: int = 4
+    gemini_search_max_sources: int = 50
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -290,6 +297,23 @@ class Settings:
             ),
             gemini_output_cost_per_million_tokens=_optional_float(
                 os.getenv("GEMINI_OUTPUT_COST_PER_MILLION_TOKENS", "")
+            ),
+            gemini_search_model=os.getenv(
+                "GEMINI_SEARCH_MODEL",
+                os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL),
+            ).strip(),
+            gemini_search_endpoint=os.getenv(
+                "GEMINI_SEARCH_ENDPOINT",
+                "https://generativelanguage.googleapis.com/v1beta/interactions",
+            ).strip(),
+            gemini_search_timeout_seconds=float(
+                os.getenv("GEMINI_SEARCH_TIMEOUT_SECONDS", "30").strip()
+            ),
+            gemini_search_max_queries=int(
+                os.getenv("GEMINI_SEARCH_MAX_QUERIES", "4").strip()
+            ),
+            gemini_search_max_sources=int(
+                os.getenv("GEMINI_SEARCH_MAX_SOURCES", "50").strip()
             ),
         )
 

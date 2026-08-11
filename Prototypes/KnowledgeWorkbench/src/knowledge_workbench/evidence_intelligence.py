@@ -367,13 +367,34 @@ def _duplicate_reasons(
         reasons.append("url")
     left = _normalized_text(existing.title)
     right = _normalized_text(candidate.title)
-    if left == right or (
-        min(len(left), len(right)) >= 12
-        and SequenceMatcher(None, left, right).ratio()
-        >= DefaultEvidenceDeduplicator.title_similarity_threshold
+    if _versions_compatible(existing, candidate) and (
+        left == right
+        or (
+            min(len(left), len(right)) >= 12
+            and SequenceMatcher(None, left, right).ratio()
+            >= DefaultEvidenceDeduplicator.title_similarity_threshold
+        )
     ):
         reasons.append("title_similarity")
     return reasons
+
+
+def _versions_compatible(
+    existing: BundledEvidence,
+    candidate: NormalizedEvidence,
+) -> bool:
+    if (
+        existing.publication_date is not None
+        and candidate.publication_date is not None
+        and existing.publication_date != candidate.publication_date
+    ):
+        return False
+    return not (
+        existing.citation.edition
+        and candidate.citation.edition
+        and existing.citation.edition.strip().lower()
+        != candidate.citation.edition.strip().lower()
+    )
 
 
 def _canonical_doi(value: str | None) -> str:

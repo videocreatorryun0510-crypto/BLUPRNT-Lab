@@ -3813,6 +3813,11 @@ const aiKnowledgeMessage = document.querySelector("#aiKnowledgeMessage");
 const aiKnowledgePreview = document.querySelector("#aiKnowledgePreview");
 const generateAiKnowledgeButton = document.querySelector("#generateAiKnowledgeButton");
 const saveAiKnowledgeDraftButton = document.querySelector("#saveAiKnowledgeDraftButton");
+const runGroundedEvidenceSearchButton = document.querySelector(
+  "#runGroundedEvidenceSearchButton",
+);
+const groundedSearchMessage = document.querySelector("#groundedSearchMessage");
+const groundedSearchPreview = document.querySelector("#groundedSearchPreview");
 let currentAiKnowledgePreview = null;
 
 function renderAiPipelineItems(targetSelector, items, renderItem) {
@@ -3896,6 +3901,86 @@ function renderAiKnowledgePreview(preview) {
     }),
   );
 }
+
+function renderGroundedEvidencePreview(preview) {
+  const bundle = preview.evidence_bundle;
+  const audit = preview.search_audit;
+  const policyByEvidenceId = new Map(
+    preview.policy_decisions.map((item) => [item.evidence_id, item]),
+  );
+  groundedSearchPreview.hidden = false;
+  document.querySelector("#groundedProvider").textContent = preview.provider;
+  document.querySelector("#groundedModel").textContent = preview.model;
+  document.querySelector("#groundedSourceCount").textContent =
+    audit.raw_source_count;
+  document.querySelector("#groundedAccepted").textContent =
+    `${audit.accepted_count} / ${audit.excluded_count}`;
+  document.querySelector("#groundedDeduplicated").textContent =
+    audit.deduplicated_count;
+  document.querySelector("#groundedLevels").textContent =
+    `${audit.evidence_level_counts.A} / ${audit.evidence_level_counts.B} / ${audit.evidence_level_counts.C}`;
+  document.querySelector("#groundedAuditStatus").textContent =
+    `${audit.status} · ${audit.duration_ms}ms`;
+  document.querySelector("#groundedBundleJson").textContent =
+    JSON.stringify(bundle, null, 2);
+
+  renderAiPipelineItems(
+    "#groundedQueryList",
+    preview.generated_queries,
+    (query) => ({
+      title: query.intent,
+      detail: query.query,
+    }),
+  );
+
+  const target = document.querySelector("#groundedEvidenceList");
+  target.replaceChildren();
+  bundle.evidence.forEach((ranked) => {
+    const evidence = ranked.evidence;
+    const policy = policyByEvidenceId.get(evidence.evidence_id);
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const title = document.createElement("strong");
+    title.textContent = `${ranked.rank}. ${evidence.title}`;
+    const detail = document.createElement("small");
+    detail.textContent = `${evidence.publisher} · ${policy?.domain || "unknown"} · ${policy?.domain_class || "other"} · Evidence ${evidence.evidence_level} · ${evidence.retrieved_at}`;
+    const link = document.createElement("a");
+    link.href = evidence.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = evidence.url;
+    card.append(title, detail, link);
+    target.appendChild(card);
+  });
+}
+
+runGroundedEvidenceSearchButton.addEventListener("click", async () => {
+  const theme = aiKnowledgeTheme.value.trim();
+  if (!theme) {
+    groundedSearchMessage.textContent = "先に医療用語を入力してください。";
+    aiKnowledgeTheme.focus();
+    return;
+  }
+  runGroundedEvidenceSearchButton.disabled = true;
+  groundedSearchPreview.hidden = true;
+  groundedSearchMessage.textContent =
+    "Google Search Groundingから外部Source Citationを取得しています…";
+  try {
+    const payload = await authoringApi(
+      "/api/evidence-search/gemini/previews",
+      authoringJsonOptions("POST", { theme }),
+    );
+    renderGroundedEvidencePreview(payload.preview);
+    groundedSearchMessage.textContent =
+      "Evidence候補を取得しました。医学的承認ではありません。Gemini回答本文・Claim・Knowledge Draftは保存していません。";
+  } catch (error) {
+    groundedSearchPreview.hidden = true;
+    groundedSearchMessage.textContent =
+      error instanceof Error ? error.message : "実Evidence検索に失敗しました。";
+  } finally {
+    runGroundedEvidenceSearchButton.disabled = false;
+  }
+});
 
 aiKnowledgeWizardForm.addEventListener("submit", async (event) => {
   event.preventDefault();

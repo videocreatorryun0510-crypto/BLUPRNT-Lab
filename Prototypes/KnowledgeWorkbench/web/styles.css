@@ -86,6 +86,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .ai-pipeline-json-panel { margin-top: 12px; border: 1px solid #9bbfb2; border-radius: 13px; padding: 15px; background: #fbfefd; }
 .ai-pipeline-json-panel pre { max-height: 380px; overflow: auto; border-radius: 10px; padding: 14px; color: #dcefe8; background: var(--code); font: 10px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .evidence-bundle-panel { border-color: #759f90; background: #f4faf7; }
+.grounded-search-panel { margin-top: 16px; border: 1px solid #cf9c68; border-radius: 13px; padding: 15px; background: #fff9f1; }
+.grounded-search-preview[hidden] { display: none; }
+.grounded-search-panel .secondary-action { border-color: #9c6236; color: #73441f; background: #fff; }
+.grounded-search-panel .authoring-item a { color: #176958; font-weight: 700; overflow-wrap: anywhere; }
 .authoring-workspace { min-width: 0; }
 .authoring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
 .authoring-form-grid label, .authoring-reference-form label { margin: 0; }

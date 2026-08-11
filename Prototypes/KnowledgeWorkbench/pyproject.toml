@@ -18,6 +18,7 @@ dependencies = [
   "bluprnt-presentation-request-builder>=1.0,<2",
   "bluprnt-source-bundle-publisher>=1.0,<2",
   "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
   "openai>=1.93,<3",
   "uvicorn>=0.35,<1",
 ]
