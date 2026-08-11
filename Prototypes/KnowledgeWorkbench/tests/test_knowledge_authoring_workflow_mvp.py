@@ -2,9 +2,10 @@
 
 from fastapi.testclient import TestClient
 from knowledge_contracts.v10 import KnowledgeRecord
+from pytest import mark
+
 from knowledge_workbench.main import create_app
 from knowledge_workbench.providers.fixture_provider import FixtureKnowledgeProvider
-from pytest import mark
 
 
 def _client() -> TestClient:

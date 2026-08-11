@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.22
+# Knowledge Workbench — Phase 5.23
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -13,6 +13,8 @@ Phase 5.18では、Provider非依存のPresentation Prompt BuilderとGemini Sand
 Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを追加しました。画面上部の専用欄で「送信前確認を作成」を押し、隔離Test Fixture、承認、Egress、Secret、Stale、Fingerprint、件数、送信量、Token、Retry、Timeoutを確認します。すべてOKの場合だけ「Test FixtureをGeminiへ1回送信」を押せます。ページ読込やKnowledge保存では自動送信されません。
 
 Phase 5.22では、AIを使わず人がKnowledgeを素早く作るKnowledge Wizardを追加しました。Category、Title、Alias、Difficulty、Exam Importanceの5項目から、既存Knowledge Contract 1.0に適合する空のSkeletonを作ります。ClaimとReferenceを追加・編集し、JSONまたはMarkdownへ出力できます。未完成データは正式Registryから分離したAuthoring Draftとして保存され、Approval、Artifact、Publisherは変更しません。
+
+Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflowを追加しました。Claimごとの保存先、Schema、Category、Reference、ID、重複、Fingerprintを読み取り専用Previewで確認し、確定した場合だけ既存Registryへ保存します。Promotion後のApproval Stateは必ず`draft`で、自動承認は行いません。
 
 ## できること
 
@@ -137,12 +139,14 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 
 1. 「Knowledge Wizard」でCategory、Title、Difficulty、Exam Importanceを選びます。Aliasは任意です。
 2. 「Skeletonを作成」を押します。Claim、Reference、Relationが空で、Reviewが`draft`の下書きが保存されます。
-3. 「Claim Authoring」で、確認可能な医学的事実を1件ずつ追加します。文章の編集、順番変更、削除ができます。
-4. 「Reference Authoring」で資料名、Evidence Level、URL、書誌情報、ページ、DOIなどを入力し、その資料が支えるClaimを選びます。
+3. 「Claim Authoring」で、確認可能な医学的事実を1件ずつ追加し、正式Knowledgeでの保存先を選びます。文章の編集、順番変更、削除ができます。
+4. 「Reference Authoring」で資料名、Evidence Level、情報源の優先順位、URL、書誌情報、ページ、DOIなどを入力し、その資料が支えるClaimを選びます。
 5. 「保存前Validation」で形式、入力数、ReferenceとClaimの対応を確認します。これは医学的正確性の判定や医学監修ではありません。
 6. 続きは「保存済み下書き」から開きます。JSON Exportは再取込用、Markdown Exportは人が読みやすい確認・共有用です。
+7. 正式登録する場合は「Promotion Preview」を押し、保存先Registry Key、新規/Version更新、ID、Version、Validationを確認します。
+8. 全項目がOKの場合だけ「正式RegistryへPromotion」を押します。成功後のDraftは保持またはArchivedを選べます。
 
-下書きは`data/authoring_drafts/`へ1件ずつ保存されます。このフォルダはGit管理対象外です。正式Registryへの登録はPhase 5.22の対象外であり、誤って未完成Knowledgeが承認経路へ入ることはありません。詳しい責務と運用は[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)を参照してください。
+下書きは`data/authoring_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。どちらもGit管理対象外です。PreviewはRegistryを変更せず、Promotion成功後も正式Knowledgeは`draft`のため、医学レビューとApproval Gateを迂回しません。詳しくは[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)と[Knowledge Promotion Workflow](../../Docs/knowledge_promotion_workflow.md)を参照してください。
 
 ## 国家試験CSVをPreviewして取り込む
 

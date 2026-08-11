@@ -55,6 +55,25 @@ class ReferenceRole(StrEnum):
     SUPPORTING = "supporting"
 
 
+class AuthoringDraftState(StrEnum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class AuthoringSemanticSlot(StrEnum):
+    """Explicit author intent used by Promotion; no medical inference is performed."""
+
+    UNASSIGNED = "unassigned"
+    DEFINITION = "definition"
+    OVERVIEW = "overview"
+    BIOLOGICAL_BASIS = "biological_basis"
+    ANALYTE_CHARACTERISTIC = "analyte_characteristic"
+    PURPOSE = "purpose"
+    INTERPRETATION_CAUTION = "interpretation_caution"
+    SAFETY_CONSIDERATION = "safety_consideration"
+    CAUTION = "caution"
+
+
 class AuthoringMetadata(StrictModel):
     category: AuthoringCategory
     title: ShortText
@@ -67,13 +86,14 @@ class AuthoringClaim(StrictModel):
     claim_id: ClaimId
     assertion: MediumText
     position: int = Field(ge=1, le=500)
-    semantic_slot: Literal["unassigned"] = "unassigned"
+    semantic_slot: AuthoringSemanticSlot = AuthoringSemanticSlot.UNASSIGNED
 
 
 class AuthoringReference(StrictModel):
     source_id: SourceId
     evidence_level: EvidenceLevel
     evidence_role: ReferenceRole
+    source_priority_rank: int | None = Field(default=None, ge=1, le=6)
     title: ShortText
     issuing_organization: OptionalShortText = None
     edition: OptionalShortText = None
@@ -105,6 +125,7 @@ class KnowledgeAuthoringDraft(StrictModel):
     draft_id: DraftId
     created_at: datetime
     updated_at: datetime
+    lifecycle_state: AuthoringDraftState = AuthoringDraftState.ACTIVE
     metadata: AuthoringMetadata
     knowledge: KnowledgeRecord
     claims: list[AuthoringClaim] = Field(default_factory=list, max_length=500)
@@ -158,6 +179,7 @@ class CreateAuthoringDraftRequest(StrictModel):
 
 class AddAuthoringClaimRequest(StrictModel):
     assertion: MediumText
+    semantic_slot: AuthoringSemanticSlot = AuthoringSemanticSlot.UNASSIGNED
 
 
 class UpdateAuthoringClaimRequest(AddAuthoringClaimRequest):
@@ -171,6 +193,7 @@ class ReorderAuthoringClaimsRequest(StrictModel):
 class AddAuthoringReferenceRequest(StrictModel):
     evidence_level: EvidenceLevel
     evidence_role: ReferenceRole = ReferenceRole.SUPPORTING
+    source_priority_rank: int | None = Field(default=None, ge=1, le=6)
     title: ShortText
     issuing_organization: OptionalShortText = None
     edition: OptionalShortText = None
@@ -234,6 +257,7 @@ class AuthoringDraftSummary(StrictModel):
     claim_count: int
     reference_count: int
     review_state: Literal["draft"]
+    lifecycle_state: AuthoringDraftState
     updated_at: datetime
 
 

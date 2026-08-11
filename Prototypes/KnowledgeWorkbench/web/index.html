@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=authoring-5.22.0" />
+    <link rel="stylesheet" href="/static/styles.css?v=promotion-5.23.0" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.22</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.23</p>
           <h1>Knowledge Workbench</h1>
           <p class="lead">未完成のKnowledgeを安全な下書きで素早く作り、正式登録前に内容を整える。</p>
         </div>
@@ -110,8 +110,8 @@
 
       <section class="authoring-panel" aria-labelledby="authoring-title">
         <div class="panel-copy">
-          <p class="step">PHASE 5.22 · KNOWLEDGE AUTHORING</p>
-          <h2 id="authoring-title">Knowledge Wizard</h2>
+          <p class="step">PHASE 5.23 · KNOWLEDGE PROMOTION</p>
+          <h2 id="authoring-title">Knowledge Wizard &amp; Promotion</h2>
           <p>
             5項目だけで安全な下書きを作成します。ここでの保存は正式Registryへの登録や
             医学的承認ではありません。
@@ -177,6 +177,8 @@
                 <h3>Claim Authoring</h3>
                 <label for="authoringClaimText">医学的事実</label>
                 <textarea id="authoringClaimText" rows="3" maxlength="800" placeholder="1つの確認可能な事実を入力"></textarea>
+                <label for="authoringClaimSlot">正式Knowledgeでの保存先</label>
+                <select id="authoringClaimSlot"><option value="unassigned">未指定</option></select>
                 <button id="addAuthoringClaimButton" class="primary-action" type="button">＋ Claim追加</button>
                 <div id="authoringClaimList" class="authoring-item-list"></div>
               </section>
@@ -189,6 +191,17 @@
                   </label>
                   <label>Role
                     <select id="authoringEvidenceRole"><option value="primary">Primary</option><option value="supporting" selected>Supporting</option></select>
+                  </label>
+                  <label class="wide">情報源の優先順位
+                    <select id="authoringSourcePriorityRank">
+                      <option value="">Promotion前に選択</option>
+                      <option value="1">1 · 厚生労働省</option>
+                      <option value="2">2 · 日本臨床衛生検査技師会</option>
+                      <option value="3">3 · 日本医学会・各学会ガイドライン</option>
+                      <option value="4">4 · 国家試験出題基準</option>
+                      <option value="5">5 · 教科書</option>
+                      <option value="6">6 · PubMed</option>
+                    </select>
                   </label>
                   <label class="wide">資料名<input id="authoringReferenceTitle" maxlength="180" /></label>
                   <label class="wide">発行団体・書誌情報<input id="authoringReferenceOrganization" maxlength="300" /></label>
@@ -222,6 +235,48 @@
               <button id="exportAuthoringJsonButton" class="secondary-action" type="button">JSON Export</button>
               <button id="exportAuthoringMarkdownButton" class="secondary-action" type="button">Markdown Export</button>
             </div>
+
+            <section class="promotion-panel" aria-labelledby="promotion-preview-title">
+              <div class="promotion-heading">
+                <div>
+                  <p class="step">PREVIEW BEFORE REGISTRY WRITE</p>
+                  <h3 id="promotion-preview-title">Promotion Preview</h3>
+                  <p>PreviewではRegistryを変更しません。すべての検査に通った場合だけ正式保存できます。</p>
+                </div>
+                <button id="previewPromotionButton" class="primary-action" type="button">Promotion Preview</button>
+              </div>
+              <div id="promotionPreview" hidden>
+                <div class="promotion-metrics">
+                  <div><span>Knowledge</span><strong id="promotionKnowledgeName">--</strong></div>
+                  <div><span>Category</span><strong id="promotionCategory">--</strong></div>
+                  <div><span>Claims / References</span><strong id="promotionCounts">--</strong></div>
+                  <div><span>Completeness</span><strong id="promotionCompleteness">--</strong></div>
+                  <div><span>Registry Key</span><strong id="promotionRegistryKey">--</strong></div>
+                  <div><span>Action</span><strong id="promotionOperation">--</strong></div>
+                  <div><span>Knowledge ID</span><strong id="promotionKnowledgeId">--</strong></div>
+                  <div><span>Version / Approval</span><strong id="promotionVersion">--</strong></div>
+                </div>
+                <ul id="promotionValidationChecks" class="report-list issues"></ul>
+                <div class="promotion-commit-row">
+                  <label>Promotion後のDraft
+                    <select id="promotionDraftDisposition">
+                      <option value="keep">保持する</option>
+                      <option value="archive">Archivedにする</option>
+                    </select>
+                  </label>
+                  <label>操作者<input id="promotionActor" value="knowledge_author" maxlength="120" /></label>
+                  <label class="wide">コメント<input id="promotionComment" maxlength="500" placeholder="登録理由・変更内容（任意）" /></label>
+                  <button id="commitPromotionButton" class="primary-action" type="button" disabled>正式RegistryへPromotion</button>
+                </div>
+              </div>
+              <p id="promotionMessage" class="control-note" role="status"></p>
+              <div id="promotionSavedResult" class="promotion-result" hidden></div>
+              <div class="promotion-log-heading">
+                <h3>Promotion Log</h3>
+                <button id="refreshPromotionLogButton" class="secondary-action compact" type="button">更新</button>
+              </div>
+              <div id="promotionLogList" class="authoring-item-list"></div>
+            </section>
           </div>
         </div>
       </section>
@@ -1126,6 +1181,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=authoring-5.22.0" defer></script>
+    <script src="/static/app.js?v=promotion-5.23.0" defer></script>
   </body>
 </html>

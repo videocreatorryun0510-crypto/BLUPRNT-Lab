@@ -14,6 +14,7 @@ from knowledge_workbench.authoring_models import (
     AddAuthoringClaimRequest,
     AddAuthoringReferenceRequest,
     AuthoringClaim,
+    AuthoringDraftState,
     AuthoringDraftSummary,
     AuthoringMetadata,
     AuthoringReference,
@@ -72,6 +73,7 @@ class KnowledgeAuthoringService:
                 claim_id=self._new_id("clm"),
                 assertion=request.assertion,
                 position=len(draft.claims) + 1,
+                semantic_slot=request.semantic_slot,
             ),
         ]
         return self._save_update(draft, claims=claims)
@@ -88,7 +90,12 @@ class KnowledgeAuthoringService:
         for claim in draft.claims:
             if claim.claim_id == claim_id:
                 found = True
-                claim = claim.model_copy(update={"assertion": request.assertion})
+                claim = claim.model_copy(
+                    update={
+                        "assertion": request.assertion,
+                        "semantic_slot": request.semantic_slot,
+                    }
+                )
             claims.append(claim)
         if not found:
             raise ValueError(f"Claim not found: {claim_id}")
@@ -261,6 +268,17 @@ class KnowledgeAuthoringService:
                     message="Claimへ未接続のReferenceがあります。",
                 )
             )
+        if draft.references and any(
+            item.source_priority_rank is None for item in draft.references
+        ):
+            issues.append(
+                AuthoringValidationIssue(
+                    code="source_priority_unassigned",
+                    severity=ValidationSeverity.WARNING,
+                    path="references.source_priority_rank",
+                    message="Promotion前に情報源の優先順位を選択してください。",
+                )
+            )
 
         completeness = 40
         completeness += min(len(draft.claims), 3) * 10
@@ -291,7 +309,8 @@ class KnowledgeAuthoringService:
         aliases = "、".join(draft.metadata.aliases) or "なし"
         claim_lines = (
             "\n".join(
-                f"{claim.position}. `{claim.claim_id}` — {claim.assertion}"
+                f"{claim.position}. `{claim.claim_id}` "
+                f"(`{claim.semantic_slot.value}`) — {claim.assertion}"
                 for claim in draft.claims
             )
             or "（未入力）"
@@ -318,6 +337,12 @@ class KnowledgeAuthoringService:
             "## Relations\n\n（未入力）\n"
         )
 
+    def archive(self, draft_id: str) -> KnowledgeAuthoringDraft:
+        """Archive a promoted draft without deleting its authoring history."""
+
+        draft = self.get(draft_id)
+        return self._save_update(draft, lifecycle_state=AuthoringDraftState.ARCHIVED)
+
     def _save_update(
         self, draft: KnowledgeAuthoringDraft, **updates: Any
     ) -> KnowledgeAuthoringDraft:
@@ -340,6 +365,7 @@ class KnowledgeAuthoringService:
             claim_count=len(draft.claims),
             reference_count=len(draft.references),
             review_state=draft.review.state,
+            lifecycle_state=draft.lifecycle_state,
             updated_at=draft.updated_at,
         )
 

@@ -3817,6 +3817,20 @@ const authoringReferenceClaims = document.querySelector("#authoringReferenceClai
 let currentAuthoringDraft = null;
 let currentAuthoringValidation = null;
 let editingAuthoringReferenceId = null;
+let currentPromotionPreview = null;
+let promotionSemanticSlots = {};
+
+const promotionSlotLabels = {
+  definition: "定義",
+  overview: "概要",
+  biological_basis: "生物学的基盤",
+  analyte_characteristic: "測定対象の特徴",
+  purpose: "検査目的",
+  interpretation_caution: "解釈上の注意",
+  safety_consideration: "安全上の注意",
+  caution: "注意事項",
+  unassigned: "未指定（Promotion不可）",
+};
 
 async function authoringApi(path, options = {}) {
   const response = await fetch(path, options);
@@ -3846,7 +3860,7 @@ async function refreshAuthoringDrafts(preferredId = null) {
   payload.drafts.forEach((draft) => {
     const option = document.createElement("option");
     option.value = draft.draft_id;
-    option.textContent = `${draft.title} · ${termTypeLabels[draft.category] || draft.category} · Claim ${draft.claim_count}`;
+    option.textContent = `${draft.title} · ${termTypeLabels[draft.category] || draft.category} · Claim ${draft.claim_count} · ${draft.lifecycle_state}`;
     option.selected = draft.draft_id === selected;
     authoringDraftSelect.appendChild(option);
   });
@@ -3858,6 +3872,7 @@ async function openAuthoringDraft(draftId) {
   currentAuthoringDraft = payload.draft;
   currentAuthoringValidation = payload.validation;
   renderAuthoringDraft();
+  resetPromotionPreview();
   authoringMessage.textContent = `${payload.draft.metadata.title} の下書きを開きました。正式Registryは変更していません。`;
 }
 
@@ -3872,6 +3887,7 @@ function renderAuthoringDraft() {
   document.querySelector("#authoringClaimCount").textContent = draft.claims.length;
   document.querySelector("#authoringReferenceCount").textContent = draft.references.length;
   document.querySelector("#authoringReviewState").textContent = draft.review.state;
+  renderNewClaimSlotOptions();
   renderAuthoringClaims();
   renderAuthoringReferences();
   renderAuthoringValidation();
@@ -3895,10 +3911,15 @@ function renderAuthoringClaims() {
     textarea.rows = 3;
     textarea.maxLength = 800;
     textarea.value = claim.assertion;
+    const slot = document.createElement("select");
+    appendPromotionSlotOptions(slot, claim.semantic_slot);
     const actions = document.createElement("div");
     actions.className = "authoring-item-actions";
     const save = authoringButton("保存", async () => {
-      await mutateAuthoring(`/claims/${claim.claim_id}`, "PUT", { assertion: textarea.value });
+      await mutateAuthoring(`/claims/${claim.claim_id}`, "PUT", {
+        assertion: textarea.value,
+        semantic_slot: slot.value,
+      });
     });
     const up = authoringButton("↑", () => reorderAuthoringClaim(index, -1));
     const down = authoringButton("↓", () => reorderAuthoringClaim(index, 1));
@@ -3908,7 +3929,7 @@ function renderAuthoringClaims() {
       await mutateAuthoring(`/claims/${claim.claim_id}`, "DELETE");
     }, "danger-action");
     actions.append(save, up, down, remove);
-    card.append(id, textarea, actions);
+    card.append(id, textarea, slot, actions);
     authoringClaimList.appendChild(card);
 
     const option = document.createElement("option");
@@ -3916,6 +3937,23 @@ function renderAuthoringClaims() {
     option.textContent = `${claim.position}. ${claim.assertion}`;
     authoringReferenceClaims.appendChild(option);
   });
+}
+
+function appendPromotionSlotOptions(select, selected = "unassigned") {
+  const category = currentAuthoringDraft?.metadata?.category;
+  const values = ["unassigned", ...(promotionSemanticSlots[category] || [])];
+  select.replaceChildren();
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = promotionSlotLabels[value] || value;
+    option.selected = value === selected;
+    select.appendChild(option);
+  });
+}
+
+function renderNewClaimSlotOptions() {
+  appendPromotionSlotOptions(document.querySelector("#authoringClaimSlot"), "unassigned");
 }
 
 function authoringButton(label, handler, className = "secondary-action") {
@@ -3974,6 +4012,7 @@ function beginAuthoringReferenceEdit(reference) {
   editingAuthoringReferenceId = reference.source_id;
   document.querySelector("#authoringEvidenceLevel").value = reference.evidence_level;
   document.querySelector("#authoringEvidenceRole").value = reference.evidence_role;
+  document.querySelector("#authoringSourcePriorityRank").value = reference.source_priority_rank || "";
   document.querySelector("#authoringReferenceTitle").value = reference.title;
   document.querySelector("#authoringReferenceOrganization").value = reference.issuing_organization || "";
   document.querySelector("#authoringReferenceYear").value = reference.publication_year || "";
@@ -3996,6 +4035,7 @@ function clearAuthoringReferenceForm() {
     document.querySelector(`#authoringReference${name}`).value = "";
   });
   [...authoringReferenceClaims.options].forEach((option) => { option.selected = false; });
+  document.querySelector("#authoringSourcePriorityRank").value = "";
   document.querySelector("#saveAuthoringReferenceButton").textContent = "＋ Reference追加";
   document.querySelector("#cancelAuthoringReferenceButton").hidden = true;
 }
@@ -4003,9 +4043,11 @@ function clearAuthoringReferenceForm() {
 function authoringReferencePayload() {
   const optional = (selector) => document.querySelector(selector).value.trim() || null;
   const year = document.querySelector("#authoringReferenceYear").value;
+  const sourcePriorityRank = document.querySelector("#authoringSourcePriorityRank").value;
   return {
     evidence_level: document.querySelector("#authoringEvidenceLevel").value,
     evidence_role: document.querySelector("#authoringEvidenceRole").value,
+    source_priority_rank: sourcePriorityRank ? Number(sourcePriorityRank) : null,
     title: document.querySelector("#authoringReferenceTitle").value.trim(),
     issuing_organization: optional("#authoringReferenceOrganization"),
     publication_year: year ? Number(year) : null,
@@ -4049,6 +4091,7 @@ async function mutateAuthoring(suffix, method, body = null) {
   currentAuthoringDraft = payload.draft;
   currentAuthoringValidation = payload.validation;
   renderAuthoringDraft();
+  resetPromotionPreview();
   await refreshAuthoringDrafts(currentAuthoringDraft.draft_id);
   authoringMessage.textContent = "下書きを保存しました。正式Registryは変更していません。";
 }
@@ -4083,7 +4126,13 @@ document.querySelector("#loadAuthoringDraftButton").addEventListener("click", as
 document.querySelector("#addAuthoringClaimButton").addEventListener("click", async () => {
   const field = document.querySelector("#authoringClaimText");
   if (!field.value.trim()) { authoringMessage.textContent = "Claim本文を入力してください。"; return; }
-  try { await mutateAuthoring("/claims", "POST", { assertion: field.value.trim() }); field.value = ""; }
+  try {
+    await mutateAuthoring("/claims", "POST", {
+      assertion: field.value.trim(),
+      semantic_slot: document.querySelector("#authoringClaimSlot").value,
+    });
+    field.value = "";
+  }
   catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "追加できませんでした。"; }
 });
 
@@ -4121,6 +4170,111 @@ function exportAuthoring(format) {
 document.querySelector("#exportAuthoringJsonButton").addEventListener("click", () => exportAuthoring("json"));
 document.querySelector("#exportAuthoringMarkdownButton").addEventListener("click", () => exportAuthoring("markdown"));
 
+function resetPromotionPreview() {
+  currentPromotionPreview = null;
+  document.querySelector("#promotionPreview").hidden = true;
+  document.querySelector("#commitPromotionButton").disabled = true;
+  document.querySelector("#promotionSavedResult").hidden = true;
+  document.querySelector("#promotionMessage").textContent = "";
+}
+
+function renderPromotionPreview(preview) {
+  currentPromotionPreview = preview;
+  document.querySelector("#promotionPreview").hidden = false;
+  document.querySelector("#promotionKnowledgeName").textContent = preview.knowledge_name;
+  document.querySelector("#promotionCategory").textContent = termTypeLabels[preview.category] || preview.category;
+  document.querySelector("#promotionCounts").textContent = `${preview.claim_count} / ${preview.reference_count}`;
+  document.querySelector("#promotionCompleteness").textContent = `${preview.completeness_score}%`;
+  document.querySelector("#promotionRegistryKey").textContent = preview.registry_key;
+  document.querySelector("#promotionOperation").textContent =
+    preview.operation === "create" ? "新規作成" : "Version更新";
+  document.querySelector("#promotionKnowledgeId").textContent = preview.target_knowledge_id;
+  document.querySelector("#promotionVersion").textContent = `v${preview.target_version} / draft`;
+  const list = document.querySelector("#promotionValidationChecks");
+  list.replaceChildren();
+  preview.validation.checks.forEach((check) => {
+    const item = document.createElement("li");
+    item.dataset.severity = check.passed ? "info" : "error";
+    const title = document.createElement("strong");
+    title.textContent = `${check.passed ? "✓" : "×"} ${check.code}`;
+    const message = document.createElement("span");
+    message.textContent = check.message;
+    item.append(title, message);
+    list.appendChild(item);
+  });
+  document.querySelector("#commitPromotionButton").disabled = !preview.validation.promotion_allowed;
+  document.querySelector("#promotionMessage").textContent = preview.validation.promotion_allowed
+    ? "Promotion可能です。確定するまでRegistryは変更されません。"
+    : "不足項目を修正して、もう一度Previewしてください。Registryは変更されていません。";
+}
+
+async function previewPromotion() {
+  if (!currentAuthoringDraft) throw new Error("先に下書きを開いてください。");
+  const payload = await authoringApi(
+    `/api/authoring/drafts/${currentAuthoringDraft.draft_id}/promotion/preview`,
+    { method: "POST" },
+  );
+  renderPromotionPreview(payload.preview);
+  await refreshPromotionLogs();
+}
+
+async function commitPromotion() {
+  if (!currentPromotionPreview) throw new Error("先にPromotion Previewを実行してください。");
+  const payload = await authoringApi("/api/authoring/promotions", authoringJsonOptions("POST", {
+    preview_id: currentPromotionPreview.preview_id,
+    draft_disposition: document.querySelector("#promotionDraftDisposition").value,
+    actor: document.querySelector("#promotionActor").value.trim() || "knowledge_author",
+    comment: document.querySelector("#promotionComment").value.trim(),
+  }));
+  const result = payload.result;
+  const output = document.querySelector("#promotionSavedResult");
+  output.hidden = false;
+  output.textContent = `Registry保存完了：${result.knowledge_id} / Version ${result.knowledge_version} / Approval ${result.approval_state} / Draft ${result.draft_lifecycle_state}`;
+  document.querySelector("#promotionMessage").textContent = "正式KnowledgeへPromotionしました。自動承認は行っていません。";
+  document.querySelector("#commitPromotionButton").disabled = true;
+  await refreshAuthoringDrafts(currentAuthoringDraft.draft_id);
+  await refreshPromotionLogs();
+  await refreshRegistryList(true);
+}
+
+async function refreshPromotionLogs() {
+  const payload = await authoringApi("/api/authoring/promotion/logs?limit=20");
+  const list = document.querySelector("#promotionLogList");
+  list.replaceChildren();
+  if (!payload.logs.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Promotion履歴はまだありません。";
+    list.appendChild(empty);
+    return;
+  }
+  payload.logs.forEach((event) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const title = document.createElement("strong");
+    title.textContent = `${event.event_type === "preview" ? "Preview" : "Promotion"} · ${event.status}`;
+    const detail = document.createElement("small");
+    detail.textContent = `${event.knowledge_id} · v${event.knowledge_version} · ${new Date(event.occurred_at).toLocaleString("ja-JP")}`;
+    card.append(title, detail);
+    list.appendChild(card);
+  });
+}
+
+document.querySelector("#previewPromotionButton").addEventListener("click", async () => {
+  try { await previewPromotion(); }
+  catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Previewできませんでした。"; }
+});
+
+document.querySelector("#commitPromotionButton").addEventListener("click", async () => {
+  try { await commitPromotion(); }
+  catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Promotionできませんでした。"; }
+});
+
+document.querySelector("#refreshPromotionLogButton").addEventListener("click", async () => {
+  try { await refreshPromotionLogs(); }
+  catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Promotion Logを読み込めませんでした。"; }
+});
+
 fetch("/api/status")
   .then((response) => response.json())
   .then((status) => {
@@ -4149,6 +4303,10 @@ refreshRegistryList(true);
 refreshArtifactRegistryList(true);
 refreshBackups();
 loadDiseaseRelationVocabulary();
-refreshAuthoringDrafts().catch(() => {
-  authoringMessage.textContent = "保存済み下書きを読み込めませんでした。";
+authoringApi("/api/authoring/promotion/semantic-slots")
+  .then((payload) => { promotionSemanticSlots = payload.semantic_slots; })
+  .then(() => refreshAuthoringDrafts())
+  .catch(() => { authoringMessage.textContent = "保存済み下書きを読み込めませんでした。"; });
+refreshPromotionLogs().catch(() => {
+  document.querySelector("#promotionMessage").textContent = "Promotion Logを読み込めませんでした。";
 });

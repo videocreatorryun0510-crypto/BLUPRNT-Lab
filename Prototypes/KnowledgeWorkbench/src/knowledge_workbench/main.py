@@ -135,6 +135,17 @@ from knowledge_workbench.knowledge_relation_repository import (
     KnowledgeRelationRepository,
 )
 from knowledge_workbench.knowledge_relation_service import KnowledgeRelationService
+from knowledge_workbench.promotion_log import JsonlPromotionLog, PromotionLogError
+from knowledge_workbench.promotion_models import (
+    CommitPromotionRequest,
+    PromotionPreview,
+    PromotionResult,
+)
+from knowledge_workbench.promotion_service import (
+    KnowledgePromotionService,
+    PromotionError,
+    promotion_semantic_slots,
+)
 from knowledge_workbench.providers.base import KnowledgeProvider
 from knowledge_workbench.registry_backup import SQLiteRegistryBackupManager
 from knowledge_workbench.settings import Settings, build_provider
@@ -460,7 +471,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.22.0",
+        version="5.23.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -495,6 +506,18 @@ def create_app(
     )
     authoring_service = KnowledgeAuthoringService(
         FileAuthoringDraftRepository(authoring_output_directory)
+    )
+    promotion_log_path = (
+        Path(temporary_registry_directory.name) / "promotion_logs" / "promotion.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "promotion_logs"
+        / "promotion.jsonl"
+    )
+    promotion_service = KnowledgePromotionService(
+        authoring_service,
+        resolved_registry,
+        JsonlPromotionLog(promotion_log_path),
     )
 
     def _authoring_response(draft: KnowledgeAuthoringDraft) -> JSONResponse:
@@ -970,11 +993,28 @@ def create_app(
             "knowledge_authoring_output": str(authoring_output_directory),
             "knowledge_authoring_registry_write_enabled": False,
             "knowledge_authoring_ai_generation_enabled": False,
+            "knowledge_promotion_version": "1.0",
+            "knowledge_promotion_preview_mutates_registry": False,
+            "knowledge_promotion_registry_write_enabled": True,
+            "knowledge_promotion_approval_state": "draft",
+            "knowledge_promotion_log": str(promotion_log_path),
         }
 
     @app.get("/api/schema/knowledge-authoring-1.0")
     def authoring_schema_v10() -> dict[str, object]:
         return KnowledgeAuthoringDraft.model_json_schema()
+
+    @app.get("/api/schema/knowledge-promotion-preview-1.0")
+    def promotion_preview_schema_v10() -> dict[str, object]:
+        return PromotionPreview.model_json_schema()
+
+    @app.get("/api/schema/knowledge-promotion-result-1.0")
+    def promotion_result_schema_v10() -> dict[str, object]:
+        return PromotionResult.model_json_schema()
+
+    @app.get("/api/authoring/promotion/semantic-slots")
+    def list_promotion_semantic_slots() -> dict[str, object]:
+        return {"status": "success", "semantic_slots": promotion_semantic_slots()}
 
     @app.get("/api/authoring/drafts")
     def list_authoring_drafts() -> dict[str, object]:
@@ -1009,6 +1049,62 @@ def create_app(
             )
         except AuthoringDraftNotFoundError as error:
             return _authoring_error(error, 404, "authoring_draft_not_found")
+
+    @app.post("/api/authoring/drafts/{draft_id}/promotion/preview")
+    def preview_authoring_promotion(draft_id: str) -> JSONResponse:
+        try:
+            preview = promotion_service.preview(draft_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": (
+                        "ready" if preview.validation.promotion_allowed else "blocked"
+                    ),
+                    "preview": preview.model_dump(mode="json"),
+                    "registry_mutated": False,
+                    "approval_state": "draft",
+                },
+            )
+        except AuthoringDraftNotFoundError as error:
+            return _authoring_error(error, 404, "authoring_draft_not_found")
+        except (PromotionError, PromotionLogError, ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "promotion_preview_failed")
+
+    @app.post("/api/authoring/promotions")
+    def commit_authoring_promotion(request: CommitPromotionRequest) -> JSONResponse:
+        try:
+            result = promotion_service.commit(request)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "result": result.model_dump(mode="json"),
+                    "registry_mutated": True,
+                    "approval_state": "draft",
+                    "automatic_approval_performed": False,
+                },
+            )
+        except (PromotionError, PromotionLogError, RegistryOperationError) as error:
+            return _authoring_error(error, 409, "promotion_commit_failed")
+        except (ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "promotion_validation_failed")
+
+    @app.get("/api/authoring/promotion/logs")
+    def list_authoring_promotion_logs(limit: int = 100) -> JSONResponse:
+        try:
+            safe_limit = max(1, min(limit, 500))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "logs": [
+                        item.model_dump(mode="json")
+                        for item in promotion_service.logs(limit=safe_limit)
+                    ],
+                },
+            )
+        except PromotionLogError as error:
+            return _authoring_error(error, 500, "promotion_log_unavailable")
 
     @app.post("/api/authoring/drafts/{draft_id}/claims")
     def add_authoring_claim(
