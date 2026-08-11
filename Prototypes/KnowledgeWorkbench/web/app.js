@@ -3807,6 +3807,128 @@ async function loadDiseaseRelationVocabulary() {
   }
 }
 
+const aiKnowledgeWizardForm = document.querySelector("#aiKnowledgeWizardForm");
+const aiKnowledgeTheme = document.querySelector("#aiKnowledgeTheme");
+const aiKnowledgeMessage = document.querySelector("#aiKnowledgeMessage");
+const aiKnowledgePreview = document.querySelector("#aiKnowledgePreview");
+const generateAiKnowledgeButton = document.querySelector("#generateAiKnowledgeButton");
+const saveAiKnowledgeDraftButton = document.querySelector("#saveAiKnowledgeDraftButton");
+let currentAiKnowledgePreview = null;
+
+function renderAiPipelineItems(targetSelector, items, renderItem) {
+  const target = document.querySelector(targetSelector);
+  target.replaceChildren();
+  items.forEach((entry) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const rendered = renderItem(entry);
+    const title = document.createElement("strong");
+    title.textContent = rendered.title;
+    const detail = document.createElement("small");
+    detail.textContent = rendered.detail;
+    card.append(title, detail);
+    target.appendChild(card);
+  });
+}
+
+function renderAiKnowledgePreview(preview) {
+  currentAiKnowledgePreview = preview;
+  aiKnowledgePreview.hidden = false;
+  document.querySelector("#aiPipelineSubject").textContent =
+    preview.evidence_search.subject.canonical_name;
+  document.querySelector("#aiPipelineCategory").textContent =
+    termTypeLabels[preview.evidence_search.subject.category]
+      || preview.evidence_search.subject.category;
+  document.querySelector("#aiPipelineEvidenceCount").textContent =
+    preview.evidence_search.evidence.length;
+  document.querySelector("#aiPipelineClaimCount").textContent =
+    preview.claim_build.claims.length;
+  document.querySelector("#aiPipelineReferenceCount").textContent =
+    preview.references.length;
+  document.querySelector("#aiPipelineProvider").textContent =
+    `${preview.evidence_search.provider_name} v${preview.evidence_search.provider_version}`;
+  document.querySelector("#aiPipelineExternal").textContent =
+    `${preview.external_search_called ? "Yes" : "No"} / ${preview.external_ai_called ? "Yes" : "No"}`;
+  document.querySelector("#aiPipelineFingerprint").textContent = preview.fingerprint;
+  document.querySelector("#aiPipelineDraftJson").textContent =
+    JSON.stringify(preview.authoring_draft, null, 2);
+  saveAiKnowledgeDraftButton.disabled = false;
+
+  renderAiPipelineItems(
+    "#aiPipelineEvidenceList",
+    preview.evidence_ranking.ranked_evidence,
+    (entry) => ({
+      title: `${entry.rank}. ${entry.evidence.title}`,
+      detail: `${entry.evidence.publisher} · 優先順位 ${entry.evidence.source_priority_rank} · Evidence ${entry.evidence.evidence_level}`,
+    }),
+  );
+  renderAiPipelineItems(
+    "#aiPipelineClaimList",
+    preview.claim_build.claims,
+    (claim) => ({
+      title: claim.assertion,
+      detail: `${claim.claim_type} · ${claim.semantic_slot} · Evidence ${claim.evidence_ids.length}件 · 抽出信頼度 ${Math.round(claim.confidence * 100)}%`,
+    }),
+  );
+  renderAiPipelineItems(
+    "#aiPipelineReferenceList",
+    preview.references,
+    (reference) => ({
+      title: reference.title,
+      detail: `${reference.issuing_organization || "発行団体未登録"} · Claim ${reference.supported_claim_ids.length}件`,
+    }),
+  );
+}
+
+aiKnowledgeWizardForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  generateAiKnowledgeButton.disabled = true;
+  aiKnowledgeMessage.textContent = "EvidenceからDraft Previewを組み立てています…";
+  try {
+    const payload = await authoringApi(
+      "/api/ai-knowledge-pipeline/previews",
+      authoringJsonOptions("POST", { theme: aiKnowledgeTheme.value.trim() }),
+    );
+    renderAiKnowledgePreview(payload.preview);
+    aiKnowledgeMessage.textContent =
+      "Previewを生成しました。外部検索・LLM・Registry・Promotionは動作していません。";
+  } catch (error) {
+    currentAiKnowledgePreview = null;
+    aiKnowledgePreview.hidden = true;
+    aiKnowledgeMessage.textContent =
+      error instanceof Error ? error.message : "Draft Previewを生成できませんでした。";
+  } finally {
+    generateAiKnowledgeButton.disabled = false;
+  }
+});
+
+document.querySelectorAll("[data-ai-theme]").forEach((button) => {
+  button.addEventListener("click", () => {
+    aiKnowledgeTheme.value = button.dataset.aiTheme;
+    aiKnowledgeTheme.focus();
+  });
+});
+
+saveAiKnowledgeDraftButton.addEventListener("click", async () => {
+  if (!currentAiKnowledgePreview) return;
+  saveAiKnowledgeDraftButton.disabled = true;
+  try {
+    const payload = await authoringApi(
+      `/api/ai-knowledge-pipeline/previews/${currentAiKnowledgePreview.pipeline_id}/save`,
+      { method: "POST" },
+    );
+    const draftId = payload.result.draft.draft_id;
+    await refreshAuthoringDrafts(draftId);
+    await openAuthoringDraft(draftId);
+    aiKnowledgeMessage.textContent =
+      "Authoring Draftへ保存しました。正式RegistryとPromotionは変更していません。";
+  } catch (error) {
+    saveAiKnowledgeDraftButton.disabled = false;
+    aiKnowledgeMessage.textContent =
+      error instanceof Error ? error.message : "Authoring Draftへ保存できませんでした。";
+  }
+});
+
 const authoringWizardForm = document.querySelector("#authoringWizardForm");
 const authoringDraftSelect = document.querySelector("#authoringDraftSelect");
 const authoringEditor = document.querySelector("#authoringEditor");

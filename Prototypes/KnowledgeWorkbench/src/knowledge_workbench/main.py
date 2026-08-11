@@ -126,9 +126,28 @@ from knowledge_workbench.exam_import_service import (
     import_exam_csv,
 )
 from knowledge_workbench.exam_metadata_provider import DummyExamMetadataProvider
+from knowledge_workbench.fixture_knowledge_pipeline import (
+    FixtureClaimBuilder,
+    FixtureEvidenceSearchProvider,
+    FixturePipelineCatalog,
+    FixturePipelineThemeError,
+)
 from knowledge_workbench.gemini_acceptance import (
     GeminiAcceptanceError,
     GeminiAcceptanceService,
+)
+from knowledge_workbench.knowledge_pipeline_builders import (
+    AuthoringKnowledgeBuilder,
+    AuthoringReferenceBuilder,
+    DefaultEvidenceRanker,
+)
+from knowledge_workbench.knowledge_pipeline_models import (
+    EvidenceSearchResult,
+    KnowledgePipelinePreview,
+)
+from knowledge_workbench.knowledge_pipeline_service import (
+    KnowledgePipelineError,
+    KnowledgePipelineService,
 )
 from knowledge_workbench.knowledge_registry import KnowledgeRegistry
 from knowledge_workbench.knowledge_relation_repository import (
@@ -216,6 +235,12 @@ class GenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     term: str = Field(min_length=1, max_length=80)
+
+
+class KnowledgePipelinePreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    theme: str = Field(min_length=1, max_length=300)
 
 
 class CsvImportRequest(BaseModel):
@@ -471,7 +496,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.23.0",
+        version="5.24.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -506,6 +531,20 @@ def create_app(
     )
     authoring_service = KnowledgeAuthoringService(
         FileAuthoringDraftRepository(authoring_output_directory)
+    )
+    fixture_pipeline_catalog = FixturePipelineCatalog(
+        Path(__file__).resolve().parents[4]
+    )
+    evidence_search_provider = FixtureEvidenceSearchProvider(
+        fixture_pipeline_catalog
+    )
+    knowledge_pipeline_service = KnowledgePipelineService(
+        search_provider=evidence_search_provider,
+        evidence_ranker=DefaultEvidenceRanker(),
+        claim_builder=FixtureClaimBuilder(fixture_pipeline_catalog),
+        reference_builder=AuthoringReferenceBuilder(),
+        knowledge_builder=AuthoringKnowledgeBuilder(authoring_service),
+        authoring=authoring_service,
     )
     promotion_log_path = (
         Path(temporary_registry_directory.name) / "promotion_logs" / "promotion.jsonl"
@@ -998,7 +1037,80 @@ def create_app(
             "knowledge_promotion_registry_write_enabled": True,
             "knowledge_promotion_approval_state": "draft",
             "knowledge_promotion_log": str(promotion_log_path),
+            "ai_knowledge_pipeline_version": "1.0",
+            "ai_knowledge_pipeline_mode": "local_fixture_sandbox",
+            "ai_knowledge_pipeline_external_search_enabled": False,
+            "ai_knowledge_pipeline_llm_enabled": False,
+            "ai_knowledge_pipeline_registry_write_enabled": False,
+            "ai_knowledge_pipeline_supported_themes": (
+                fixture_pipeline_catalog.supported_themes()
+            ),
         }
+
+    @app.get("/api/schema/evidence-search-1.0")
+    def evidence_search_schema_v10() -> dict[str, object]:
+        return EvidenceSearchResult.model_json_schema()
+
+    @app.get("/api/schema/knowledge-pipeline-preview-1.0")
+    def knowledge_pipeline_preview_schema_v10() -> dict[str, object]:
+        return KnowledgePipelinePreview.model_json_schema()
+
+    @app.get("/api/ai-knowledge-pipeline")
+    def knowledge_pipeline_status() -> dict[str, object]:
+        return {
+            "status": "ready",
+            "pipeline_version": "1.0",
+            "mode": "local_fixture_sandbox",
+            "search_provider": evidence_search_provider.provider_name,
+            "search_provider_version": evidence_search_provider.provider_version,
+            "claim_builder": "local_fixture_claim_builder",
+            "external_search_enabled": False,
+            "llm_enabled": False,
+            "supported_themes": fixture_pipeline_catalog.supported_themes(),
+        }
+
+    @app.post("/api/ai-knowledge-pipeline/previews")
+    def preview_ai_knowledge_pipeline(
+        request: KnowledgePipelinePreviewRequest,
+    ) -> JSONResponse:
+        try:
+            preview = knowledge_pipeline_service.preview(request.theme)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "preview": preview.model_dump(mode="json"),
+                    "authoring_draft_saved": False,
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                },
+            )
+        except (KnowledgePipelineError, FixturePipelineThemeError, ValidationError) as error:
+            return _authoring_error(error, 422, "knowledge_pipeline_preview_failed")
+
+    @app.post("/api/ai-knowledge-pipeline/previews/{pipeline_id}/save")
+    def save_ai_knowledge_pipeline_draft(pipeline_id: str) -> JSONResponse:
+        try:
+            result = knowledge_pipeline_service.save(pipeline_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "result": result.model_dump(mode="json"),
+                    "authoring_draft_saved": True,
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "external_ai_called": False,
+                    "external_search_called": False,
+                },
+            )
+        except (
+            KnowledgePipelineError,
+            AuthoringDraftStorageError,
+            ValidationError,
+            ValueError,
+        ) as error:
+            return _authoring_error(error, 422, "knowledge_pipeline_save_failed")
 
     @app.get("/api/schema/knowledge-authoring-1.0")
     def authoring_schema_v10() -> dict[str, object]:

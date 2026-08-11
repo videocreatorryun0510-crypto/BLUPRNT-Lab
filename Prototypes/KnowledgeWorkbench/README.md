@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.23
+# Knowledge Workbench — Phase 5.24
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -15,6 +15,8 @@ Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを�
 Phase 5.22では、AIを使わず人がKnowledgeを素早く作るKnowledge Wizardを追加しました。Category、Title、Alias、Difficulty、Exam Importanceの5項目から、既存Knowledge Contract 1.0に適合する空のSkeletonを作ります。ClaimとReferenceを追加・編集し、JSONまたはMarkdownへ出力できます。未完成データは正式Registryから分離したAuthoring Draftとして保存され、Approval、Artifact、Publisherは変更しません。
 
 Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflowを追加しました。Claimごとの保存先、Schema、Category、Reference、ID、重複、Fingerprintを読み取り専用Previewで確認し、確定した場合だけ既存Registryへ保存します。Promotion後のApproval Stateは必ず`draft`で、自動承認は行いません。
+
+Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search、Ranking、Claim、Reference、Knowledge Builderを通してAuthoring Draft Previewを作るProvider非依存Pipelineを追加しました。今回は外部検索とLLMを呼ばず、既存ローカルKnowledge例を使うSandboxです。保存先はAuthoring Draftだけで、Promotion、Registry、Review、Approvalは自動実行しません。
 
 ## できること
 
@@ -106,6 +108,14 @@ Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflow�
 86. Schema、作成時Completeness、必須項目、Claim数、Reference整合性を保存前に確認する
 87. 下書きをJSON・Markdownへ出力し、JSONを新しい下書きとして取り込む
 88. 未完成下書きの保存で正式Registry・Approval・Publisherが変わらないことを保証する
+89. Promotion PreviewでSchema、Category、Claim、Reference、ID、重複、Fingerprintを確認する
+90. 明示確定した場合だけAuthoring Draftを正式Registryへ`draft`で登録する
+91. テーマからEvidence Search Contract 1.0へProvider非依存で変換する
+92. Evidenceを情報源優先順位とEvidence Levelで決定的に並べる
+93. Claim候補と根拠Evidence IDを対応付ける
+94. Evidenceを既存Knowledge Contract互換Referenceへ変換する
+95. Knowledge Draft、Claim、Referenceを保存前Previewで確認する
+96. Authoring Draft保存後もRegistry・Promotion・Review・Approvalを変更しない
 
 画面へ表示する医学知識はAIによる医学監修前の下書きです。Exam Metadataの出題回・年度・問題番号は画面確認用ダミーであり、実際の出題実績ではありません。どちらの完全性スコアも情報の揃い具合であり、正確性や承認の点数ではありません。
 
@@ -134,6 +144,17 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 ```
 
 ブラウザで `http://127.0.0.1:8000` を開きます。終了するときはターミナルで `Control + C` を押します。
+
+## AI Knowledge Wizardで用語から下書きを作る
+
+1. 「AI Knowledge Wizard」へ医療用語を入力します。
+2. 「Draft Preview生成」を押します。
+3. Knowledge名・Category、Evidence、Claim、Reference、Fingerprintを確認します。
+4. `External / LLM`と`Registry / Promotion`がいずれも`No`であることを確認します。
+5. 保存する場合だけ「Authoring Draftへ保存」を押します。
+6. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
+
+Phase 5.24のSandbox対応テーマは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`です。外部検索とLLMは未接続のため、その他の用語では医学情報を推測せず停止します。詳しくは[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
 
 ## Knowledge Wizardで新しい下書きを作る
 

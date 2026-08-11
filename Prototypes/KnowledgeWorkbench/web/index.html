@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=promotion-5.23.0" />
+    <link rel="stylesheet" href="/static/styles.css?v=ai-pipeline-5.24.0" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.23</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.24</p>
           <h1>Knowledge Workbench</h1>
           <p class="lead">未完成のKnowledgeを安全な下書きで素早く作り、正式登録前に内容を整える。</p>
         </div>
@@ -106,6 +106,83 @@
             <button type="button" data-term="HbA1c">HbA1c</button>
           </div>
         </form>
+      </section>
+
+      <section class="authoring-panel ai-pipeline-panel" aria-labelledby="ai-knowledge-title">
+        <div class="panel-copy">
+          <p class="step">PHASE 5.24 · AI KNOWLEDGE PIPELINE</p>
+          <h2 id="ai-knowledge-title">AI Knowledge Wizard</h2>
+          <p>
+            用語だけからEvidence・Claim・Referenceを通してAuthoring Draftを組み立てます。
+            今回は安全なローカルFixtureで経路を確認し、外部検索とLLMは呼びません。
+          </p>
+          <div class="pipeline-safety-note">
+            <strong>Sandbox MVP</strong>
+            <span>外部通信なし · Registry変更なし · Promotionなし · 医学監修前</span>
+          </div>
+        </div>
+        <div class="authoring-workspace">
+          <form id="aiKnowledgeWizardForm" class="ai-pipeline-form">
+            <label for="aiKnowledgeTheme">テーマ・医療用語</label>
+            <div class="input-row">
+              <input id="aiKnowledgeTheme" maxlength="300" placeholder="例：フェリチン" required />
+              <button id="generateAiKnowledgeButton" class="primary-action" type="submit">
+                Draft Preview生成
+              </button>
+            </div>
+            <div class="examples" aria-label="Pipeline Sandboxの対応テーマ">
+              <span>Sandbox：</span>
+              <button type="button" data-ai-theme="フェリチン">フェリチン</button>
+              <button type="button" data-ai-theme="鉄欠乏性貧血">鉄欠乏性貧血</button>
+              <button type="button" data-ai-theme="Gram染色">Gram染色</button>
+            </div>
+          </form>
+          <p id="aiKnowledgeMessage" class="control-note" role="status">
+            入力だけでは保存されません。Previewを確認後にAuthoring Draftとして保存します。
+          </p>
+
+          <div id="aiKnowledgePreview" class="ai-pipeline-preview" hidden>
+            <div class="ai-pipeline-metrics">
+              <div><span>Knowledge</span><strong id="aiPipelineSubject">--</strong></div>
+              <div><span>Category</span><strong id="aiPipelineCategory">--</strong></div>
+              <div><span>Evidence</span><strong id="aiPipelineEvidenceCount">0</strong></div>
+              <div><span>Claims</span><strong id="aiPipelineClaimCount">0</strong></div>
+              <div><span>References</span><strong id="aiPipelineReferenceCount">0</strong></div>
+              <div><span>Provider</span><strong id="aiPipelineProvider">--</strong></div>
+              <div><span>External / LLM</span><strong id="aiPipelineExternal">No / No</strong></div>
+              <div><span>Registry / Promotion</span><strong>No / No</strong></div>
+            </div>
+            <div class="ai-pipeline-column-grid">
+              <section class="authoring-card">
+                <h3>Evidence Preview</h3>
+                <div id="aiPipelineEvidenceList" class="authoring-item-list"></div>
+              </section>
+              <section class="authoring-card">
+                <h3>Claim Preview</h3>
+                <div id="aiPipelineClaimList" class="authoring-item-list"></div>
+              </section>
+              <section class="authoring-card">
+                <h3>Reference Preview</h3>
+                <div id="aiPipelineReferenceList" class="authoring-item-list"></div>
+              </section>
+            </div>
+            <section class="ai-pipeline-json-panel">
+              <div class="promotion-heading">
+                <div>
+                  <p class="step">AUTHORING DRAFT PREVIEW</p>
+                  <h3>Knowledge Draft JSON</h3>
+                </div>
+                <button id="saveAiKnowledgeDraftButton" class="primary-action" type="button">
+                  Authoring Draftへ保存
+                </button>
+              </div>
+              <p class="fingerprint-line">
+                <span>Fingerprint</span><code id="aiPipelineFingerprint">--</code>
+              </p>
+              <pre id="aiPipelineDraftJson"></pre>
+            </section>
+          </div>
+        </div>
       </section>
 
       <section class="authoring-panel" aria-labelledby="authoring-title">
@@ -1181,6 +1258,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=promotion-5.23.0" defer></script>
+    <script src="/static/app.js?v=ai-pipeline-5.24.0" defer></script>
   </body>
 </html>

@@ -44,6 +44,13 @@ class KnowledgeAuthoringService:
         return self.repository.get(draft_id)
 
     def create(self, request: CreateAuthoringDraftRequest) -> KnowledgeAuthoringDraft:
+        return self.save_generated_draft(self.build_skeleton(request))
+
+    def build_skeleton(
+        self, request: CreateAuthoringDraftRequest
+    ) -> KnowledgeAuthoringDraft:
+        """Build a contract-valid draft without persisting it."""
+
         now = datetime.now(UTC)
         knowledge_id = self._new_id("knw")
         knowledge = KnowledgeRecord.model_validate(
@@ -61,7 +68,17 @@ class KnowledgeAuthoringService:
             metadata=AuthoringMetadata.model_validate(request.model_dump()),
             knowledge=knowledge,
         )
-        return self.repository.save(draft)
+        return draft
+
+    def save_generated_draft(
+        self, draft: KnowledgeAuthoringDraft
+    ) -> KnowledgeAuthoringDraft:
+        """Persist a Pipeline draft only after the user confirms its Preview."""
+
+        validated = KnowledgeAuthoringDraft.model_validate(draft)
+        if not self.validate(validated).save_allowed:
+            raise ValueError("Authoring validation failed")
+        return self.repository.save(validated)
 
     def add_claim(
         self, draft_id: str, request: AddAuthoringClaimRequest
