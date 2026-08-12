@@ -525,6 +525,64 @@
               <button id="exportAuthoringMarkdownButton" class="secondary-action" type="button">Markdown Export</button>
             </div>
 
+            <section id="knowledgeAssemblerPanel" class="promotion-panel" aria-labelledby="knowledge-draft-preview-title">
+              <div class="promotion-heading">
+                <div>
+                  <p class="step">PHASE 5.29 · LOSSLESS ASSEMBLY</p>
+                  <h3 id="knowledge-draft-preview-title">Knowledge Draft Preview</h3>
+                  <p>
+                    人が採用・編集したClaimと選択したReferenceを、内容を変えずに整理します。
+                    Registry登録・Promotion・Approvalは行いません。
+                  </p>
+                </div>
+                <button id="generateKnowledgeDraftButton" class="primary-action" type="button">
+                  Generate Draft
+                </button>
+              </div>
+              <div id="knowledgeDraftPreview" hidden>
+                <div class="promotion-metrics">
+                  <div><span>Title</span><strong id="knowledgeDraftTitle">--</strong></div>
+                  <div><span>Category</span><strong id="knowledgeDraftCategory">--</strong></div>
+                  <div><span>Claims</span><strong id="knowledgeDraftClaimCount">0</strong></div>
+                  <div><span>References</span><strong id="knowledgeDraftReferenceCount">0</strong></div>
+                  <div><span>Completeness</span><strong id="knowledgeDraftCompleteness">--</strong></div>
+                  <div><span>Validation</span><strong id="knowledgeDraftValidation">--</strong></div>
+                </div>
+                <section class="authoring-validation">
+                  <div>
+                    <h3>Summary（既存Claimの完全一致コピー）</h3>
+                    <p id="knowledgeDraftSummary">--</p>
+                  </div>
+                </section>
+                <div class="authoring-column-grid">
+                  <section class="authoring-card">
+                    <h3>Claim一覧</h3>
+                    <div id="knowledgeDraftClaimList" class="authoring-item-list"></div>
+                  </section>
+                  <section class="authoring-card">
+                    <h3>Reference一覧</h3>
+                    <div id="knowledgeDraftReferenceList" class="authoring-item-list"></div>
+                  </section>
+                </div>
+                <section class="authoring-validation">
+                  <div>
+                    <h3>Draft Validation</h3>
+                    <p>順序・ID・Reference対応・Category・Fingerprint・Metadataを確認します。</p>
+                  </div>
+                  <ul id="knowledgeDraftValidationIssues" class="report-list issues"></ul>
+                </section>
+                <p class="fingerprint-line">
+                  <span>Fingerprint</span><code id="knowledgeDraftFingerprint">--</code>
+                </p>
+                <div class="authoring-export-row">
+                  <button id="exportKnowledgeDraftJsonButton" class="secondary-action" type="button" disabled>Export JSON</button>
+                  <button id="exportKnowledgeDraftMarkdownButton" class="secondary-action" type="button" disabled>Export Markdown</button>
+                  <button id="returnToAuthoringButton" class="secondary-action" type="button">Return to Authoring</button>
+                </div>
+              </div>
+              <p id="knowledgeDraftMessage" class="control-note" role="status"></p>
+            </section>
+
             <section class="promotion-panel" aria-labelledby="promotion-preview-title">
               <div class="promotion-heading">
                 <div>

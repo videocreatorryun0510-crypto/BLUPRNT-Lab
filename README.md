@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.28「Evidence-Grounded Claim Builder MVP」を実装しました。** 人が採用したPubMed Formal EvidenceだけからAIがClaim候補を抽出し、Evidence ID、Abstract Locator、支持度、重複候補を追跡します。人が採用したDirect ClaimだけをAuthoring Draftへ保存し、Promotion・Registry・医学承認は変更しません。詳細は[Evidence-Grounded Claim Builder](Docs/evidence_grounded_claim_builder.md)に記録しています。
+> **Phase 5.29「Knowledge Assembler MVP」を実装しました。** 人が採用・修正したClaimと選択したReferenceを一字も書き換えず、Promotion前の独立Knowledge Draft 1.0へ構造化します。Summaryも既存Claimの完全一致コピーだけを許可し、Registry・Promotion・Approvalは実行しません。詳細は[Knowledge Assembler](Docs/knowledge_assembler.md)に記録しています。
 
 ---
 

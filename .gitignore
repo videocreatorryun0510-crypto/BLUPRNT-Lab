@@ -14,5 +14,6 @@ Publisher Output/
 Prototypes/KnowledgeWorkbench/data/*.sqlite3*
 Prototypes/KnowledgeWorkbench/data/backups/
 Prototypes/KnowledgeWorkbench/data/authoring_drafts/
+Prototypes/KnowledgeWorkbench/data/knowledge_drafts/
 Prototypes/KnowledgeWorkbench/data/promotion_logs/
 Prototypes/KnowledgeWorkbench/data/search_audit/

@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.28
+# Knowledge Workbench — Phase 5.29
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -25,6 +25,8 @@ Phase 5.26.1では、Gemini Google Search GroundingをDiscovery専用Providerへ
 Phase 5.27では、NCBI公式E-utilitiesを使うPubMed Formal Evidence Providerを追加しました。医療用語から直接検索する経路と、Discovery Candidateを検索HintとしてPubMedへ再問い合わせする経路があります。PubMed Recordが確認できた資料だけを既存Evidence Intelligence、重複排除、順位付け、Evidence Bundleへ通します。採用・除外・保留は記録できますが、Claim生成や医学レビューではありません。
 
 Phase 5.28では、人が「採用」したFormal EvidenceだけからAIがClaim Candidateを抽出します。各候補にはEvidence ID、Abstract内Locator、PMID/DOI、Support Level、Confidence、重複判定が付きます。Workbenchで採用・修正・除外・保留を記録し、採用済みDirect ClaimだけをAuthoring Draftへ保存できます。正式Claim、Promotion、Registry、医学承認は変更しません。
+
+Phase 5.29では、Authoring DraftのClaimとReferenceを内容変更せずKnowledge Draft 1.0へ整理するKnowledge Assemblerを追加しました。Summaryは既存Claim本文の完全一致コピーで、Claim順、Reference対応、Category、Metadata、Fingerprintを保存前に検証します。Knowledge Draftは正式Registryと別に保存され、PromotionとApprovalは実行しません。
 
 ## できること
 
@@ -168,7 +170,7 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 6. 保存する場合だけ「Authoring Draftへ保存」を押します。
 7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。Phase 5.28の「選択EvidenceからClaim候補生成」は、採用済みEvidenceだけを実LLMへ渡します。詳しくは[Evidence-Grounded Claim Builder](../../Docs/evidence_grounded_claim_builder.md)、[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
+Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。Phase 5.28の「選択EvidenceからClaim候補生成」は、採用済みEvidenceだけを実LLMへ渡します。Phase 5.29の「Generate Draft」は、Authoring Draftの内容を変えずKnowledge Draft Previewを作ります。詳しくは[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Evidence-Grounded Claim Builder](../../Docs/evidence_grounded_claim_builder.md)、[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
 
 ## PubMed正式Evidenceを確認する
 
@@ -189,10 +191,12 @@ Discovery Resultsから進む場合は「PubMedで正式Evidence取得」を押�
 4. 「Reference Authoring」で資料名、Evidence Level、情報源の優先順位、URL、書誌情報、ページ、DOIなどを入力し、その資料が支えるClaimを選びます。
 5. 「保存前Validation」で形式、入力数、ReferenceとClaimの対応を確認します。これは医学的正確性の判定や医学監修ではありません。
 6. 続きは「保存済み下書き」から開きます。JSON Exportは再取込用、Markdown Exportは人が読みやすい確認・共有用です。
-7. 正式登録する場合は「Promotion Preview」を押し、保存先Registry Key、新規/Version更新、ID、Version、Validationを確認します。
-8. 全項目がOKの場合だけ「正式RegistryへPromotion」を押します。成功後のDraftは保持またはArchivedを選べます。
+7. ClaimとReferenceが揃ったら「Knowledge Draft Preview」の「Generate Draft」を押します。
+8. Title、Category、Claim順、Reference対応、既存Claimから転記したSummary、Completeness、Fingerprint、Validationを確認します。
+9. 必要ならJSONまたはMarkdownへ出力します。「Return to Authoring」で編集へ戻れます。この欄からPromotionは実行できません。
+10. 既存Promotion Workflowを利用する場合は、別欄の「Promotion Preview」で正式登録前の検査を行います。
 
-下書きは`data/authoring_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。どちらもGit管理対象外です。PreviewはRegistryを変更せず、Promotion成功後も正式Knowledgeは`draft`のため、医学レビューとApproval Gateを迂回しません。詳しくは[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)と[Knowledge Promotion Workflow](../../Docs/knowledge_promotion_workflow.md)を参照してください。
+Authoring Draftは`data/authoring_drafts/`、検証済みKnowledge Draftは`data/knowledge_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。いずれもGit管理対象外です。AssemblerはRegistryを変更せず、Knowledge DraftのApprovalは`draft`固定です。詳しくは[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)、[Knowledge Promotion Workflow](../../Docs/knowledge_promotion_workflow.md)を参照してください。
 
 ## 国家試験CSVをPreviewして取り込む
 

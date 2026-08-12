@@ -4384,6 +4384,8 @@ let currentAuthoringDraft = null;
 let currentAuthoringValidation = null;
 let editingAuthoringReferenceId = null;
 let currentPromotionPreview = null;
+let currentKnowledgeDraft = null;
+let currentKnowledgeDraftValidation = null;
 let promotionSemanticSlots = {};
 
 const promotionSlotLabels = {
@@ -4438,6 +4440,7 @@ async function openAuthoringDraft(draftId) {
   currentAuthoringDraft = payload.draft;
   currentAuthoringValidation = payload.validation;
   renderAuthoringDraft();
+  resetKnowledgeDraftPreview();
   resetPromotionPreview();
   authoringMessage.textContent = `${payload.draft.metadata.title} の下書きを開きました。正式Registryは変更していません。`;
 }
@@ -4657,6 +4660,7 @@ async function mutateAuthoring(suffix, method, body = null) {
   currentAuthoringDraft = payload.draft;
   currentAuthoringValidation = payload.validation;
   renderAuthoringDraft();
+  resetKnowledgeDraftPreview();
   resetPromotionPreview();
   await refreshAuthoringDrafts(currentAuthoringDraft.draft_id);
   authoringMessage.textContent = "下書きを保存しました。正式Registryは変更していません。";
@@ -4677,6 +4681,7 @@ authoringWizardForm.addEventListener("submit", async (event) => {
     currentAuthoringDraft = payload.draft;
     currentAuthoringValidation = payload.validation;
     renderAuthoringDraft();
+    resetKnowledgeDraftPreview();
     await refreshAuthoringDrafts(payload.draft.draft_id);
     authoringMessage.textContent = "Skeletonを作成しました。ClaimとReferenceを追加できます。";
   } catch (error) {
@@ -4722,6 +4727,7 @@ document.querySelector("#authoringImportFile").addEventListener("change", async 
     currentAuthoringDraft = payload.draft;
     currentAuthoringValidation = payload.validation;
     renderAuthoringDraft();
+    resetKnowledgeDraftPreview();
     await refreshAuthoringDrafts(payload.draft.draft_id);
     authoringMessage.textContent = "JSONを新しい下書きとしてImportしました。";
   } catch (error) { authoringMessage.textContent = error instanceof Error ? error.message : "Importできませんでした。"; }
@@ -4735,6 +4741,146 @@ function exportAuthoring(format) {
 
 document.querySelector("#exportAuthoringJsonButton").addEventListener("click", () => exportAuthoring("json"));
 document.querySelector("#exportAuthoringMarkdownButton").addEventListener("click", () => exportAuthoring("markdown"));
+
+function resetKnowledgeDraftPreview() {
+  currentKnowledgeDraft = null;
+  currentKnowledgeDraftValidation = null;
+  document.querySelector("#knowledgeDraftPreview").hidden = true;
+  document.querySelector("#exportKnowledgeDraftJsonButton").disabled = true;
+  document.querySelector("#exportKnowledgeDraftMarkdownButton").disabled = true;
+  document.querySelector("#knowledgeDraftMessage").textContent = "";
+}
+
+function renderKnowledgeDraftList(targetSelector, items, emptyMessage, renderer) {
+  const target = document.querySelector(targetSelector);
+  target.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = emptyMessage;
+    target.appendChild(empty);
+    return;
+  }
+  items.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    renderer(card, item);
+    target.appendChild(card);
+  });
+}
+
+function renderKnowledgeDraft(draft, validation) {
+  currentKnowledgeDraft = draft;
+  currentKnowledgeDraftValidation = validation;
+  document.querySelector("#knowledgeDraftPreview").hidden = false;
+  document.querySelector("#knowledgeDraftTitle").textContent = draft.title;
+  document.querySelector("#knowledgeDraftCategory").textContent =
+    termTypeLabels[draft.category] || draft.category;
+  document.querySelector("#knowledgeDraftClaimCount").textContent = draft.claims.length;
+  document.querySelector("#knowledgeDraftReferenceCount").textContent = draft.references.length;
+  document.querySelector("#knowledgeDraftCompleteness").textContent =
+    `${draft.completeness.score}%`;
+  document.querySelector("#knowledgeDraftValidation").textContent =
+    validation.save_allowed ? "OK" : "要修正";
+  document.querySelector("#knowledgeDraftSummary").textContent = draft.summary;
+  document.querySelector("#knowledgeDraftFingerprint").textContent = draft.fingerprint;
+  renderKnowledgeDraftList(
+    "#knowledgeDraftClaimList",
+    draft.claims,
+    "Claimはありません。Authoringへ戻って追加してください。",
+    (card, claim) => {
+      const title = document.createElement("strong");
+      title.textContent = `${claim.position}. ${claim.assertion}`;
+      const detail = document.createElement("small");
+      detail.textContent = `${claim.claim_id} · ${claim.semantic_slot} · Reference ${claim.reference_ids.length}件`;
+      card.append(title, detail);
+    },
+  );
+  renderKnowledgeDraftList(
+    "#knowledgeDraftReferenceList",
+    draft.references,
+    "Referenceはありません。Authoringへ戻って追加してください。",
+    (card, reference) => {
+      const title = document.createElement("strong");
+      title.textContent = `[${reference.evidence_level}] ${reference.title}`;
+      const detail = document.createElement("small");
+      detail.textContent = `${reference.source_id} · Claim ${reference.supported_claim_ids.length}件`;
+      card.append(title, detail);
+    },
+  );
+  const issueList = document.querySelector("#knowledgeDraftValidationIssues");
+  issueList.replaceChildren();
+  if (!validation.issues.length) {
+    const item = document.createElement("li");
+    item.dataset.severity = "info";
+    const title = document.createElement("strong");
+    title.textContent = "Validation OK";
+    const message = document.createElement("span");
+    message.textContent = "Claim・Reference・Category・Fingerprint・Metadataは整合しています。";
+    item.append(title, message);
+    issueList.appendChild(item);
+  } else {
+    validation.issues.forEach((issue) => {
+      const item = document.createElement("li");
+      item.dataset.severity = "error";
+      const title = document.createElement("strong");
+      title.textContent = issue.code;
+      const message = document.createElement("span");
+      message.textContent = issue.message;
+      item.append(title, message);
+      issueList.appendChild(item);
+    });
+  }
+  document.querySelector("#exportKnowledgeDraftJsonButton").disabled = !validation.save_allowed;
+  document.querySelector("#exportKnowledgeDraftMarkdownButton").disabled = !validation.save_allowed;
+}
+
+async function generateKnowledgeDraft() {
+  if (!currentAuthoringDraft) throw new Error("先にAuthoring Draftを開いてください。");
+  const response = await fetch(
+    "/api/knowledge-assembler/drafts",
+    authoringJsonOptions("POST", { authoring_draft_id: currentAuthoringDraft.draft_id }),
+  );
+  const payload = await response.json();
+  if (!response.ok) {
+    const issue = payload.validation?.issues?.[0]?.message;
+    throw new Error(issue || payload.errors?.[0]?.message || "Knowledge Draftを生成できませんでした。");
+  }
+  renderKnowledgeDraft(payload.draft, payload.validation);
+  document.querySelector("#knowledgeDraftMessage").textContent =
+    "Knowledge Draftを生成しました。Registry・Promotion・Approvalは変更していません。";
+}
+
+function exportKnowledgeDraft(format) {
+  if (!currentKnowledgeDraft || !currentKnowledgeDraftValidation?.save_allowed) {
+    document.querySelector("#knowledgeDraftMessage").textContent =
+      "Validation済みKnowledge Draftを先に生成してください。";
+    return;
+  }
+  window.location.assign(
+    `/api/knowledge-assembler/drafts/${currentKnowledgeDraft.knowledge_draft_id}/export?format=${format}`,
+  );
+}
+
+document.querySelector("#generateKnowledgeDraftButton").addEventListener("click", async () => {
+  try {
+    await generateKnowledgeDraft();
+  } catch (error) {
+    document.querySelector("#knowledgeDraftMessage").textContent =
+      error instanceof Error ? error.message : "Knowledge Draftを生成できませんでした。";
+  }
+});
+document.querySelector("#exportKnowledgeDraftJsonButton").addEventListener("click", () => {
+  exportKnowledgeDraft("json");
+});
+document.querySelector("#exportKnowledgeDraftMarkdownButton").addEventListener("click", () => {
+  exportKnowledgeDraft("markdown");
+});
+document.querySelector("#returnToAuthoringButton").addEventListener("click", () => {
+  document.querySelector("#authoringClaimText").focus();
+  document.querySelector("#authoringEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+  authoringMessage.textContent = "Authoringへ戻りました。ClaimまたはReferenceを修正できます。";
+});
 
 function resetPromotionPreview() {
   currentPromotionPreview = null;

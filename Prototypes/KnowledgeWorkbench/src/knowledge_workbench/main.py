@@ -175,6 +175,21 @@ from knowledge_workbench.grounded_evidence_service import (
     GroundedDiscoveryService,
     JsonlGroundedDiscoveryAuditLog,
 )
+from knowledge_workbench.knowledge_assembler import (
+    KnowledgeAssembler,
+    KnowledgeDraftService,
+    KnowledgeDraftValidationError,
+    KnowledgeDraftValidator,
+)
+from knowledge_workbench.knowledge_draft_models import (
+    AssembleKnowledgeDraftRequest,
+    KnowledgeDraft,
+)
+from knowledge_workbench.knowledge_draft_repository import (
+    FileKnowledgeDraftRepository,
+    KnowledgeDraftNotFoundError,
+    KnowledgeDraftStorageError,
+)
 from knowledge_workbench.knowledge_pipeline_builders import (
     AuthoringKnowledgeBuilder,
     AuthoringReferenceBuilder,
@@ -580,7 +595,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.28.0",
+        version="5.29.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -615,6 +630,17 @@ def create_app(
     )
     authoring_service = KnowledgeAuthoringService(
         FileAuthoringDraftRepository(authoring_output_directory)
+    )
+    knowledge_draft_output_directory = (
+        Path(temporary_registry_directory.name) / "knowledge_drafts"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent / "knowledge_drafts"
+    )
+    knowledge_draft_service = KnowledgeDraftService(
+        assembler=KnowledgeAssembler(),
+        validator=KnowledgeDraftValidator(),
+        repository=FileKnowledgeDraftRepository(knowledge_draft_output_directory),
+        authoring=authoring_service,
     )
     fixture_pipeline_catalog = FixturePipelineCatalog(
         Path(__file__).resolve().parents[4]
@@ -1249,6 +1275,13 @@ def create_app(
             "knowledge_authoring_output": str(authoring_output_directory),
             "knowledge_authoring_registry_write_enabled": False,
             "knowledge_authoring_ai_generation_enabled": False,
+            "knowledge_assembler_version": "1.0.0",
+            "knowledge_draft_contract_version": "1.0",
+            "knowledge_draft_output": str(knowledge_draft_output_directory),
+            "knowledge_draft_registry_write_enabled": False,
+            "knowledge_draft_promotion_enabled": False,
+            "knowledge_draft_automatic_approval_enabled": False,
+            "knowledge_draft_provider_neutral": True,
             "knowledge_promotion_version": "1.0",
             "knowledge_promotion_preview_mutates_registry": False,
             "knowledge_promotion_registry_write_enabled": True,
@@ -1919,6 +1952,10 @@ def create_app(
     def authoring_schema_v10() -> dict[str, object]:
         return KnowledgeAuthoringDraft.model_json_schema()
 
+    @app.get("/api/schema/knowledge-draft-1.0")
+    def knowledge_draft_schema_v10() -> dict[str, object]:
+        return KnowledgeDraft.model_json_schema()
+
     @app.get("/api/schema/knowledge-promotion-preview-1.0")
     def promotion_preview_schema_v10() -> dict[str, object]:
         return PromotionPreview.model_json_schema()
@@ -2102,6 +2139,112 @@ def create_app(
             )
         except AuthoringDraftNotFoundError as error:
             return _authoring_error(error, 404, "authoring_draft_not_found")
+
+    @app.get("/api/knowledge-assembler/drafts")
+    def list_knowledge_drafts() -> dict[str, object]:
+        return {
+            "status": "success",
+            "drafts": [
+                item.model_dump(mode="json") for item in knowledge_draft_service.list()
+            ],
+            "registry_mutated": False,
+            "promotion_performed": False,
+            "approval_performed": False,
+        }
+
+    @app.post("/api/knowledge-assembler/drafts")
+    def generate_knowledge_draft(
+        request: AssembleKnowledgeDraftRequest,
+    ) -> JSONResponse:
+        try:
+            draft, validation = knowledge_draft_service.generate(
+                request.authoring_draft_id
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "draft": draft.model_dump(mode="json"),
+                    "validation": validation.model_dump(mode="json"),
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except KnowledgeDraftValidationError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "blocked",
+                    "validation": error.report.model_dump(mode="json"),
+                    "draft_saved": False,
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except AuthoringDraftNotFoundError as error:
+            return _authoring_error(error, 404, "authoring_draft_not_found")
+        except (KnowledgeDraftStorageError, ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "knowledge_draft_generation_failed")
+
+    @app.get("/api/knowledge-assembler/drafts/{knowledge_draft_id}")
+    def get_knowledge_draft(knowledge_draft_id: str) -> JSONResponse:
+        try:
+            draft, validation = knowledge_draft_service.get(knowledge_draft_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "draft": draft.model_dump(mode="json"),
+                    "validation": validation.model_dump(mode="json"),
+                    "registry_mutated": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except (KnowledgeDraftNotFoundError, AuthoringDraftNotFoundError) as error:
+            return _authoring_error(error, 404, "knowledge_draft_not_found")
+        except (KnowledgeDraftStorageError, ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "knowledge_draft_validation_failed")
+
+    @app.get("/api/knowledge-assembler/drafts/{knowledge_draft_id}/export")
+    def export_knowledge_draft(
+        knowledge_draft_id: str,
+        format: Literal["json", "markdown"] = "json",
+    ) -> Response:
+        try:
+            draft, validation = knowledge_draft_service.get(knowledge_draft_id)
+            if not validation.save_allowed:
+                raise KnowledgeDraftValidationError(validation)
+            if format == "markdown":
+                body = knowledge_draft_service.export_markdown(draft)
+                suffix = "md"
+                media_type = "text/markdown; charset=utf-8"
+            else:
+                body = knowledge_draft_service.export_json(draft)
+                suffix = "json"
+                media_type = "application/json"
+            return Response(
+                content=body,
+                media_type=media_type,
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="{draft.knowledge_draft_id}.{suffix}"'
+                    )
+                },
+            )
+        except (KnowledgeDraftNotFoundError, AuthoringDraftNotFoundError) as error:
+            return _authoring_error(error, 404, "knowledge_draft_not_found")
+        except KnowledgeDraftValidationError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "blocked",
+                    "validation": error.report.model_dump(mode="json"),
+                    "draft_saved": False,
+                },
+            )
 
     @app.post("/api/gemini-acceptance/preflight")
     def gemini_acceptance_preflight() -> JSONResponse:
