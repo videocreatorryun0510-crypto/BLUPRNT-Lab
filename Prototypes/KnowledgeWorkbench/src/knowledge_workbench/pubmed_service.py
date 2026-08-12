@@ -9,6 +9,11 @@ from uuid import uuid4
 
 from pydantic import HttpUrl, ValidationError
 
+from knowledge_workbench.claim_candidate_models import (
+    FormalEvidenceClaimInput,
+    FormalEvidenceSelectionSet,
+    formal_selection_set_id,
+)
 from knowledge_workbench.discovery_interfaces import FormalEvidenceAcquisitionRequest
 from knowledge_workbench.evidence_intelligence import (
     DefaultEvidenceDeduplicator,
@@ -33,6 +38,7 @@ from knowledge_workbench.providers.pubmed_provider import (
     PubMedEvidenceProviderResult,
 )
 from knowledge_workbench.pubmed_models import (
+    EvidenceSelectionDecision,
     PubMedEvidenceSelectionEntry,
     PubMedEvidenceSelectionRequest,
     PubMedFormalEvidenceMetadata,
@@ -298,6 +304,16 @@ class JsonlPubMedSelectionRepository:
             ) from error
         return list(reversed(entries[-limit:]))
 
+    def latest_for_bundle(
+        self,
+        bundle_id: str,
+    ) -> dict[str, PubMedEvidenceSelectionEntry]:
+        latest: dict[str, PubMedEvidenceSelectionEntry] = {}
+        for entry in self.list(limit=5000):
+            if entry.bundle_id == bundle_id and entry.evidence_id not in latest:
+                latest[entry.evidence_id] = entry
+        return latest
+
 
 class PubMedFormalEvidenceService:
     def __init__(
@@ -366,6 +382,66 @@ class PubMedFormalEvidenceService:
             item.evidence.evidence_id for item in preview.evidence_bundle.evidence
         }
         return self.selections.save(request, known_evidence_ids=evidence_ids)
+
+    def accepted_evidence_selection(
+        self,
+        bundle_id: str,
+        *,
+        knowledge_term: str,
+    ) -> FormalEvidenceSelectionSet:
+        preview = self._pending.get(bundle_id)
+        if preview is None:
+            raise PubMedEvidenceServiceError(
+                "Evidence Bundleが見つかりません。もう一度PubMed検索してください。"
+            )
+        latest = self.selections.latest_for_bundle(bundle_id)
+        accepted_ids = {
+            evidence_id
+            for evidence_id, decision in latest.items()
+            if decision.decision is EvidenceSelectionDecision.INCLUDE
+        }
+        if not accepted_ids:
+            raise PubMedEvidenceServiceError(
+                "採用されたFormal Evidenceがありません。先にEvidenceを採用してください。"
+            )
+        if len(accepted_ids) > 10:
+            raise PubMedEvidenceServiceError(
+                "Claim生成へ渡せる採用済みFormal Evidenceは最大10件です。"
+            )
+        evidence = tuple(
+            FormalEvidenceClaimInput(
+                evidence_id=item.evidence.evidence_id,
+                title=item.evidence.title,
+                abstract_or_snippet=item.evidence.abstract_or_snippet,
+                citation=item.evidence.citation.formatted,
+                pmid=item.evidence.pmid,
+                doi=item.evidence.doi,
+                provider_names=tuple(
+                    sorted(provider.provider_name for provider in item.evidence.providers)
+                ),
+            )
+            for item in preview.evidence_bundle.evidence
+            if item.evidence.evidence_id in accepted_ids
+        )
+        if not evidence:
+            raise PubMedEvidenceServiceError(
+                "採用Evidenceを現在のEvidence Bundleで確認できません。"
+            )
+        return FormalEvidenceSelectionSet(
+            selection_set_id=formal_selection_set_id(
+                knowledge_term,
+                bundle_id,
+                preview.evidence_bundle.fingerprint,
+                [item.evidence_id for item in evidence],
+            ),
+            knowledge_term=knowledge_term,
+            evidence_bundle_id=bundle_id,
+            evidence_bundle_fingerprint=preview.evidence_bundle.fingerprint,
+            evidence=evidence,
+        )
+
+    def pending_preview(self, bundle_id: str) -> PubMedFormalEvidencePreview | None:
+        return self._pending.get(bundle_id)
 
     def _build_preview(
         self,

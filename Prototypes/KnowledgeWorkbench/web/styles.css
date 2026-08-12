@@ -387,6 +387,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 pre { margin: 0; max-height: 720px; overflow: auto; padding: 24px; color: #d8f1e7; background: var(--code); font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .json-panel { position: sticky; top: 18px; }
 footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+.claim-review-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.claim-candidate { border-left: 4px solid #86958f; }
+.claim-candidate.direct { border-left-color: #2c765f; }
+.claim-candidate.partial, .claim-candidate.indirect { border-left-color: #bd7a2e; }
+.claim-candidate.unsupported, .claim-candidate.conflicting { border-left-color: #a74545; }
+.claim-candidate[data-decision="accepted"] { background: #edf7f1; }
+.claim-candidate[data-decision="excluded"] { opacity: 0.65; }
+.claim-revision-input { width: 100%; box-sizing: border-box; margin-top: 8px; resize: vertical; }
 
 @media (max-width: 850px) {
   .shell { width: min(100% - 24px, 720px); padding-top: 28px; }
@@ -438,6 +446,7 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: cen
   .authoring-reference-form .wide { grid-column: auto; }
   .authoring-metrics { grid-template-columns: repeat(2, 1fr); }
   .ai-pipeline-metrics { grid-template-columns: repeat(2, 1fr); }
+  .claim-review-controls { grid-template-columns: 1fr; }
   .promotion-heading, .promotion-log-heading { align-items: stretch; flex-direction: column; }
   .promotion-metrics, .promotion-commit-row { grid-template-columns: 1fr; }
   .promotion-commit-row .wide { grid-column: auto; }

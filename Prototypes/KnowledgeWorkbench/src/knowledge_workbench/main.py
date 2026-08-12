@@ -118,6 +118,18 @@ from knowledge_workbench.authoring_repository import (
     FileAuthoringDraftRepository,
 )
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
+from knowledge_workbench.claim_candidate_models import (
+    ClaimCandidateSet,
+    CreateGroundedAuthoringDraftRequest,
+    HumanClaimReviewRequest,
+)
+from knowledge_workbench.claim_candidate_service import (
+    ClaimGenerationServiceError,
+    EvidenceGroundedClaimService,
+    JsonlClaimGenerationAuditLog,
+    JsonlHumanClaimReviewRepository,
+)
+from knowledge_workbench.claim_generation_interfaces import ClaimGenerationAdapter
 from knowledge_workbench.discovery_interfaces import (
     FormalEvidenceAcquisitionRequest,
     FormalEvidenceProviderType,
@@ -193,6 +205,10 @@ from knowledge_workbench.promotion_service import (
     promotion_semantic_slots,
 )
 from knowledge_workbench.providers.base import KnowledgeProvider
+from knowledge_workbench.providers.gemini_claim_adapter import (
+    GeminiClaimAdapterConfig,
+    GeminiClaimGenerationAdapter,
+)
 from knowledge_workbench.providers.pubmed_provider import (
     PubMedEvidenceError,
     PubMedEvidenceProvider,
@@ -298,6 +314,14 @@ class PubMedDiscoveryHandoffRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     candidate: DiscoveryCandidate
+
+
+class ClaimCandidatePreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    knowledge_term: str = Field(min_length=1, max_length=300)
+    evidence_bundle_id: str = Field(pattern=r"^evb_[a-z0-9][a-z0-9_-]{7,63}$")
+    max_candidates: int = Field(default=10, ge=1, le=20)
 
 
 class CsvImportRequest(BaseModel):
@@ -552,10 +576,11 @@ def create_app(
     artifact_registry: SQLitePresentationArtifactRegistry | None = None,
     grounded_search_provider: GeminiGroundedSearchProvider | None = None,
     pubmed_evidence_provider: PubMedEvidenceProvider | None = None,
+    claim_generation_adapter: ClaimGenerationAdapter | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.27.0",
+        version="5.28.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -692,6 +717,51 @@ def create_app(
         normalizer=PubMedEvidenceNormalizer(),
         search_audit=pubmed_search_audit,
         selections=pubmed_selections,
+    )
+    claim_generation_audit_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "claim_generation.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "claim_generation.jsonl"
+    )
+    human_claim_review_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "human_claim_review.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "human_claim_review.jsonl"
+    )
+    resolved_claim_generation_adapter = (
+        claim_generation_adapter
+        if claim_generation_adapter is not None
+        else GeminiClaimGenerationAdapter(
+            GeminiClaimAdapterConfig(
+                api_key=resolved_settings.gemini_api_key,
+                model=resolved_settings.gemini_claim_model,
+                endpoint=resolved_settings.gemini_claim_endpoint,
+                timeout_seconds=resolved_settings.gemini_claim_timeout_seconds,
+                max_output_tokens=resolved_settings.gemini_claim_max_output_tokens,
+            )
+        )
+    )
+    claim_generation_audit = JsonlClaimGenerationAuditLog(
+        claim_generation_audit_path
+    )
+    human_claim_reviews = JsonlHumanClaimReviewRepository(
+        human_claim_review_path
+    )
+    grounded_claim_service = EvidenceGroundedClaimService(
+        pubmed=pubmed_evidence_service,
+        adapter=resolved_claim_generation_adapter,
+        registry=resolved_registry,
+        authoring=authoring_service,
+        generation_audit=claim_generation_audit,
+        human_reviews=human_claim_reviews,
     )
     promotion_log_path = (
         Path(temporary_registry_directory.name) / "promotion_logs" / "promotion.jsonl"
@@ -1216,6 +1286,26 @@ def create_app(
             "pubmed_max_records": resolved_pubmed_provider.config.max_records,
             "pubmed_search_audit": str(pubmed_search_audit_path),
             "pubmed_selection_audit": str(pubmed_selection_audit_path),
+            "evidence_grounded_claim_builder_version": "1.0",
+            "claim_candidate_contract_version": "1.0",
+            "claim_support_assessment_version": "1.0",
+            "claim_generation_provider": (
+                resolved_claim_generation_adapter.provider_name
+            ),
+            "claim_generation_model": resolved_claim_generation_adapter.model,
+            "claim_generation_api_key_configured": bool(
+                resolved_settings.gemini_api_key.strip()
+            ),
+            "claim_generation_max_candidates": (
+                resolved_settings.claim_generation_max_candidates
+            ),
+            "claim_generation_audit": str(claim_generation_audit_path),
+            "human_claim_review_audit": str(human_claim_review_path),
+            "claim_generation_formal_evidence_only": True,
+            "claim_generation_discovery_input_allowed": False,
+            "claim_generation_registry_write_enabled": False,
+            "claim_generation_promotion_enabled": False,
+            "claim_generation_medical_approval": False,
         }
 
     @app.get("/api/schema/evidence-search-1.0")
@@ -1255,6 +1345,14 @@ def create_app(
     @app.get("/api/schema/pubmed-evidence-selection-1.0")
     def pubmed_evidence_selection_schema_v10() -> dict[str, object]:
         return PubMedEvidenceSelectionRequest.model_json_schema()
+
+    @app.get("/api/schema/claim-candidate-set-1.0")
+    def claim_candidate_set_schema_v10() -> dict[str, object]:
+        return ClaimCandidateSet.model_json_schema()
+
+    @app.get("/api/schema/human-claim-review-1.0")
+    def human_claim_review_schema_v10() -> dict[str, object]:
+        return HumanClaimReviewRequest.model_json_schema()
 
     @app.get("/api/ai-knowledge-pipeline")
     def knowledge_pipeline_status() -> dict[str, object]:
@@ -1599,6 +1697,175 @@ def create_app(
             )
         except PubMedEvidenceServiceError as error:
             return _authoring_error(error, 422, "pubmed_selection_audit_failed")
+
+    @app.get("/api/claim-candidates")
+    def claim_candidate_status() -> dict[str, object]:
+        return {
+            "status": "ready",
+            "phase": "5.28",
+            "contract_version": "1.0",
+            "provider": resolved_claim_generation_adapter.provider_name,
+            "provider_version": resolved_claim_generation_adapter.provider_version,
+            "model": resolved_claim_generation_adapter.model,
+            "formal_evidence_only": True,
+            "human_evidence_selection_required": True,
+            "discovery_input_allowed": False,
+            "authoring_draft_enabled": True,
+            "authoring_adoption_policy": "human_accepted_and_direct_only",
+            "registry_write_enabled": False,
+            "promotion_enabled": False,
+            "medical_approval": False,
+        }
+
+    @app.post("/api/claim-candidates/previews")
+    def preview_claim_candidates(
+        request: ClaimCandidatePreviewRequest,
+    ) -> JSONResponse:
+        try:
+            candidate_set = grounded_claim_service.generate(
+                knowledge_term=request.knowledge_term,
+                evidence_bundle_id=request.evidence_bundle_id,
+                max_candidates=request.max_candidates,
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "candidate_set": candidate_set.model_dump(mode="json"),
+                    "ai_generated_candidate": True,
+                    "medical_approval": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [{"code": error.code.value, "message": str(error)}],
+                    "candidate_set_created": False,
+                    "medical_approval": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                },
+            )
+
+    @app.post("/api/claim-candidates/reviews")
+    def review_claim_candidate(request: HumanClaimReviewRequest) -> JSONResponse:
+        try:
+            review = grounded_claim_service.review(request)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "review": review.model_dump(mode="json"),
+                    "kpi": grounded_claim_service.review_kpi(
+                        request.candidate_set_id
+                    ).model_dump(mode="json"),
+                    "medical_approval": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [{"code": error.code.value, "message": str(error)}],
+                    "medical_approval": False,
+                    "registry_changed": False,
+                },
+            )
+
+    @app.get("/api/claim-candidates/{candidate_set_id}/kpi")
+    def claim_candidate_review_kpi(candidate_set_id: str) -> JSONResponse:
+        try:
+            kpi = grounded_claim_service.review_kpi(candidate_set_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "kpi": kpi.model_dump(mode="json"),
+                    "medical_approval": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "status": "error",
+                    "errors": [{"code": error.code.value, "message": str(error)}],
+                },
+            )
+
+    @app.get("/api/claim-candidates/reviews")
+    def list_claim_candidate_reviews(limit: int = 100) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 500))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "reviews": [
+                        item.model_dump(mode="json")
+                        for item in human_claim_reviews.list(limit=bounded_limit)
+                    ],
+                    "medical_approval": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return _authoring_error(error, 422, "human_claim_review_read_failed")
+
+    @app.post("/api/claim-candidates/authoring-drafts")
+    def create_grounded_authoring_draft(
+        request: CreateGroundedAuthoringDraftRequest,
+    ) -> JSONResponse:
+        try:
+            result = grounded_claim_service.create_authoring_draft(request)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "result": result.model_dump(mode="json"),
+                    "adoption_policy": "human_accepted_and_direct_only",
+                    "medical_approval": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [{"code": error.code.value, "message": str(error)}],
+                    "authoring_draft_saved": False,
+                    "medical_approval": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                },
+            )
+
+    @app.get("/api/claim-candidates/audit")
+    def claim_candidate_audit(limit: int = 20) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 100))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "events": [
+                        item.model_dump(mode="json")
+                        for item in claim_generation_audit.list(limit=bounded_limit)
+                    ],
+                    "medical_body_stored": False,
+                    "api_key_stored": False,
+                },
+            )
+        except ClaimGenerationServiceError as error:
+            return _authoring_error(error, 422, "claim_generation_audit_failed")
 
     @app.post("/api/ai-knowledge-pipeline/previews")
     def preview_ai_knowledge_pipeline(

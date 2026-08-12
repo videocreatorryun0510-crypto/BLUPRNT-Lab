@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.27
+# Knowledge Workbench — Phase 5.28
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -23,6 +23,8 @@ Phase 5.25では、検索元固有のRaw EvidenceをWorkbenchへ渡さず、共�
 Phase 5.26.1では、Gemini Google Search GroundingをDiscovery専用Providerへ移行しました。「探索候補を検索（Gemini）」を明示的に押した時だけ外部検索し、Citation SourceをDiscovery Candidate Setとして表示します。正式Evidence、Evidence Bundle、Claim、Knowledge Draft、Registry、Promotion、Approvalは作成・変更できません。
 
 Phase 5.27では、NCBI公式E-utilitiesを使うPubMed Formal Evidence Providerを追加しました。医療用語から直接検索する経路と、Discovery Candidateを検索HintとしてPubMedへ再問い合わせする経路があります。PubMed Recordが確認できた資料だけを既存Evidence Intelligence、重複排除、順位付け、Evidence Bundleへ通します。採用・除外・保留は記録できますが、Claim生成や医学レビューではありません。
+
+Phase 5.28では、人が「採用」したFormal EvidenceだけからAIがClaim Candidateを抽出します。各候補にはEvidence ID、Abstract内Locator、PMID/DOI、Support Level、Confidence、重複判定が付きます。Workbenchで採用・修正・除外・保留を記録し、採用済みDirect ClaimだけをAuthoring Draftへ保存できます。正式Claim、Promotion、Registry、医学承認は変更しません。
 
 ## できること
 
@@ -166,7 +168,7 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 6. 保存する場合だけ「Authoring Draftへ保存」を押します。
 7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。詳しくは[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
+Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。Phase 5.28の「選択EvidenceからClaim候補生成」は、採用済みEvidenceだけを実LLMへ渡します。詳しくは[Evidence-Grounded Claim Builder](../../Docs/evidence_grounded_claim_builder.md)、[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
 
 ## PubMed正式Evidenceを確認する
 

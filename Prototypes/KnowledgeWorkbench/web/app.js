@@ -3822,8 +3822,20 @@ const runPubMedSearchButton = document.querySelector("#runPubMedSearchButton");
 const pubmedSearchMessage = document.querySelector("#pubmedSearchMessage");
 const pubmedSearchPreview = document.querySelector("#pubmedSearchPreview");
 const pubmedSelectionOperator = document.querySelector("#pubmedSelectionOperator");
+const generateClaimCandidatesButton = document.querySelector(
+  "#generateClaimCandidatesButton",
+);
+const claimCandidateMessage = document.querySelector("#claimCandidateMessage");
+const claimCandidatePreview = document.querySelector("#claimCandidatePreview");
+const claimReviewOperator = document.querySelector("#claimReviewOperator");
+const claimDraftCategory = document.querySelector("#claimDraftCategory");
+const createGroundedDraftButton = document.querySelector(
+  "#createGroundedDraftButton",
+);
 let currentAiKnowledgePreview = null;
 let currentPubMedPreview = null;
+let currentClaimCandidateSet = null;
+let claimReviewStartedAt = null;
 
 function renderAiPipelineItems(targetSelector, items, renderItem) {
   const target = document.querySelector(targetSelector);
@@ -3946,6 +3958,7 @@ function renderPubMedPreview(preview) {
     bundle.fingerprint;
   document.querySelector("#pubmedBundleJson").textContent =
     JSON.stringify(bundle, null, 2);
+  generateClaimCandidatesButton.disabled = false;
 
   const target = document.querySelector("#pubmedEvidenceList");
   target.replaceChildren();
@@ -4008,6 +4021,207 @@ function renderPubMedPreview(preview) {
     target.appendChild(card);
   });
 }
+
+function claimSupportLabel(level) {
+  return {
+    direct: "Direct（直接支持）",
+    partial: "Partial（一部支持）",
+    indirect: "Indirect（間接）",
+    unsupported: "Unsupported（支持なし）",
+    conflicting: "Conflicting（相違あり）",
+  }[level] || level;
+}
+
+async function saveClaimReview(candidate, decision, revisedClaimText, card) {
+  const operator = claimReviewOperator.value.trim();
+  if (!operator) {
+    claimCandidateMessage.textContent = "Claim確認の操作者を入力してください。";
+    claimReviewOperator.focus();
+    return;
+  }
+  const body = {
+    candidate_set_id: currentClaimCandidateSet.candidate_set_id,
+    candidate_claim_id: candidate.candidate_claim_id,
+    decision,
+    operator,
+    review_duration_ms: claimReviewStartedAt
+      ? Math.max(0, Date.now() - claimReviewStartedAt)
+      : null,
+  };
+  if (decision === "revised") {
+    body.revised_claim_text = revisedClaimText;
+  }
+  try {
+    await authoringApi(
+      "/api/claim-candidates/reviews",
+      authoringJsonOptions("POST", body),
+    );
+    card.dataset.decision = decision;
+    claimCandidateMessage.textContent =
+      `${candidate.candidate_claim_id}を「${decision}」として記録しました。医学承認ではありません。`;
+  } catch (error) {
+    claimCandidateMessage.textContent =
+      error instanceof Error ? error.message : "Claim確認を保存できませんでした。";
+  }
+}
+
+function renderClaimCandidateSet(candidateSet) {
+  currentClaimCandidateSet = candidateSet;
+  claimReviewStartedAt = Date.now();
+  claimCandidatePreview.hidden = false;
+  const validation = candidateSet.validation;
+  document.querySelector("#claimCandidateCount").textContent =
+    validation.candidate_count;
+  document.querySelector("#claimDirectCount").textContent = validation.direct_count;
+  document.querySelector("#claimPartialCount").textContent = validation.partial_count;
+  document.querySelector("#claimIndirectCount").textContent = validation.indirect_count;
+  document.querySelector("#claimUnsupportedCount").textContent =
+    validation.unsupported_count;
+  document.querySelector("#claimConflictingCount").textContent =
+    validation.conflicting_count;
+  document.querySelector("#claimValidationStatus").textContent =
+    validation.validation_passed ? "OK" : "NG";
+  document.querySelector("#claimGenerationDuration").textContent =
+    `${candidateSet.kpi.claim_generation_duration_ms} ms`;
+  document.querySelector("#claimCandidateFingerprint").textContent =
+    candidateSet.candidate_set_fingerprint;
+  document.querySelector("#claimCandidateJson").textContent =
+    JSON.stringify(candidateSet, null, 2);
+
+  const target = document.querySelector("#claimCandidateList");
+  target.replaceChildren();
+  candidateSet.candidates.forEach((candidate) => {
+    const card = document.createElement("article");
+    card.className = `authoring-item claim-candidate ${candidate.support_level}`;
+    const title = document.createElement("strong");
+    title.textContent = candidate.claim_text;
+    const support = document.createElement("small");
+    support.textContent =
+      `${claimSupportLabel(candidate.support_level)} · Confidence ${Math.round(candidate.confidence * 100)}% · ` +
+      `Duplicate ${candidate.duplicate_assessment.classification}`;
+    const evidence = document.createElement("small");
+    evidence.textContent =
+      `Supporting Evidence: ${candidate.supporting_evidence_ids.join(", ")}`;
+    const locators = document.createElement("small");
+    locators.textContent = candidate.source_locators
+      .map((item) => {
+        const identifiers = [
+          item.pmid ? `PMID ${item.pmid}` : null,
+          item.doi ? `DOI ${item.doi}` : null,
+        ].filter(Boolean).join(" · ");
+        return `${item.locator_type}: ${item.locator_value}${identifiers ? ` · ${identifiers}` : ""}`;
+      })
+      .join(" / ");
+    const rationale = document.createElement("p");
+    rationale.textContent = candidate.support_assessment.rationale;
+    const revision = document.createElement("textarea");
+    revision.className = "claim-revision-input";
+    revision.rows = 2;
+    revision.maxLength = 800;
+    revision.value = candidate.claim_text;
+    revision.setAttribute("aria-label", `${candidate.candidate_claim_id}の修正文`);
+    const actions = document.createElement("div");
+    actions.className = "button-row";
+    [
+      ["accepted", "採用"],
+      ["revised", "修正"],
+      ["excluded", "除外"],
+      ["hold", "保留"],
+    ].forEach(([decision, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary-action";
+      button.textContent = label;
+      button.addEventListener("click", async () => {
+        if (decision === "revised" && !revision.value.trim()) {
+          claimCandidateMessage.textContent = "修正文を入力してください。";
+          revision.focus();
+          return;
+        }
+        button.disabled = true;
+        await saveClaimReview(
+          candidate,
+          decision,
+          decision === "revised" ? revision.value.trim() : null,
+          card,
+        );
+        button.disabled = false;
+      });
+      actions.appendChild(button);
+    });
+    card.append(title, support, evidence, locators, rationale, revision, actions);
+    if (candidate.support_level === "conflicting") {
+      const conflict = document.createElement("p");
+      conflict.className = "discovery-warning";
+      conflict.textContent = "Evidence間の相違は自動解決しません。人が確認してください。";
+      card.appendChild(conflict);
+    }
+    target.appendChild(card);
+  });
+}
+
+generateClaimCandidatesButton.addEventListener("click", async () => {
+  const term = aiKnowledgeTheme.value.trim();
+  if (!currentPubMedPreview || !term) {
+    claimCandidateMessage.textContent =
+      "先にPubMed正式Evidenceを取得し、Evidenceを採用してください。";
+    return;
+  }
+  generateClaimCandidatesButton.disabled = true;
+  claimCandidatePreview.hidden = true;
+  claimCandidateMessage.textContent =
+    "採用済みFormal EvidenceだけからClaim候補を抽出しています…";
+  try {
+    const payload = await authoringApi(
+      "/api/claim-candidates/previews",
+      authoringJsonOptions("POST", {
+        knowledge_term: term,
+        evidence_bundle_id: currentPubMedPreview.evidence_bundle.bundle_id,
+        max_candidates: 10,
+      }),
+    );
+    renderClaimCandidateSet(payload.candidate_set);
+    claimCandidateMessage.textContent =
+      "Claim候補を生成しました。Support LevelとLocatorを確認して採用・修正・除外・保留を選んでください。";
+  } catch (error) {
+    currentClaimCandidateSet = null;
+    claimCandidatePreview.hidden = true;
+    claimCandidateMessage.textContent =
+      error instanceof Error ? error.message : "Claim候補を生成できませんでした。";
+  } finally {
+    generateClaimCandidatesButton.disabled = false;
+  }
+});
+
+createGroundedDraftButton.addEventListener("click", async () => {
+  if (!currentClaimCandidateSet) {
+    claimCandidateMessage.textContent = "先にClaim候補を生成してください。";
+    return;
+  }
+  const operator = claimReviewOperator.value.trim();
+  if (!operator) {
+    claimCandidateMessage.textContent = "Claim確認の操作者を入力してください。";
+    return;
+  }
+  createGroundedDraftButton.disabled = true;
+  try {
+    const payload = await authoringApi(
+      "/api/claim-candidates/authoring-drafts",
+      authoringJsonOptions("POST", {
+        candidate_set_id: currentClaimCandidateSet.candidate_set_id,
+        category: claimDraftCategory.value,
+        operator,
+      }),
+    );
+    claimCandidateMessage.textContent =
+      `Authoring Draft ${payload.result.draft.draft_id} を保存しました。Promotion・Approvalは実行していません。`;
+  } catch (error) {
+    claimCandidateMessage.textContent =
+      error instanceof Error ? error.message : "Authoring Draftを保存できませんでした。";
+  } finally {
+    createGroundedDraftButton.disabled = false;
+  }
+});
 
 function renderDiscoveryPreview(preview) {
   const candidateSet = preview.discovery_candidate_set;

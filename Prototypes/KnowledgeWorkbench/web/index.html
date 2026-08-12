@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=pubmed-formal-evidence-5.27.0" />
+    <link rel="stylesheet" href="/static/styles.css?v=evidence-grounded-claims-5.28.0" />
   </head>
   <body>
     <main class="shell">
@@ -110,12 +110,12 @@
 
       <section class="authoring-panel ai-pipeline-panel" aria-labelledby="ai-knowledge-title">
         <div class="panel-copy">
-          <p class="step">PHASE 5.25–5.27 · EVIDENCE / DISCOVERY</p>
+          <p class="step">PHASE 5.25–5.28 · EVIDENCE / CLAIM AUTHORING</p>
           <h2 id="ai-knowledge-title">AI Knowledge Wizard</h2>
           <p>
             検索元ごとのEvidenceを共通形式へ整え、重複を除き、根拠レベル順に並べた
             Evidence BundleからAuthoring Draftを組み立てます。
-            今回は安全なローカルFixtureで経路を確認し、外部検索とLLMは呼びません。
+            PubMedで人が採用した正式Evidenceだけを使い、AIがClaim候補を抽出します。
           </p>
           <div class="pipeline-safety-note">
             <strong>責務を分離</strong>
@@ -256,6 +256,79 @@
                   <span>Bundle Fingerprint</span><code id="pubmedBundleFingerprint">--</code>
                 </p>
                 <pre id="pubmedBundleJson"></pre>
+              </section>
+            </div>
+          </section>
+
+          <section class="grounded-search-panel claim-candidate-panel" aria-labelledby="claim-candidate-title">
+            <div class="promotion-heading">
+              <div>
+                <p class="step">PHASE 5.28 · EVIDENCE-GROUNDED CLAIMS</p>
+                <h3 id="claim-candidate-title">Claim Candidate &amp; Support Assessment</h3>
+              </div>
+              <button id="generateClaimCandidatesButton" class="primary-action" type="button" disabled>
+                選択EvidenceからClaim候補生成
+              </button>
+            </div>
+            <p class="control-note">
+              PubMed Evidenceを先に「採用」してください。AIは採用済みAbstractの範囲だけで候補を作り、
+              正式Claim ID・Promotion・医学承認は行いません。
+            </p>
+            <p class="formal-evidence-notice">
+              <strong>AI Generated Candidate：Yes</strong>
+              Medical Approval：No · Registry Changed：No · Promotion：No
+            </p>
+            <div class="claim-review-controls">
+              <label class="compact-field" for="claimReviewOperator">
+                Claim確認の操作者
+                <input id="claimReviewOperator" maxlength="120" value="product_owner" />
+              </label>
+              <label class="compact-field" for="claimDraftCategory">
+                Draft Category
+                <select id="claimDraftCategory">
+                  <option value="laboratory_test_item">検査項目</option>
+                  <option value="disease">疾患</option>
+                  <option value="staining_method">染色法</option>
+                  <option value="test_item">検査項目（詳細）</option>
+                  <option value="specimen">検体</option>
+                  <option value="reagent">試薬</option>
+                  <option value="biological_structure">生体構造</option>
+                </select>
+              </label>
+            </div>
+            <p id="claimCandidateMessage" class="control-note" role="status">
+              Formal Evidenceの取得・人による採用後に生成できます。
+            </p>
+            <div id="claimCandidatePreview" class="grounded-search-preview" hidden>
+              <div class="ai-pipeline-metrics">
+                <div><span>Candidates</span><strong id="claimCandidateCount">0</strong></div>
+                <div><span>Direct</span><strong id="claimDirectCount">0</strong></div>
+                <div><span>Partial</span><strong id="claimPartialCount">0</strong></div>
+                <div><span>Indirect</span><strong id="claimIndirectCount">0</strong></div>
+                <div><span>Unsupported</span><strong id="claimUnsupportedCount">0</strong></div>
+                <div><span>Conflicting</span><strong id="claimConflictingCount">0</strong></div>
+                <div><span>Validation</span><strong id="claimValidationStatus">--</strong></div>
+                <div><span>Claim Generation</span><strong id="claimGenerationDuration">--</strong></div>
+                <div><span>Registry / Promotion</span><strong>No / No</strong></div>
+              </div>
+              <section class="authoring-card">
+                <h3>Claim Candidates</h3>
+                <div id="claimCandidateList" class="authoring-item-list"></div>
+              </section>
+              <section class="ai-pipeline-json-panel">
+                <div class="promotion-heading">
+                  <div>
+                    <p class="step">CLAIM CANDIDATE CONTRACT 1.0</p>
+                    <h3>Claim Candidate Set JSON</h3>
+                  </div>
+                  <button id="createGroundedDraftButton" class="primary-action" type="button">
+                    採用済みDirect ClaimをDraft保存
+                  </button>
+                </div>
+                <p class="fingerprint-line">
+                  <span>Candidate Set Fingerprint</span><code id="claimCandidateFingerprint">--</code>
+                </p>
+                <pre id="claimCandidateJson"></pre>
               </section>
             </div>
           </section>
@@ -1397,6 +1470,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=pubmed-formal-evidence-5.27.0" defer></script>
+    <script src="/static/app.js?v=evidence-grounded-claims-5.28.0" defer></script>
   </body>
 </html>

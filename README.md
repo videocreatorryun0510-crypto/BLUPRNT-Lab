@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.27「PubMed E-utilities Formal Evidence Provider MVP」を実装しました。** 医療用語または人が選んだDiscovery Candidateを検索HintとしてNCBI公式APIへ再問い合わせし、PubMed Recordを確認できた場合だけ既存Evidence ContractとEvidence Bundleへ変換します。Claim・Knowledge Draft・Registry・Promotion・Approvalは変更しません。詳細は[PubMed Formal Evidence Provider](Docs/pubmed_formal_evidence_provider.md)に記録しています。
+> **Phase 5.28「Evidence-Grounded Claim Builder MVP」を実装しました。** 人が採用したPubMed Formal EvidenceだけからAIがClaim候補を抽出し、Evidence ID、Abstract Locator、支持度、重複候補を追跡します。人が採用したDirect ClaimだけをAuthoring Draftへ保存し、Promotion・Registry・医学承認は変更しません。詳細は[Evidence-Grounded Claim Builder](Docs/evidence_grounded_claim_builder.md)に記録しています。
 
 ---
 

@@ -2,6 +2,10 @@
 
 from typing import Protocol, runtime_checkable
 
+from knowledge_workbench.claim_candidate_models import (
+    ClaimAdapterResult,
+    ClaimGenerationRequest,
+)
 from knowledge_workbench.knowledge_pipeline_models import (
     ClaimBuildResult,
     EvidenceBundle,
@@ -61,3 +65,15 @@ class ClaimBuilder(Protocol):
         evidence: EvidenceBundle,
     ) -> ClaimBuildResult:
         """Build Claim candidates from the only allowed downstream Evidence object."""
+
+
+@runtime_checkable
+class EvidenceGroundedClaimBuilder(Protocol):
+    """Phase 5.28 boundary; formal Claim IDs are not issued here."""
+
+    provider_name: str
+    provider_version: str
+    model: str
+
+    def generate(self, request: ClaimGenerationRequest) -> ClaimAdapterResult:
+        """Extract candidates from human-selected Formal Evidence only."""

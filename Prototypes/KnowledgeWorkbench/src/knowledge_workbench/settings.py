@@ -120,6 +120,13 @@ class Settings:
     gemini_search_timeout_seconds: float = 30.0
     gemini_search_max_queries: int = 4
     gemini_search_max_sources: int = 50
+    gemini_claim_model: str = DEFAULT_GEMINI_MODEL
+    gemini_claim_endpoint: str = (
+        "https://generativelanguage.googleapis.com/v1beta/interactions"
+    )
+    gemini_claim_timeout_seconds: float = 30.0
+    gemini_claim_max_output_tokens: int = 4096
+    claim_generation_max_candidates: int = 10
     ncbi_api_key: str = ""
     ncbi_tool: str = "bluprnt_lab_medical_os"
     ncbi_email: str = ""
@@ -322,6 +329,23 @@ class Settings:
             ),
             gemini_search_max_sources=int(
                 os.getenv("GEMINI_SEARCH_MAX_SOURCES", "50").strip()
+            ),
+            gemini_claim_model=os.getenv(
+                "GEMINI_CLAIM_MODEL",
+                os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL),
+            ).strip(),
+            gemini_claim_endpoint=os.getenv(
+                "GEMINI_CLAIM_ENDPOINT",
+                "https://generativelanguage.googleapis.com/v1beta/interactions",
+            ).strip(),
+            gemini_claim_timeout_seconds=float(
+                os.getenv("GEMINI_CLAIM_TIMEOUT_SECONDS", "30").strip()
+            ),
+            gemini_claim_max_output_tokens=int(
+                os.getenv("GEMINI_CLAIM_MAX_OUTPUT_TOKENS", "4096").strip()
+            ),
+            claim_generation_max_candidates=int(
+                os.getenv("CLAIM_GENERATION_MAX_CANDIDATES", "10").strip()
             ),
             ncbi_api_key=os.getenv("NCBI_API_KEY", "").strip(),
             ncbi_tool=os.getenv(

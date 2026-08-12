@@ -56,9 +56,12 @@
 | Phase 5.25：Evidence Intelligence Layer MVP | 実装完了・プロダクトオーナー確認待ち |
 | Phase 5.26：Gemini Grounded Evidence Search Provider MVP | 実装完了・実検索パイロット確認待ち |
 | Phase 5.26.1：Discovery Candidate Boundary | 実装完了・プロダクトオーナー確認待ち |
-| Phase 5.27：PubMed E-utilities Formal Evidence Provider MVP | 実装完了・実API Pilot確認中 |
+| Phase 5.27：PubMed E-utilities Formal Evidence Provider MVP | 実装完了・実API Pilot成功 |
+| Phase 5.28：Evidence-Grounded Claim Builder MVP | 実装完了・実API Pilot確認中 |
 
 Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止します。Phase 5.15ではAI非依存のPresentation Request、Phase 5.16ではProvider非依存のAdapter Interface、Phase 5.17では承認済み正本のProvider Payload解決、Data Egress Policy、Traceable Responseを追加しました。Phase 5.18ではProvider非依存Prompt BuilderとGemini固有Sandbox Adapterを分離し、Phase 5.19ではProvider・Rendererに依存しないPresentation Artifactを教育成果物の唯一の正本Contractとして追加しました。Phase 5.20ではArtifact専用Registry、独立承認、Immutable approved版、History、Diff、Completeness、approved限定Renderer Gatewayを追加しました。Phase 5.20.1ではKnowledgeとArtifactの両方を確認するDual Approval Gateへ強化し、Phase 5.21ではそのKnowledge `approved`が保証する人の医学レビュー基準、Role、Evidence、Checklist、独立Review Versionを設計しました。Phase 5.22では未完成Knowledgeを正式Registryから分離して、人が5項目からSkeleton、Claim、Referenceを短時間で作成・検証・入出力できるAuthoring Workflowを追加しました。Phase 5.23ではSchema・Category・Claim・Reference・Registry重複・ID・FingerprintをPreviewで確認し、明示確定時だけ安定IDとVersionを維持して正式Registryへ`draft`登録するPromotion Workflowを追加しました。Phase 5.24では、Theme、Evidence、Claim、Reference、Knowledge BuilderをProvider非依存のPipelineとして分離し、実検索・LLMなしのSandboxからAuthoring Draft Previewと明示保存まで接続しました。Phase 5.25では、Provider固有のRaw Evidenceを内部へ閉じ、標準化、重複排除、A/B/C順位付けを経たEvidence BundleだけをWorkbenchとClaim Builderへ渡す境界を追加しました。Phase 5.26ではGemini Citationの実探索経路を追加し、Phase 5.26.1でその出力をDiscovery Candidate Setへ訂正して正式Evidence経路から完全分離しました。Phase 5.27ではNCBI公式ESearch・EFetchからPubMed Recordを再取得し、既存Evidence BundleとHuman Selectionまで通す最初のFormal Evidence Providerを追加しました。
+
+Phase 5.28では人が採用したFormal EvidenceだけからLLMが追跡可能なClaim Candidateを抽出し、Support Assessment、Source Locator、重複Preview、人の判断を経て、採用済みDirect ClaimだけをAuthoring Draftへ保存する境界を追加しました。
 
 ### Phase 5.0成果物
 
@@ -436,6 +439,21 @@ Exam Metadataは医学知識と独立した版付きコンポーネントとし�
 - Timeout、429、5xx、Network、不正JSON/XML、空結果、部分成功の停止・記録
 - [PubMed Formal Evidence Provider](pubmed_formal_evidence_provider.md)
 - [ADR-0023](adr/0023-pubmed-as-first-formal-evidence-provider.md)
+
+### Phase 5.28成果物
+
+- 正式Claimと分離したClaim Candidate Contract 1.0
+- 人が採用したFormal Evidenceだけを許可するSelection Gate
+- Provider非依存Prompt Builder、Claim Adapter Interface、Gemini実Adapter
+- Direct / Partial / Indirect / Unsupported / ConflictingのSupport Assessment
+- Abstract内短文、PMID、DOIを追跡するSource Locator
+- Evidence ID、Locator、Support、Fingerprint、Provider中立性のValidator
+- Candidate・既存RegistryとのExact / Possible Duplicate Preview（自動Mergeなし）
+- 採用・修正・除外・保留を残すHuman Claim Review履歴
+- 人が採用したDirect ClaimだけのAuthoring Draft接続と正式Reference Mapping
+- 医学本文・API Keyを保存しないAuditとKPI計測
+- [Evidence-Grounded Claim Builder](evidence_grounded_claim_builder.md)
+- [ADR-0024](adr/0024-evidence-grounded-claim-candidates.md)
 
 ---
 
