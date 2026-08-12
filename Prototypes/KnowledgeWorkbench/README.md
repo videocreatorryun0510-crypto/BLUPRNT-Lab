@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.26.1
+# Knowledge Workbench — Phase 5.27
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -21,6 +21,8 @@ Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search�
 Phase 5.25では、検索元固有のRaw EvidenceをWorkbenchへ渡さず、共通Evidence Contractへ標準化し、重複排除、Evidence Level A→B→Cの順位付け、Evidence Bundle化を行う独立層を追加しました。Information PriorityはEvidence Levelと混ぜず、同Level内の補助基準として扱います。検索監査には件数とIDだけを保存し、医学本文は保存しません。
 
 Phase 5.26.1では、Gemini Google Search GroundingをDiscovery専用Providerへ移行しました。「探索候補を検索（Gemini）」を明示的に押した時だけ外部検索し、Citation SourceをDiscovery Candidate Setとして表示します。正式Evidence、Evidence Bundle、Claim、Knowledge Draft、Registry、Promotion、Approvalは作成・変更できません。
+
+Phase 5.27では、NCBI公式E-utilitiesを使うPubMed Formal Evidence Providerを追加しました。医療用語から直接検索する経路と、Discovery Candidateを検索HintとしてPubMedへ再問い合わせする経路があります。PubMed Recordが確認できた資料だけを既存Evidence Intelligence、重複排除、順位付け、Evidence Bundleへ通します。採用・除外・保留は記録できますが、Claim生成や医学レビューではありません。
 
 ## できること
 
@@ -144,7 +146,7 @@ Knowledge JSON内に残る旧`exam_metadata`欄はVersion 0.3互換用です。�
 cp Prototypes/KnowledgeWorkbench/.env.example Prototypes/KnowledgeWorkbench/.env
 ```
 
-AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキーを入力します。Gemini SandboxまたはDiscovery検索を利用する場合だけ、`GEMINI_API_KEY=`へGemini APIキーを入力します。検索モデルは`GEMINI_SEARCH_MODEL=`で切り替えられます。このファイルはGitの管理対象外で、共有しません。
+AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキーを入力します。Gemini SandboxまたはDiscovery検索を利用する場合だけ、`GEMINI_API_KEY=`へGemini APIキーを入力します。検索モデルは`GEMINI_SEARCH_MODEL=`で切り替えられます。PubMedはAPIキーなしでも安全側のRate Limitで利用できます。必要な場合だけ`NCBI_API_KEY=`、連絡先として`NCBI_TOOL=`と`NCBI_EMAIL=`を設定します。このファイルはGitの管理対象外で、共有しません。
 
 起動します。
 
@@ -164,7 +166,18 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 6. 保存する場合だけ「Authoring Draftへ保存」を押します。
 7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は任意の医療用語を検索できますが、正式EvidenceではないDiscovery Resultsを表示するだけです。候補ごとの「正式Evidence取得」は専用Provider未実装のため無効です。詳しくは[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)、[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
+Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。詳しくは[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
+
+## PubMed正式Evidenceを確認する
+
+1. AI Knowledge Wizardへ`Ferritin`等の医学用語を入力します。
+2. 「PubMed正式Evidence検索」を押します。
+3. Query、PMID、Title、Authors、Journal、Publication Type、DOI、Abstract有無を確認します。
+4. Evidence Bundle、Fingerprint、`Formal Evidence: Yes`を確認します。
+5. Claim、Knowledge Draft、Registry、Promotionがいずれも生成・変更されていないことを確認します。
+6. 将来Claim生成に使う候補を「採用」「除外」「保留」から選びます。これは医学レビューではありません。
+
+Discovery Resultsから進む場合は「PubMedで正式Evidence取得」を押します。CandidateそのものはEvidenceにならず、PubMedで再検索・EFetchできた場合だけ正式Evidenceになります。
 
 ## Knowledge Wizardで新しい下書きを作る
 

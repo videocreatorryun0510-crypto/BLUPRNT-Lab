@@ -266,10 +266,10 @@ def stable_evidence_id(
     publication_date: str | None,
 ) -> str:
     identity = (
-        f"doi:{_canonical_doi(doi)}"
-        if _canonical_doi(doi)
-        else f"pmid:{_canonical_pmid(pmid)}"
+        f"pmid:{_canonical_pmid(pmid)}"
         if _canonical_pmid(pmid)
+        else f"doi:{_canonical_doi(doi)}"
+        if _canonical_doi(doi)
         else f"url:{_canonical_url(url)}"
         if _canonical_url(url)
         else "title:"
@@ -353,14 +353,14 @@ def _duplicate_reasons(
     candidate: NormalizedEvidence,
 ) -> list[DeduplicationReason]:
     reasons: list[DeduplicationReason] = []
-    if _canonical_doi(existing.doi) and _canonical_doi(existing.doi) == _canonical_doi(
-        candidate.doi
-    ):
-        reasons.append("doi")
     if _canonical_pmid(existing.pmid) and _canonical_pmid(
         existing.pmid
     ) == _canonical_pmid(candidate.pmid):
         reasons.append("pmid")
+    if _canonical_doi(existing.doi) and _canonical_doi(existing.doi) == _canonical_doi(
+        candidate.doi
+    ):
+        reasons.append("doi")
     if _canonical_url(str(existing.url) if existing.url else None) and _canonical_url(
         str(existing.url) if existing.url else None
     ) == _canonical_url(str(candidate.url) if candidate.url else None):

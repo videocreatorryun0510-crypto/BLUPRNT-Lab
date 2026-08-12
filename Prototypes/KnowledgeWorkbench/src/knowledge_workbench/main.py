@@ -118,7 +118,12 @@ from knowledge_workbench.authoring_repository import (
     FileAuthoringDraftRepository,
 )
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
+from knowledge_workbench.discovery_interfaces import (
+    FormalEvidenceAcquisitionRequest,
+    FormalEvidenceProviderType,
+)
 from knowledge_workbench.discovery_models import (
+    DiscoveryCandidate,
     DiscoveryCandidateSet,
     GroundedDiscoveryPreview,
 )
@@ -188,6 +193,22 @@ from knowledge_workbench.promotion_service import (
     promotion_semantic_slots,
 )
 from knowledge_workbench.providers.base import KnowledgeProvider
+from knowledge_workbench.providers.pubmed_provider import (
+    PubMedEvidenceError,
+    PubMedEvidenceProvider,
+    PubMedEvidenceProviderConfig,
+)
+from knowledge_workbench.pubmed_models import (
+    PubMedEvidenceSelectionRequest,
+    PubMedFormalEvidencePreview,
+)
+from knowledge_workbench.pubmed_service import (
+    JsonlPubMedSearchAuditLog,
+    JsonlPubMedSelectionRepository,
+    PubMedEvidenceNormalizer,
+    PubMedEvidenceServiceError,
+    PubMedFormalEvidenceService,
+)
 from knowledge_workbench.registry_backup import SQLiteRegistryBackupManager
 from knowledge_workbench.settings import Settings, build_provider
 from knowledge_workbench.sqlite_knowledge_registry import SQLiteKnowledgeRegistry
@@ -263,6 +284,20 @@ class KnowledgePipelinePreviewRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     theme: str = Field(min_length=1, max_length=300)
+
+
+class PubMedDirectPreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    theme: str = Field(min_length=1, max_length=300)
+    aliases: list[str] = Field(default_factory=list, max_length=20)
+    max_records: int = Field(default=20, ge=1, le=30)
+
+
+class PubMedDiscoveryHandoffRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    candidate: DiscoveryCandidate
 
 
 class CsvImportRequest(BaseModel):
@@ -516,10 +551,11 @@ def create_app(
     gemini_acceptance_service: GeminiAcceptanceService | None = None,
     artifact_registry: SQLitePresentationArtifactRegistry | None = None,
     grounded_search_provider: GeminiGroundedSearchProvider | None = None,
+    pubmed_evidence_provider: PubMedEvidenceProvider | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.26.1",
+        version="5.27.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -614,6 +650,48 @@ def create_app(
     grounded_search_service = GroundedDiscoveryService(
         resolved_grounded_search_provider,
         grounded_search_audit,
+    )
+    pubmed_search_audit_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "pubmed_search.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "pubmed_search.jsonl"
+    )
+    pubmed_selection_audit_path = (
+        Path(temporary_registry_directory.name)
+        / "search_audit"
+        / "pubmed_selection.jsonl"
+        if temporary_registry_directory is not None
+        else resolved_settings.registry_path.parent
+        / "search_audit"
+        / "pubmed_selection.jsonl"
+    )
+    resolved_pubmed_provider = (
+        pubmed_evidence_provider
+        if pubmed_evidence_provider is not None
+        else PubMedEvidenceProvider(
+            PubMedEvidenceProviderConfig(
+                api_key=resolved_settings.ncbi_api_key,
+                tool=resolved_settings.ncbi_tool,
+                email=resolved_settings.ncbi_email,
+                base_url=resolved_settings.ncbi_eutilities_base_url,
+                timeout_seconds=resolved_settings.ncbi_timeout_seconds,
+                max_records=resolved_settings.ncbi_max_records,
+            )
+        )
+    )
+    pubmed_search_audit = JsonlPubMedSearchAuditLog(pubmed_search_audit_path)
+    pubmed_selections = JsonlPubMedSelectionRepository(
+        pubmed_selection_audit_path
+    )
+    pubmed_evidence_service = PubMedFormalEvidenceService(
+        provider=resolved_pubmed_provider,
+        normalizer=PubMedEvidenceNormalizer(),
+        search_audit=pubmed_search_audit,
+        selections=pubmed_selections,
     )
     promotion_log_path = (
         Path(temporary_registry_directory.name) / "promotion_logs" / "promotion.jsonl"
@@ -1130,7 +1208,14 @@ def create_app(
             "gemini_grounded_search_claim_generation_enabled": False,
             "discovery_candidate_contract_version": "1.0",
             "discovery_converts_to_evidence_bundle": False,
-            "discovery_formal_evidence_provider_available": False,
+            "discovery_formal_evidence_provider_available": True,
+            "pubmed_formal_evidence_provider_version": "1.0",
+            "pubmed_api_key_configured": bool(
+                resolved_pubmed_provider.config.api_key.strip()
+            ),
+            "pubmed_max_records": resolved_pubmed_provider.config.max_records,
+            "pubmed_search_audit": str(pubmed_search_audit_path),
+            "pubmed_selection_audit": str(pubmed_selection_audit_path),
         }
 
     @app.get("/api/schema/evidence-search-1.0")
@@ -1162,6 +1247,14 @@ def create_app(
     @app.get("/api/schema/grounded-discovery-preview-1.1")
     def grounded_discovery_preview_schema_v11() -> dict[str, object]:
         return GroundedDiscoveryPreview.model_json_schema()
+
+    @app.get("/api/schema/pubmed-formal-evidence-preview-1.0")
+    def pubmed_formal_evidence_preview_schema_v10() -> dict[str, object]:
+        return PubMedFormalEvidencePreview.model_json_schema()
+
+    @app.get("/api/schema/pubmed-evidence-selection-1.0")
+    def pubmed_evidence_selection_schema_v10() -> dict[str, object]:
+        return PubMedEvidenceSelectionRequest.model_json_schema()
 
     @app.get("/api/ai-knowledge-pipeline")
     def knowledge_pipeline_status() -> dict[str, object]:
@@ -1249,7 +1342,7 @@ def create_app(
                 "mhlw",
                 "j_stage",
             ],
-            "formal_evidence_provider_available": False,
+            "formal_evidence_provider_available": True,
         }
 
     @app.get("/api/discovery/gemini")
@@ -1352,6 +1445,160 @@ def create_app(
         response.headers["X-BLUPRNT-Migration"] = "discovery-candidate-set-1.0"
         response.headers["Deprecation"] = "true"
         return response
+
+    def _pubmed_aliases(term: str, supplied: list[str]) -> tuple[str, ...]:
+        normalized = "".join(term.casefold().split())
+        values = list(supplied)
+        for entry in resolved_registry.snapshot().knowledge:
+            names = [entry.canonical_name, *entry.aliases]
+            if normalized not in {"".join(item.casefold().split()) for item in names}:
+                continue
+            values.extend(item for item in names if item != term)
+            break
+        return tuple(dict.fromkeys(item.strip() for item in values if item.strip()))
+
+    def _pubmed_preview_response(
+        operation: Any,
+    ) -> JSONResponse:
+        try:
+            preview = operation()
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "preview": preview.model_dump(mode="json"),
+                    "formal_evidence": True,
+                    "claim_generated": False,
+                    "knowledge_draft_generated": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except PubMedEvidenceError as error:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "errors": [{"code": error.code.value, "message": str(error)}],
+                    "formal_evidence": False,
+                    "claim_generated": False,
+                    "knowledge_draft_generated": False,
+                    "registry_changed": False,
+                    "promotion_performed": False,
+                    "approval_performed": False,
+                },
+            )
+        except PubMedEvidenceServiceError as error:
+            return _authoring_error(error, 422, "pubmed_evidence_validation_failed")
+
+    @app.get("/api/formal-evidence/pubmed")
+    def pubmed_formal_evidence_status() -> dict[str, object]:
+        return {
+            "status": "ready",
+            "phase": "5.27",
+            "provider": resolved_pubmed_provider.provider_name,
+            "provider_version": resolved_pubmed_provider.provider_version,
+            "official_api": "NCBI E-utilities",
+            "base_url": resolved_pubmed_provider.config.base_url,
+            "api_key_configured": bool(
+                resolved_pubmed_provider.config.api_key.strip()
+            ),
+            "api_key_value_exposed": False,
+            "max_records": resolved_pubmed_provider.config.max_records,
+            "rate_limit_mode": resolved_pubmed_provider.limiter.mode.value,
+            "full_text_acquired": False,
+            "claim_generation_enabled": False,
+            "registry_write_enabled": False,
+            "promotion_enabled": False,
+            "approval_enabled": False,
+            "discovery_direct_conversion_allowed": False,
+        }
+
+    @app.post("/api/formal-evidence/pubmed/previews")
+    def preview_pubmed_formal_evidence(
+        request: PubMedDirectPreviewRequest,
+    ) -> JSONResponse:
+        return _pubmed_preview_response(
+            lambda: pubmed_evidence_service.direct_preview(
+                request.theme,
+                aliases=_pubmed_aliases(request.theme, request.aliases),
+                max_records=request.max_records,
+            )
+        )
+
+    @app.post("/api/formal-evidence/pubmed/discovery-handoffs")
+    def handoff_discovery_to_pubmed(
+        request: PubMedDiscoveryHandoffRequest,
+    ) -> JSONResponse:
+        candidate = request.candidate
+        return _pubmed_preview_response(
+            lambda: pubmed_evidence_service.handoff_preview(
+                FormalEvidenceAcquisitionRequest(
+                    candidate_id=candidate.candidate_id,
+                    source_url=candidate.url,
+                    selected_provider=FormalEvidenceProviderType.PUBMED,
+                    candidate_title=candidate.title,
+                    search_term=candidate.search_query,
+                )
+            )
+        )
+
+    @app.get("/api/formal-evidence/pubmed/audit")
+    def pubmed_search_audit_events(limit: int = 20) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 100))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "events": [
+                        item.model_dump(mode="json")
+                        for item in pubmed_search_audit.list(limit=bounded_limit)
+                    ],
+                    "medical_body_stored": False,
+                    "secret_stored": False,
+                },
+            )
+        except PubMedEvidenceServiceError as error:
+            return _authoring_error(error, 422, "pubmed_search_audit_failed")
+
+    @app.post("/api/formal-evidence/pubmed/selections")
+    def save_pubmed_evidence_selection(
+        request: PubMedEvidenceSelectionRequest,
+    ) -> JSONResponse:
+        try:
+            selection = pubmed_evidence_service.select(request)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "selection": selection.model_dump(mode="json"),
+                    "medical_review_performed": False,
+                    "claim_generated": False,
+                    "registry_changed": False,
+                },
+            )
+        except PubMedEvidenceServiceError as error:
+            return _authoring_error(error, 422, "pubmed_selection_failed")
+
+    @app.get("/api/formal-evidence/pubmed/selections")
+    def list_pubmed_evidence_selections(limit: int = 100) -> JSONResponse:
+        try:
+            bounded_limit = max(1, min(limit, 500))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "selections": [
+                        item.model_dump(mode="json")
+                        for item in pubmed_selections.list(limit=bounded_limit)
+                    ],
+                    "medical_review_performed": False,
+                },
+            )
+        except PubMedEvidenceServiceError as error:
+            return _authoring_error(error, 422, "pubmed_selection_audit_failed")
 
     @app.post("/api/ai-knowledge-pipeline/previews")
     def preview_ai_knowledge_pipeline(

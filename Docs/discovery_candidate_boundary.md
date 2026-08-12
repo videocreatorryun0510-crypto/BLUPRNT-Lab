@@ -93,7 +93,7 @@ acquire(FormalEvidenceAcquisitionRequest) → RawEvidenceSearchResult
 
 Title、Publisher、Domain、URL、Snippet、Search Queryを表示します。Evidence Level、Evidence Bundle、Claim、Knowledgeは表示しません。
 
-候補ごとに「正式Evidence取得」ボタンの配置場所を用意しました。正式Provider未実装のためMVPでは無効化し、PubMed等のProviderを接続した後だけ有効にします。Geminiから直接Claimを作るボタンはありません。
+候補ごとの「PubMedで正式Evidence取得」はPhase 5.27で有効になりました。このボタンはCandidateをEvidenceへ変換せず、PMID・DOI・Title等を検索HintとしてPubMedへ再問い合わせします。Geminiから直接Claimを作るボタンはありません。
 
 ## Phase 5.26互換性
 
@@ -115,4 +115,4 @@ Title、Publisher、Domain、URL、Snippet、Search Queryを表示します。Ev
 
 ## 次のPhase
 
-最初のFormal Evidence ProviderとしてPubMed E-utilitiesを1つだけ接続します。Human SelectionされたCandidateからPMIDまたはURLを受け取り、PubMedの利用条件と公式Metadataに基づいて正式Evidenceへ変換します。
+Phase 5.27で最初のFormal Evidence ProviderとしてPubMed E-utilitiesを接続しました。次は、選択済みEvidenceだけを入力とするClaim Support Assessment境界を設計します。LLM Claim生成を先に接続してはいけません。

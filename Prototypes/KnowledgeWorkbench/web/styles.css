@@ -92,6 +92,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--green); box-shad
 .grounded-search-panel .authoring-item a { color: #176958; font-weight: 700; overflow-wrap: anywhere; }
 .discovery-warning { border-left: 4px solid #b75b32; padding: 10px 12px; color: #6f321d; background: #fff1e8; line-height: 1.6; }
 .formal-evidence-action[disabled] { cursor: not-allowed; opacity: 0.65; }
+.formal-evidence-notice { border-left: 4px solid #267a54; padding: 10px 12px; color: #164d34; background: #eaf8f0; line-height: 1.6; }
 .authoring-workspace { min-width: 0; }
 .authoring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
 .authoring-form-grid label, .authoring-reference-form label { margin: 0; }

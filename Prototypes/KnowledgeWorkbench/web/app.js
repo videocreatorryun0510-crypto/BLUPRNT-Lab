@@ -3818,7 +3818,12 @@ const runDiscoverySearchButton = document.querySelector(
 );
 const groundedSearchMessage = document.querySelector("#groundedSearchMessage");
 const groundedSearchPreview = document.querySelector("#groundedSearchPreview");
+const runPubMedSearchButton = document.querySelector("#runPubMedSearchButton");
+const pubmedSearchMessage = document.querySelector("#pubmedSearchMessage");
+const pubmedSearchPreview = document.querySelector("#pubmedSearchPreview");
+const pubmedSelectionOperator = document.querySelector("#pubmedSelectionOperator");
 let currentAiKnowledgePreview = null;
+let currentPubMedPreview = null;
 
 function renderAiPipelineItems(targetSelector, items, renderItem) {
   const target = document.querySelector(targetSelector);
@@ -3902,6 +3907,108 @@ function renderAiKnowledgePreview(preview) {
   );
 }
 
+async function runPubMedPreview(path, body) {
+  runPubMedSearchButton.disabled = true;
+  pubmedSearchPreview.hidden = true;
+  pubmedSearchMessage.textContent =
+    "NCBI公式E-utilitiesからPubMed Recordを確認しています…";
+  try {
+    const payload = await authoringApi(path, authoringJsonOptions("POST", body));
+    renderPubMedPreview(payload.preview);
+    pubmedSearchMessage.textContent =
+      "PubMed正式Evidenceを取得しました。Claim・Knowledge Draft・Registry・Promotion・Approvalは変更していません。";
+  } catch (error) {
+    currentPubMedPreview = null;
+    pubmedSearchPreview.hidden = true;
+    pubmedSearchMessage.textContent =
+      error instanceof Error ? error.message : "PubMed検索に失敗しました。";
+  } finally {
+    runPubMedSearchButton.disabled = false;
+  }
+}
+
+function renderPubMedPreview(preview) {
+  currentPubMedPreview = preview;
+  const bundle = preview.evidence_bundle;
+  const audit = preview.search_audit;
+  pubmedSearchPreview.hidden = false;
+  document.querySelector("#pubmedMode").textContent = preview.mode;
+  document.querySelector("#pubmedEvidenceCount").textContent =
+    bundle.accepted_evidence_count;
+  document.querySelector("#pubmedExcludedCount").textContent =
+    bundle.excluded_evidence_count;
+  document.querySelector("#pubmedDeduplicatedCount").textContent =
+    audit.deduplicated_count;
+  document.querySelector("#pubmedAuditStatus").textContent =
+    `${audit.status} · ${audit.duration_ms}ms`;
+  document.querySelector("#pubmedQuery").textContent = preview.query;
+  document.querySelector("#pubmedBundleFingerprint").textContent =
+    bundle.fingerprint;
+  document.querySelector("#pubmedBundleJson").textContent =
+    JSON.stringify(bundle, null, 2);
+
+  const target = document.querySelector("#pubmedEvidenceList");
+  target.replaceChildren();
+  preview.formal_evidence_metadata.forEach((metadata) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const title = document.createElement("strong");
+    title.textContent = metadata.title;
+    const identifiers = document.createElement("small");
+    identifiers.textContent =
+      `PMID ${metadata.pmid} · ${metadata.journal} · ${metadata.publication_date || "発行日未収載"}`;
+    const authors = document.createElement("small");
+    authors.textContent = `Authors: ${metadata.authors.join(", ") || "未収載"}`;
+    const details = document.createElement("small");
+    details.textContent =
+      `Publication Type: ${metadata.publication_types.join(", ") || "未収載"} · ` +
+      `DOI: ${metadata.doi || "なし"} · Abstract: ${metadata.abstract_available ? "あり" : "なし"} · ` +
+      `Evidence Level ${metadata.evidence_level} · Retrieved ${metadata.retrieved_at}`;
+    const actions = document.createElement("div");
+    actions.className = "button-row";
+    [
+      ["include", "採用"],
+      ["exclude", "除外"],
+      ["hold", "保留"],
+    ].forEach(([decision, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary-action";
+      button.textContent = label;
+      button.addEventListener("click", async () => {
+        const operator = pubmedSelectionOperator.value.trim();
+        if (!operator) {
+          pubmedSearchMessage.textContent = "Evidence選択の操作者を入力してください。";
+          pubmedSelectionOperator.focus();
+          return;
+        }
+        button.disabled = true;
+        try {
+          await authoringApi(
+            "/api/formal-evidence/pubmed/selections",
+            authoringJsonOptions("POST", {
+              bundle_id: bundle.bundle_id,
+              evidence_id: metadata.evidence_id,
+              decision,
+              operator,
+            }),
+          );
+          pubmedSearchMessage.textContent =
+            `${metadata.pmid}を「${label}」として記録しました。医学レビューではありません。`;
+        } catch (error) {
+          pubmedSearchMessage.textContent =
+            error instanceof Error ? error.message : "Evidence選択を保存できませんでした。";
+        } finally {
+          button.disabled = false;
+        }
+      });
+      actions.appendChild(button);
+    });
+    card.append(title, identifiers, authors, details, actions);
+    target.appendChild(card);
+  });
+}
+
 function renderDiscoveryPreview(preview) {
   const candidateSet = preview.discovery_candidate_set;
   const audit = preview.search_audit;
@@ -3949,9 +4056,14 @@ function renderDiscoveryPreview(preview) {
     const acquireButton = document.createElement("button");
     acquireButton.type = "button";
     acquireButton.className = "secondary-action formal-evidence-action";
-    acquireButton.textContent = "正式Evidence取得（専用Provider未接続）";
-    acquireButton.disabled = true;
-    acquireButton.title = "PubMed等の正式Providerは次Phaseで接続します。";
+    acquireButton.textContent = "PubMedで正式Evidence取得";
+    acquireButton.title = "Candidateを変換せず、PubMedへ再検索します。";
+    acquireButton.addEventListener("click", async () => {
+      await runPubMedPreview(
+        "/api/formal-evidence/pubmed/discovery-handoffs",
+        { candidate },
+      );
+    });
     card.append(title, detail, query, snippet, link, acquireButton);
     target.appendChild(card);
   });
@@ -3983,6 +4095,19 @@ runDiscoverySearchButton.addEventListener("click", async () => {
   } finally {
     runDiscoverySearchButton.disabled = false;
   }
+});
+
+runPubMedSearchButton.addEventListener("click", async () => {
+  const theme = aiKnowledgeTheme.value.trim();
+  if (!theme) {
+    pubmedSearchMessage.textContent = "先に医療用語を入力してください。";
+    aiKnowledgeTheme.focus();
+    return;
+  }
+  await runPubMedPreview(
+    "/api/formal-evidence/pubmed/previews",
+    { theme, max_records: 20 },
+  );
 });
 
 aiKnowledgeWizardForm.addEventListener("submit", async (event) => {

@@ -120,6 +120,14 @@ class Settings:
     gemini_search_timeout_seconds: float = 30.0
     gemini_search_max_queries: int = 4
     gemini_search_max_sources: int = 50
+    ncbi_api_key: str = ""
+    ncbi_tool: str = "bluprnt_lab_medical_os"
+    ncbi_email: str = ""
+    ncbi_eutilities_base_url: str = (
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    )
+    ncbi_timeout_seconds: float = 20.0
+    ncbi_max_records: int = 20
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -314,6 +322,21 @@ class Settings:
             ),
             gemini_search_max_sources=int(
                 os.getenv("GEMINI_SEARCH_MAX_SOURCES", "50").strip()
+            ),
+            ncbi_api_key=os.getenv("NCBI_API_KEY", "").strip(),
+            ncbi_tool=os.getenv(
+                "NCBI_TOOL", "bluprnt_lab_medical_os"
+            ).strip(),
+            ncbi_email=os.getenv("NCBI_EMAIL", "").strip(),
+            ncbi_eutilities_base_url=os.getenv(
+                "NCBI_EUTILITIES_BASE_URL",
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
+            ).strip(),
+            ncbi_timeout_seconds=float(
+                os.getenv("NCBI_TIMEOUT_SECONDS", "20").strip()
+            ),
+            ncbi_max_records=int(
+                os.getenv("NCBI_MAX_RECORDS", "20").strip()
             ),
         )
 

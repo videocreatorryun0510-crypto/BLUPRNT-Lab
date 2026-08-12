@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.26.1「Discovery Candidate Boundary」を実装しました。** Gemini Groundingは人へ探索候補を提示するDiscovery専用とし、Formal Evidence、Evidence Bundle、Claim Builder、Promotion、Registry、Approvalから型・Validation・画面で分離しました。正式根拠は将来、PubMed・PMC・PMDA・厚労省・J-STAGE等の専用Providerから取得します。詳細は[Discovery Candidate Boundary](Docs/discovery_candidate_boundary.md)に記録しています。
+> **Phase 5.27「PubMed E-utilities Formal Evidence Provider MVP」を実装しました。** 医療用語または人が選んだDiscovery Candidateを検索HintとしてNCBI公式APIへ再問い合わせし、PubMed Recordを確認できた場合だけ既存Evidence ContractとEvidence Bundleへ変換します。Claim・Knowledge Draft・Registry・Promotion・Approvalは変更しません。詳細は[PubMed Formal Evidence Provider](Docs/pubmed_formal_evidence_provider.md)に記録しています。
 
 ---
 

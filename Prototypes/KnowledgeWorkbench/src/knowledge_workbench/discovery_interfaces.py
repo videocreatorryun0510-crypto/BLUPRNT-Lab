@@ -38,6 +38,10 @@ class FormalEvidenceAcquisitionRequest(BaseModel):
     candidate_id: str = Field(pattern=r"^dsc_[a-f0-9]{20}$")
     source_url: HttpUrl
     selected_provider: FormalEvidenceProviderType
+    candidate_title: str | None = Field(default=None, max_length=2000)
+    candidate_doi: str | None = Field(default=None, max_length=500)
+    candidate_pmid: str | None = Field(default=None, pattern=r"^[0-9]{1,12}$")
+    search_term: str | None = Field(default=None, max_length=500)
 
 
 @runtime_checkable

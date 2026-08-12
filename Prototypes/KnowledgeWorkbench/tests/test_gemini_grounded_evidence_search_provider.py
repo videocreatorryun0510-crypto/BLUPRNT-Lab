@@ -495,7 +495,7 @@ def test_workbench_uses_discovery_words_and_hides_formal_evidence_fields() -> No
     assert status["output_contract"] == "discovery_candidate_set_1.0"
     assert status["evidence_bundle_generation_enabled"] is False
     assert status["claim_generation_enabled"] is False
-    assert status["formal_evidence_provider_available"] is False
+    assert status["formal_evidence_provider_available"] is True
     assert status["formal_evidence_providers"] == [
         provider.value for provider in FormalEvidenceProviderType
     ]
