@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Knowledge Workbench | BLUPRNT Lab</title>
-    <link rel="stylesheet" href="/static/styles.css?v=grounded-evidence-5.26.0" />
+    <link rel="stylesheet" href="/static/styles.css?v=discovery-boundary-5.26.1" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">BLUPRNT LAB · PHASE 5.26</p>
+          <p class="eyebrow">BLUPRNT LAB · PHASE 5.26.1</p>
           <h1>Knowledge Workbench</h1>
           <p class="lead">未完成のKnowledgeを安全な下書きで素早く作り、正式登録前に内容を整える。</p>
         </div>
@@ -110,7 +110,7 @@
 
       <section class="authoring-panel ai-pipeline-panel" aria-labelledby="ai-knowledge-title">
         <div class="panel-copy">
-          <p class="step">PHASE 5.25–5.26 · EVIDENCE INTELLIGENCE</p>
+          <p class="step">PHASE 5.25–5.26.1 · EVIDENCE / DISCOVERY</p>
           <h2 id="ai-knowledge-title">AI Knowledge Wizard</h2>
           <p>
             検索元ごとのEvidenceを共通形式へ整え、重複を除き、根拠レベル順に並べた
@@ -118,8 +118,8 @@
             今回は安全なローカルFixtureで経路を確認し、外部検索とLLMは呼びません。
           </p>
           <div class="pipeline-safety-note">
-            <strong>Sandbox MVP</strong>
-            <span>外部通信なし · Registry変更なし · Promotionなし · 医学監修前</span>
+            <strong>責務を分離</strong>
+            <span>Draft PreviewはEvidence Sandbox · GeminiはDiscovery専用</span>
           </div>
         </div>
         <div class="authoring-workspace">
@@ -145,31 +145,35 @@
           <section class="grounded-search-panel" aria-labelledby="grounded-search-title">
             <div class="promotion-heading">
               <div>
-                <p class="step">PHASE 5.26 · EXPLICIT EXTERNAL SEARCH</p>
-                <h3 id="grounded-search-title">Gemini Grounded Evidence Search</h3>
+                <p class="step">PHASE 5.26.1 · DISCOVERY ONLY</p>
+                <h3 id="grounded-search-title">Gemini Discovery Search</h3>
               </div>
-              <button id="runGroundedEvidenceSearchButton" class="secondary-action" type="button">
-                実Evidence検索（Gemini）
+              <button id="runDiscoverySearchButton" class="secondary-action" type="button">
+                探索候補を検索（Gemini）
               </button>
             </div>
             <p class="control-note">
               このボタンを押した時だけ、入力した医療用語をGemini Google Search Groundingへ送信します。
-              回答本文は破棄し、外部SourceのCitationだけをEvidence候補にします。
+              回答本文は破棄し、外部SourceのCitationをDiscovery Candidateとして提示します。
+            </p>
+            <p class="discovery-warning">
+              <strong>正式Evidenceではありません。</strong>
+              Claim生成・Evidence Bundle・Promotion・Registry・Approvalへ直接接続できません。
             </p>
             <p id="groundedSearchMessage" class="control-note" role="status">
-              自動検索は行いません。Knowledge Draft・Claim・Registry・Promotionは作成しません。
+              自動検索は行いません。Discovery Resultsは人が確認する探索候補です。
             </p>
             <div id="groundedSearchPreview" class="grounded-search-preview" hidden>
               <div class="ai-pipeline-metrics">
                 <div><span>Provider</span><strong id="groundedProvider">--</strong></div>
                 <div><span>Model</span><strong id="groundedModel">--</strong></div>
-                <div><span>Sources</span><strong id="groundedSourceCount">0</strong></div>
-                <div><span>Accepted / Excluded</span><strong id="groundedAccepted">0 / 0</strong></div>
-                <div><span>Deduplicated</span><strong id="groundedDeduplicated">0</strong></div>
-                <div><span>Evidence A / B / C</span><strong id="groundedLevels">0 / 0 / 0</strong></div>
+                <div><span>Raw Sources</span><strong id="groundedSourceCount">0</strong></div>
+                <div><span>Discovery Candidates</span><strong id="groundedCandidateCount">0</strong></div>
+                <div><span>Exact Duplicates</span><strong id="groundedDuplicateCount">0</strong></div>
                 <div><span>External Search</span><strong>Yes</strong></div>
                 <div><span>LLM Claim Generation</span><strong>No</strong></div>
-                <div><span>Registry / Promotion</span><strong>No / No</strong></div>
+                <div><span>Evidence Bundle</span><strong>No</strong></div>
+                <div><span>Registry / Promotion / Approval</span><strong>No / No / No</strong></div>
                 <div><span>Search Audit</span><strong id="groundedAuditStatus">--</strong></div>
               </div>
               <div class="ai-pipeline-column-grid">
@@ -178,19 +182,19 @@
                   <div id="groundedQueryList" class="authoring-item-list"></div>
                 </section>
                 <section class="authoring-card">
-                  <h3>Evidence Preview</h3>
-                  <div id="groundedEvidenceList" class="authoring-item-list"></div>
+                  <h3>Discovery Results</h3>
+                  <div id="discoveryCandidateList" class="authoring-item-list"></div>
                 </section>
               </div>
-              <section class="ai-pipeline-json-panel evidence-bundle-panel">
+              <section class="ai-pipeline-json-panel discovery-candidate-panel">
                 <div class="promotion-heading">
                   <div>
-                    <p class="step">GROUNDING CITATIONS ONLY</p>
-                    <h3>Evidence Bundle</h3>
+                    <p class="step">DISCOVERY CONTRACT 1.0</p>
+                    <h3>Discovery Candidate Set</h3>
                   </div>
-                  <span class="badge success">Gemini回答本文 非保存</span>
+                  <span class="badge warning">Evidenceではない · 回答本文非保存</span>
                 </div>
-                <pre id="groundedBundleJson"></pre>
+                <pre id="discoveryCandidateSetJson"></pre>
               </section>
             </div>
           </section>
@@ -1332,6 +1336,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=grounded-evidence-5.26.0" defer></script>
+    <script src="/static/app.js?v=discovery-boundary-5.26.1" defer></script>
   </body>
 </html>

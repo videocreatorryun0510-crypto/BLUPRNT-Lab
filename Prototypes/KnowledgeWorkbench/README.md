@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.26
+# Knowledge Workbench — Phase 5.26.1
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -20,7 +20,7 @@ Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search�
 
 Phase 5.25では、検索元固有のRaw EvidenceをWorkbenchへ渡さず、共通Evidence Contractへ標準化し、重複排除、Evidence Level A→B→Cの順位付け、Evidence Bundle化を行う独立層を追加しました。Information PriorityはEvidence Levelと混ぜず、同Level内の補助基準として扱います。検索監査には件数とIDだけを保存し、医学本文は保存しません。
 
-Phase 5.26では、最初の実Search ProviderとしてGemini Google Search Groundingを追加しました。「実Evidence検索（Gemini）」を明示的に押した時だけ外部検索し、Gemini回答本文ではなくCitation SourceだけをEvidence Bundleへ変換します。Claim、Knowledge Draft、Registry、Promotion、Approvalは作成・変更しません。
+Phase 5.26.1では、Gemini Google Search GroundingをDiscovery専用Providerへ移行しました。「探索候補を検索（Gemini）」を明示的に押した時だけ外部検索し、Citation SourceをDiscovery Candidate Setとして表示します。正式Evidence、Evidence Bundle、Claim、Knowledge Draft、Registry、Promotion、Approvalは作成・変更できません。
 
 ## できること
 
@@ -144,7 +144,7 @@ Knowledge JSON内に残る旧`exam_metadata`欄はVersion 0.3互換用です。�
 cp Prototypes/KnowledgeWorkbench/.env.example Prototypes/KnowledgeWorkbench/.env
 ```
 
-AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキーを入力します。Gemini Sandboxまたは実Evidence検索を利用する場合だけ、`GEMINI_API_KEY=`へGemini APIキーを入力します。検索モデルは`GEMINI_SEARCH_MODEL=`で切り替えられます。このファイルはGitの管理対象外で、共有しません。
+AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキーを入力します。Gemini SandboxまたはDiscovery検索を利用する場合だけ、`GEMINI_API_KEY=`へGemini APIキーを入力します。検索モデルは`GEMINI_SEARCH_MODEL=`で切り替えられます。このファイルはGitの管理対象外で、共有しません。
 
 起動します。
 
@@ -164,7 +164,7 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 6. 保存する場合だけ「Authoring Draftへ保存」を押します。
 7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26の「実Evidence検索」は任意の医療用語を検索できますが、Evidence候補を表示するだけでClaimやDraftを作りません。詳しくは[Gemini Grounded Evidence Search](../../Docs/gemini_grounded_evidence_search.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)、[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
+Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は任意の医療用語を検索できますが、正式EvidenceではないDiscovery Resultsを表示するだけです。候補ごとの「正式Evidence取得」は専用Provider未実装のため無効です。詳しくは[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)、[AI Knowledge Pipeline](../../Docs/ai_knowledge_pipeline.md)を参照してください。
 
 ## Knowledge Wizardで新しい下書きを作る
 

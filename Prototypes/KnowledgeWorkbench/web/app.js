@@ -3813,8 +3813,8 @@ const aiKnowledgeMessage = document.querySelector("#aiKnowledgeMessage");
 const aiKnowledgePreview = document.querySelector("#aiKnowledgePreview");
 const generateAiKnowledgeButton = document.querySelector("#generateAiKnowledgeButton");
 const saveAiKnowledgeDraftButton = document.querySelector("#saveAiKnowledgeDraftButton");
-const runGroundedEvidenceSearchButton = document.querySelector(
-  "#runGroundedEvidenceSearchButton",
+const runDiscoverySearchButton = document.querySelector(
+  "#runDiscoverySearchButton",
 );
 const groundedSearchMessage = document.querySelector("#groundedSearchMessage");
 const groundedSearchPreview = document.querySelector("#groundedSearchPreview");
@@ -3823,10 +3823,10 @@ let currentAiKnowledgePreview = null;
 function renderAiPipelineItems(targetSelector, items, renderItem) {
   const target = document.querySelector(targetSelector);
   target.replaceChildren();
-  items.forEach((entry) => {
+  items.forEach((entry, index) => {
     const card = document.createElement("article");
     card.className = "authoring-item";
-    const rendered = renderItem(entry);
+    const rendered = renderItem(entry, index);
     const title = document.createElement("strong");
     title.textContent = rendered.title;
     const detail = document.createElement("small");
@@ -3902,83 +3902,86 @@ function renderAiKnowledgePreview(preview) {
   );
 }
 
-function renderGroundedEvidencePreview(preview) {
-  const bundle = preview.evidence_bundle;
+function renderDiscoveryPreview(preview) {
+  const candidateSet = preview.discovery_candidate_set;
   const audit = preview.search_audit;
-  const policyByEvidenceId = new Map(
-    preview.policy_decisions.map((item) => [item.evidence_id, item]),
-  );
   groundedSearchPreview.hidden = false;
   document.querySelector("#groundedProvider").textContent = preview.provider;
   document.querySelector("#groundedModel").textContent = preview.model;
   document.querySelector("#groundedSourceCount").textContent =
     audit.raw_source_count;
-  document.querySelector("#groundedAccepted").textContent =
-    `${audit.accepted_count} / ${audit.excluded_count}`;
-  document.querySelector("#groundedDeduplicated").textContent =
-    audit.deduplicated_count;
-  document.querySelector("#groundedLevels").textContent =
-    `${audit.evidence_level_counts.A} / ${audit.evidence_level_counts.B} / ${audit.evidence_level_counts.C}`;
+  document.querySelector("#groundedCandidateCount").textContent =
+    audit.candidate_count;
+  document.querySelector("#groundedDuplicateCount").textContent =
+    audit.duplicate_count;
   document.querySelector("#groundedAuditStatus").textContent =
     `${audit.status} · ${audit.duration_ms}ms`;
-  document.querySelector("#groundedBundleJson").textContent =
-    JSON.stringify(bundle, null, 2);
+  document.querySelector("#discoveryCandidateSetJson").textContent =
+    JSON.stringify(candidateSet, null, 2);
 
   renderAiPipelineItems(
     "#groundedQueryList",
-    preview.generated_queries,
-    (query) => ({
-      title: query.intent,
-      detail: query.query,
+    candidateSet.generated_queries,
+    (query, index) => ({
+      title: `Query ${index + 1}`,
+      detail: query,
     }),
   );
 
-  const target = document.querySelector("#groundedEvidenceList");
+  const target = document.querySelector("#discoveryCandidateList");
   target.replaceChildren();
-  bundle.evidence.forEach((ranked) => {
-    const evidence = ranked.evidence;
-    const policy = policyByEvidenceId.get(evidence.evidence_id);
+  candidateSet.candidates.forEach((candidate) => {
     const card = document.createElement("article");
     card.className = "authoring-item";
     const title = document.createElement("strong");
-    title.textContent = `${ranked.rank}. ${evidence.title}`;
+    title.textContent = candidate.title;
     const detail = document.createElement("small");
-    detail.textContent = `${evidence.publisher} · ${policy?.domain || "unknown"} · ${policy?.domain_class || "other"} · Evidence ${evidence.evidence_level} · ${evidence.retrieved_at}`;
+    detail.textContent = `${candidate.publisher} · ${candidate.domain} · ${candidate.retrieved_at}`;
+    const query = document.createElement("small");
+    query.textContent = `Search Query: ${candidate.search_query}`;
+    const snippet = document.createElement("p");
+    snippet.textContent = candidate.snippet || "Snippetは取得されていません。";
     const link = document.createElement("a");
-    link.href = evidence.url;
+    link.href = candidate.url;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = evidence.url;
-    card.append(title, detail, link);
+    link.textContent = candidate.url;
+    const acquireButton = document.createElement("button");
+    acquireButton.type = "button";
+    acquireButton.className = "secondary-action formal-evidence-action";
+    acquireButton.textContent = "正式Evidence取得（専用Provider未接続）";
+    acquireButton.disabled = true;
+    acquireButton.title = "PubMed等の正式Providerは次Phaseで接続します。";
+    card.append(title, detail, query, snippet, link, acquireButton);
     target.appendChild(card);
   });
 }
 
-runGroundedEvidenceSearchButton.addEventListener("click", async () => {
+runDiscoverySearchButton.addEventListener("click", async () => {
   const theme = aiKnowledgeTheme.value.trim();
   if (!theme) {
     groundedSearchMessage.textContent = "先に医療用語を入力してください。";
     aiKnowledgeTheme.focus();
     return;
   }
-  runGroundedEvidenceSearchButton.disabled = true;
+  runDiscoverySearchButton.disabled = true;
   groundedSearchPreview.hidden = true;
   groundedSearchMessage.textContent =
-    "Google Search Groundingから外部Source Citationを取得しています…";
+    "Google Search GroundingからDiscovery Candidateを取得しています…";
   try {
     const payload = await authoringApi(
-      "/api/evidence-search/gemini/previews",
+      "/api/discovery/gemini/previews",
       authoringJsonOptions("POST", { theme }),
     );
-    renderGroundedEvidencePreview(payload.preview);
+    renderDiscoveryPreview(payload.preview);
     groundedSearchMessage.textContent =
-      "Evidence候補を取得しました。医学的承認ではありません。Gemini回答本文・Claim・Knowledge Draftは保存していません。";
+      "Discovery Resultsを取得しました。正式Evidenceではありません。Gemini回答本文・Claim・Evidence Bundle・Knowledge Draftは保存していません。";
   } catch (error) {
     groundedSearchPreview.hidden = true;
     groundedSearchMessage.textContent =
-      error instanceof Error ? error.message : "実Evidence検索に失敗しました。";
+      error instanceof Error ? error.message : "Discovery検索に失敗しました。";
   } finally {
-    runGroundedEvidenceSearchButton.disabled = false;
+    runDiscoverySearchButton.disabled = false;
   }
 });
 

@@ -1,5 +1,7 @@
 # Phase 5.26 Gemini Grounded Evidence Search Provider MVP
 
+> **Phase 5.26.1で移行済み**：この文書はPhase 5.26時点の実装記録です。Gemini CitationをEvidence Bundleへ変換する経路は廃止し、現在は[Discovery Candidate Boundary](discovery_candidate_boundary.md)によりDiscovery Candidate Setで停止します。
+
 ## 目的
 
 Geminiを医学知識の作成者ではなく、Google Searchを利用する検索ProviderとしてEvidence Intelligence Layerへ接続します。採用対象は外部サイトのCitationだけです。Geminiが生成した回答本文は、Evidence、Claim、Knowledge Draft、監査ログのいずれにも保存しません。

@@ -1,4 +1,4 @@
-"""Gemini Interactions Google Search provider isolated from downstream Evidence."""
+"""Gemini Interactions provider isolated as a Discovery-only adapter."""
 
 from __future__ import annotations
 
@@ -11,8 +11,13 @@ from typing import Any, NoReturn, Protocol
 from uuid import uuid4
 
 import httpx
+from pydantic import HttpUrl
 
-from knowledge_workbench.authoring_models import AuthoringCategory
+from knowledge_workbench.discovery_models import (
+    DiscoveryCandidate,
+    DiscoveryCandidateSet,
+    DiscoverySearchRequest,
+)
 from knowledge_workbench.grounded_evidence_models import (
     GroundedProviderExecution,
     GroundedSearchErrorCode,
@@ -21,12 +26,7 @@ from knowledge_workbench.grounded_evidence_models import (
     GroundedSearchUsage,
     SearchIntentType,
 )
-from knowledge_workbench.knowledge_pipeline_models import (
-    EvidenceSearchRequest,
-    EvidenceSubject,
-    RawEvidenceRecord,
-    RawEvidenceSearchResult,
-)
+from knowledge_workbench.knowledge_pipeline_models import EvidenceSearchRequest
 
 
 @dataclass(frozen=True)
@@ -167,8 +167,8 @@ class MedicalSearchQueryBuilder:
 
 
 @dataclass(frozen=True)
-class GeminiGroundedProviderResult:
-    raw: RawEvidenceSearchResult
+class GeminiGroundedDiscoveryResult:
+    candidate_set: DiscoveryCandidateSet
     execution: GroundedProviderExecution
 
 
@@ -187,20 +187,33 @@ class GeminiGroundedSearchProvider:
         self.query_builder = query_builder or MedicalSearchQueryBuilder()
         self.transport = transport or HttpxGroundedSearchTransport()
 
-    def search(self, request: EvidenceSearchRequest) -> RawEvidenceSearchResult:
-        """Satisfy the common Search Provider interface."""
+    def discover(self, request: DiscoverySearchRequest) -> DiscoveryCandidateSet:
+        """Satisfy the provider-neutral Discovery Provider interface."""
 
-        return self.search_with_report(request).raw
+        return self.discover_with_report(request).candidate_set
 
-    def search_with_report(
+    def search(
         self,
-        request: EvidenceSearchRequest,
-    ) -> GeminiGroundedProviderResult:
+        request: DiscoverySearchRequest | EvidenceSearchRequest,
+    ) -> DiscoveryCandidateSet:
+        """Phase 5.26 method-name compatibility; returns Discovery, never Evidence."""
+
+        discovery_request = (
+            request
+            if isinstance(request, DiscoverySearchRequest)
+            else DiscoverySearchRequest(medical_term=request.theme)
+        )
+        return self.discover(discovery_request)
+
+    def discover_with_report(
+        self,
+        request: DiscoverySearchRequest,
+    ) -> GeminiGroundedDiscoveryResult:
         execution_id = f"gse_{uuid4().hex}"
         started_at = datetime.now(UTC)
         clock_started = monotonic()
         query_plan = self.query_builder.build(
-            request.theme,
+            request.medical_term,
             max_queries=self.config.max_queries,
         )
         if not self.config.api_key.strip():
@@ -303,15 +316,19 @@ class GeminiGroundedSearchProvider:
             )
 
         executed_queries = _extract_executed_queries(response_data)
-        records = _extract_grounding_sources(
+        response_id = response_data.get("id")
+        extracted = _extract_discovery_candidates(
             response_data,
             provider_name=self.provider_name,
             provider_version=self.provider_version,
             query_plan=query_plan,
             retrieved_at=datetime.now(UTC),
             max_sources=self.config.max_sources,
+            provider_result_id=(
+                response_id if isinstance(response_id, str) else None
+            ),
         )
-        if not records:
+        if not extracted.candidates:
             self._raise(
                 GroundedSearchErrorCode.NO_GROUNDING_SOURCE,
                 "Google Search Groundingから外部Sourceを取得できませんでした。",
@@ -325,26 +342,14 @@ class GeminiGroundedSearchProvider:
         completed_at = datetime.now(UTC)
         duration_ms = max(0, int((monotonic() - clock_started) * 1000))
         usage = _extract_usage(response_data, attempts=attempts)
-        raw = RawEvidenceSearchResult(
-            search_provider_name=self.provider_name,
-            search_provider_version=self.provider_version,
-            searched_at=started_at,
-            duration_ms=duration_ms,
-            query=request,
-            subject=EvidenceSubject(
-                canonical_name=query_plan.input_term,
-                aliases=[],
-                category=AuthoringCategory.TEST_ITEM,
-            ),
-            records=records,
-            external_search_performed=True,
-            warnings=[
-                "Gemini生成回答本文は破棄し、Grounding Citationだけを候補にしています。",
-                "Categoryは自動分類せず、Evidence検索用の汎用test_itemとして扱います。",
-                "国家試験Web検索は出題実績の証明ではありません。",
-            ],
+        candidate_set = _build_candidate_set(
+            candidates=extracted.candidates,
+            raw_source_count=extracted.raw_source_count,
+            provider_name=self.provider_name,
+            provider_version=self.provider_version,
+            query_plan=query_plan,
+            executed_queries=executed_queries,
         )
-        response_id = response_data.get("id")
         execution = GroundedProviderExecution(
             search_execution_id=execution_id,
             provider_result_id=response_id if isinstance(response_id, str) else None,
@@ -357,7 +362,10 @@ class GeminiGroundedSearchProvider:
             usage=usage,
             retry_count=max(0, attempts - 1),
         )
-        return GeminiGroundedProviderResult(raw=raw, execution=execution)
+        return GeminiGroundedDiscoveryResult(
+            candidate_set=candidate_set,
+            execution=execution,
+        )
 
     def _raise(
         self,
@@ -422,7 +430,13 @@ def _extract_executed_queries(response: dict[str, Any]) -> tuple[str, ...]:
     return tuple(queries[:20])
 
 
-def _extract_grounding_sources(
+@dataclass(frozen=True)
+class _ExtractedDiscoveryCandidates:
+    candidates: tuple[DiscoveryCandidate, ...]
+    raw_source_count: int
+
+
+def _extract_discovery_candidates(
     response: dict[str, Any],
     *,
     provider_name: str,
@@ -430,8 +444,10 @@ def _extract_grounding_sources(
     query_plan: GroundedSearchQueryPlan,
     retrieved_at: datetime,
     max_sources: int,
-) -> list[RawEvidenceRecord]:
-    records: list[RawEvidenceRecord] = []
+    provider_result_id: str | None,
+) -> _ExtractedDiscoveryCandidates:
+    candidates: list[DiscoveryCandidate] = []
+    seen: set[str] = set()
     source_index = 0
     for step in _steps(response):
         if step.get("type") != "model_output":
@@ -446,8 +462,11 @@ def _extract_grounding_sources(
             if not isinstance(annotations, list):
                 continue
             for annotation in annotations:
-                if len(records) >= max_sources:
-                    return records
+                if source_index >= max_sources:
+                    return _ExtractedDiscoveryCandidates(
+                        candidates=tuple(candidates),
+                        raw_source_count=source_index,
+                    )
                 if not isinstance(annotation, dict):
                     continue
                 if annotation.get("type") != "url_citation":
@@ -470,43 +489,93 @@ def _extract_grounding_sources(
                     if isinstance(raw_snippet, str) and raw_snippet.strip()
                     else None
                 )
-                digest = hashlib.sha256(
-                    f"{source_url}|{title}|{source_index}".encode()
-                ).hexdigest()[:20]
-                records.append(
-                    RawEvidenceRecord(
-                        provider_name=provider_name,
+                domain = _domain(source_url)
+                fingerprint = _fingerprint(
+                    {
+                        "provider": provider_name,
+                        "provider_version": provider_version,
+                        "url": source_url,
+                        "title": title,
+                    }
+                )
+                if fingerprint in seen:
+                    continue
+                seen.add(fingerprint)
+                candidates.append(
+                    DiscoveryCandidate(
+                        candidate_id=f"dsc_{fingerprint[:20]}",
+                        provider=provider_name,
                         provider_version=provider_version,
-                        provider_record_id=f"gemini-grounding:{digest}",
+                        search_query=query_plan.input_term,
+                        title=title,
+                        url=HttpUrl(source_url),
+                        publisher=domain,
+                        domain=domain,
+                        snippet=snippet,
                         retrieved_at=retrieved_at,
-                        payload={
-                            "source_url": source_url,
-                            "title": title,
-                            "publisher": _domain(source_url),
-                            "domain": _domain(source_url),
-                            "snippet": snippet,
-                            "published_date": None,
-                            "search_queries": [item.query for item in query_plan.queries],
-                            "grounding_metadata": {
-                                "annotation_type": "url_citation",
-                                "start_index": annotation.get(
-                                    "start_index",
-                                    annotation.get("startIndex"),
-                                ),
-                                "end_index": annotation.get(
-                                    "end_index",
-                                    annotation.get("endIndex"),
-                                ),
-                            },
+                        provider_metadata={
+                            "provider_result_id": provider_result_id,
+                            "annotation_type": "url_citation",
+                            "start_index": annotation.get(
+                                "start_index",
+                                annotation.get("startIndex"),
+                            ),
+                            "end_index": annotation.get(
+                                "end_index",
+                                annotation.get("endIndex"),
+                            ),
                             "content_acquisition": (
                                 "grounding_snippet"
                                 if snippet
                                 else "citation_metadata_only"
                             ),
                         },
+                        discovery_fingerprint=fingerprint,
                     )
                 )
-    return records
+    return _ExtractedDiscoveryCandidates(
+        candidates=tuple(candidates),
+        raw_source_count=source_index,
+    )
+
+
+def _build_candidate_set(
+    *,
+    candidates: tuple[DiscoveryCandidate, ...],
+    raw_source_count: int,
+    provider_name: str,
+    provider_version: str,
+    query_plan: GroundedSearchQueryPlan,
+    executed_queries: tuple[str, ...],
+) -> DiscoveryCandidateSet:
+    fingerprint = _fingerprint(
+        {
+            "provider": provider_name,
+            "provider_version": provider_version,
+            "input_term": query_plan.input_term,
+            "generated_queries": [item.query for item in query_plan.queries],
+            "candidates": [item.discovery_fingerprint for item in candidates],
+        }
+    )
+    return DiscoveryCandidateSet(
+        candidate_set_id=f"dcs_{fingerprint[:20]}",
+        provider=provider_name,
+        provider_version=provider_version,
+        input_term=query_plan.input_term,
+        generated_queries=tuple(item.query for item in query_plan.queries),
+        executed_queries=executed_queries,
+        candidates=candidates,
+        raw_source_count=raw_source_count,
+        candidate_count=len(candidates),
+        duplicate_count=raw_source_count - len(candidates),
+        created_at=datetime.now(UTC),
+        discovery_fingerprint=fingerprint,
+        warnings=(
+            "正式Evidenceではありません。人が候補を選び、専用Providerで正式取得します。",
+            "Gemini生成回答本文は破棄し、Grounding Citationだけを保持します。",
+            "国家試験Web検索は出題実績の証明ではありません。",
+        ),
+    )
 
 
 def _steps(response: dict[str, Any]) -> list[dict[str, Any]]:
@@ -574,3 +643,13 @@ def _domain(url: str) -> str:
         return httpx.URL(url).host or "unknown"
     except httpx.InvalidURL:
         return "unknown"
+
+
+def _fingerprint(payload: object) -> str:
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

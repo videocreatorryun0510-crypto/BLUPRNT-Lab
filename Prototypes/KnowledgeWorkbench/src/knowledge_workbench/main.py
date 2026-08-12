@@ -118,6 +118,10 @@ from knowledge_workbench.authoring_repository import (
     FileAuthoringDraftRepository,
 )
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
+from knowledge_workbench.discovery_models import (
+    DiscoveryCandidateSet,
+    GroundedDiscoveryPreview,
+)
 from knowledge_workbench.errors import RegistryOperationError, WorkbenchError
 from knowledge_workbench.evidence_intelligence import (
     DefaultEvidenceDeduplicator,
@@ -149,13 +153,10 @@ from knowledge_workbench.gemini_grounded_search import (
     GeminiGroundedSearchError,
     GeminiGroundedSearchProvider,
 )
-from knowledge_workbench.grounded_evidence_models import (
-    GroundedEvidenceSearchPreview,
-)
 from knowledge_workbench.grounded_evidence_service import (
-    GeminiGroundedEvidenceNormalizer,
-    GroundedEvidenceSearchService,
-    JsonlGroundedEvidenceSearchAuditLog,
+    DiscoveryAuditError,
+    GroundedDiscoveryService,
+    JsonlGroundedDiscoveryAuditLog,
 )
 from knowledge_workbench.knowledge_pipeline_builders import (
     AuthoringKnowledgeBuilder,
@@ -518,7 +519,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.26.0",
+        version="5.26.1",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -607,12 +608,11 @@ def create_app(
             )
         )
     )
-    grounded_search_audit = JsonlGroundedEvidenceSearchAuditLog(
+    grounded_search_audit = JsonlGroundedDiscoveryAuditLog(
         grounded_search_audit_path
     )
-    grounded_search_service = GroundedEvidenceSearchService(
+    grounded_search_service = GroundedDiscoveryService(
         resolved_grounded_search_provider,
-        GeminiGroundedEvidenceNormalizer(),
         grounded_search_audit,
     )
     promotion_log_path = (
@@ -1128,6 +1128,9 @@ def create_app(
             ),
             "gemini_grounded_search_audit": str(grounded_search_audit_path),
             "gemini_grounded_search_claim_generation_enabled": False,
+            "discovery_candidate_contract_version": "1.0",
+            "discovery_converts_to_evidence_bundle": False,
+            "discovery_formal_evidence_provider_available": False,
         }
 
     @app.get("/api/schema/evidence-search-1.0")
@@ -1148,7 +1151,17 @@ def create_app(
 
     @app.get("/api/schema/grounded-evidence-search-preview-1.0")
     def grounded_evidence_search_preview_schema_v10() -> dict[str, object]:
-        return GroundedEvidenceSearchPreview.model_json_schema()
+        """Phase 5.26 compatibility path; schema migrated to Discovery."""
+
+        return GroundedDiscoveryPreview.model_json_schema()
+
+    @app.get("/api/schema/discovery-candidate-set-1.0")
+    def discovery_candidate_set_schema_v10() -> dict[str, object]:
+        return DiscoveryCandidateSet.model_json_schema()
+
+    @app.get("/api/schema/grounded-discovery-preview-1.1")
+    def grounded_discovery_preview_schema_v11() -> dict[str, object]:
+        return GroundedDiscoveryPreview.model_json_schema()
 
     @app.get("/api/ai-knowledge-pipeline")
     def knowledge_pipeline_status() -> dict[str, object]:
@@ -1204,11 +1217,10 @@ def create_app(
         except EvidenceIntelligenceError as error:
             return _authoring_error(error, 422, "evidence_search_audit_failed")
 
-    @app.get("/api/evidence-search/gemini")
-    def gemini_grounded_search_status() -> dict[str, object]:
+    def _gemini_discovery_status() -> dict[str, object]:
         return {
             "status": "ready",
-            "phase": "5.26",
+            "phase": "5.26.1",
             "provider": resolved_grounded_search_provider.provider_name,
             "provider_version": resolved_grounded_search_provider.provider_version,
             "model": resolved_grounded_search_provider.config.model,
@@ -1222,14 +1234,39 @@ def create_app(
             "max_sources": resolved_grounded_search_provider.config.max_sources,
             "store": False,
             "generated_answer_stored": False,
+            "output_contract": "discovery_candidate_set_1.0",
+            "formal_evidence": False,
+            "evidence_bundle_generation_enabled": False,
             "claim_generation_enabled": False,
             "knowledge_draft_generation_enabled": False,
             "registry_write_enabled": False,
             "promotion_enabled": False,
+            "approval_enabled": False,
+            "formal_evidence_providers": [
+                "pubmed",
+                "pmc",
+                "pmda",
+                "mhlw",
+                "j_stage",
+            ],
+            "formal_evidence_provider_available": False,
         }
 
-    @app.get("/api/evidence-search/gemini/audit")
-    def gemini_grounded_search_audit(limit: int = 20) -> JSONResponse:
+    @app.get("/api/discovery/gemini")
+    def gemini_discovery_status() -> dict[str, object]:
+        return _gemini_discovery_status()
+
+    @app.get("/api/evidence-search/gemini")
+    def legacy_gemini_grounded_search_status() -> dict[str, object]:
+        """Phase 5.26 compatibility alias without an Evidence output."""
+
+        return {
+            **_gemini_discovery_status(),
+            "legacy_route": True,
+            "migrated_to": "/api/discovery/gemini",
+        }
+
+    def _gemini_discovery_audit(limit: int) -> JSONResponse:
         try:
             bounded_limit = max(1, min(limit, 100))
             return JSONResponse(
@@ -1241,19 +1278,27 @@ def create_app(
                         for item in grounded_search_audit.list(limit=bounded_limit)
                     ],
                     "generated_answer_stored": False,
+                    "formal_evidence_stored": False,
                     "medical_body_stored": False,
                     "http_headers_stored": False,
                 },
             )
-        except EvidenceIntelligenceError as error:
+        except DiscoveryAuditError as error:
             return _authoring_error(
                 error,
                 422,
-                "gemini_grounded_search_audit_failed",
+                "gemini_discovery_search_audit_failed",
             )
 
-    @app.post("/api/evidence-search/gemini/previews")
-    def preview_gemini_grounded_search(
+    @app.get("/api/discovery/gemini/audit")
+    def gemini_discovery_audit(limit: int = 20) -> JSONResponse:
+        return _gemini_discovery_audit(limit)
+
+    @app.get("/api/evidence-search/gemini/audit")
+    def legacy_gemini_grounded_search_audit(limit: int = 20) -> JSONResponse:
+        return _gemini_discovery_audit(limit)
+
+    def _preview_gemini_discovery(
         request: KnowledgePipelinePreviewRequest,
     ) -> JSONResponse:
         try:
@@ -1263,6 +1308,8 @@ def create_app(
                 content={
                     "status": "success",
                     "preview": preview.model_dump(mode="json"),
+                    "formal_evidence_acquired": False,
+                    "evidence_bundle_generated": False,
                     "knowledge_draft_generated": False,
                     "registry_mutated": False,
                     "promotion_performed": False,
@@ -1280,12 +1327,31 @@ def create_app(
                             "message": str(error),
                         }
                     ],
+                    "formal_evidence_acquired": False,
+                    "evidence_bundle_generated": False,
                     "knowledge_draft_generated": False,
                     "registry_mutated": False,
                     "promotion_performed": False,
                     "approval_performed": False,
                 },
             )
+
+    @app.post("/api/discovery/gemini/previews")
+    def preview_gemini_discovery(
+        request: KnowledgePipelinePreviewRequest,
+    ) -> JSONResponse:
+        return _preview_gemini_discovery(request)
+
+    @app.post("/api/evidence-search/gemini/previews")
+    def legacy_preview_gemini_grounded_search(
+        request: KnowledgePipelinePreviewRequest,
+    ) -> JSONResponse:
+        """Phase 5.26 route kept alive; output is Discovery Candidate Set only."""
+
+        response = _preview_gemini_discovery(request)
+        response.headers["X-BLUPRNT-Migration"] = "discovery-candidate-set-1.0"
+        response.headers["Deprecation"] = "true"
+        return response
 
     @app.post("/api/ai-knowledge-pipeline/previews")
     def preview_ai_knowledge_pipeline(

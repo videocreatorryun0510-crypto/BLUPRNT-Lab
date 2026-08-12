@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.26「Gemini Grounded Evidence Search Provider MVP」を実装しました。** 医療用語から最大4つの検索Intentを作り、Google Search Groundingの外部CitationだけをPhase 5.25の標準化・重複排除・順位付けへ渡します。Gemini回答本文はEvidenceにせず、明示ボタン操作なしの外部検索、Claim生成、Knowledge Draft、Registry変更、Promotion、Approvalは行いません。詳細は[Gemini Grounded Evidence Search](Docs/gemini_grounded_evidence_search.md)に記録しています。
+> **Phase 5.26.1「Discovery Candidate Boundary」を実装しました。** Gemini Groundingは人へ探索候補を提示するDiscovery専用とし、Formal Evidence、Evidence Bundle、Claim Builder、Promotion、Registry、Approvalから型・Validation・画面で分離しました。正式根拠は将来、PubMed・PMC・PMDA・厚労省・J-STAGE等の専用Providerから取得します。詳細は[Discovery Candidate Boundary](Docs/discovery_candidate_boundary.md)に記録しています。
 
 ---
 
