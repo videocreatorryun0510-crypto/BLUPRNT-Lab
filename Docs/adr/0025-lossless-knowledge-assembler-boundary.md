@@ -36,5 +36,4 @@ Phase 5.28までで、Formal Evidenceから人が採用・修正したClaimとRe
 
 ## Compatibility
 
-Knowledge Contract、Promotion、Approval、Registry、Evidence、Publisher、Artifactの既存Contractは不変である。既存Authoring Draft直結Promotionも互換維持し、Phase 5.29の新経路からは呼び出さない。
-
+Knowledge Contract、Approval、Registry、Evidence、Publisher、Artifactの既存Contractは不変である。Phase 5.30で既存Authoring Draft直結PromotionはDeprecated・書込拒否となり、Knowledge Draftが正式入口になった（ADR-0026）。

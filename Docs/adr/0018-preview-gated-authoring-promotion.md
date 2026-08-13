@@ -1,5 +1,7 @@
 # ADR 0018: Authoring Draftの正式登録をPreview付きPromotion境界に限定する
 
+> Superseded by [ADR 0026](0026-knowledge-draft-only-promotion-entry.md). Authoring Draft直結APIは互換用に残るが、書き込みを拒否する。
+
 - Status: Accepted
 - Date: 2026-08-10
 - Phase: 5.23 Knowledge Promotion Workflow MVP

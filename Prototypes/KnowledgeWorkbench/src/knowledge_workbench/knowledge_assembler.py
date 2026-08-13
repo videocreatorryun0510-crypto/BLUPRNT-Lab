@@ -391,11 +391,28 @@ class KnowledgeDraftService:
     def get(
         self, knowledge_draft_id: str
     ) -> tuple[KnowledgeDraft, KnowledgeDraftValidationReport]:
+        draft, _, report = self.get_with_source(knowledge_draft_id)
+        return draft, report
+
+    def get_with_source(
+        self, knowledge_draft_id: str
+    ) -> tuple[
+        KnowledgeDraft,
+        KnowledgeAuthoringDraft,
+        KnowledgeDraftValidationReport,
+    ]:
+        """Load the immutable Draft together with its verified authoring source.
+
+        Promotion receives only a Knowledge Draft ID.  The source is loaded here
+        solely to prove that the assembled content is still lossless and to reuse
+        the category skeleton that already belongs to the existing contract.
+        """
+
         draft = self.repository.get(knowledge_draft_id)
         source: KnowledgeAuthoringDraft = self.authoring.get(
             draft.metadata.source_authoring_draft_id
         )
-        return draft, self.validator.validate(draft, source)
+        return draft, source, self.validator.validate(draft, source)
 
     def list(self) -> list[KnowledgeDraftSummary]:
         return [

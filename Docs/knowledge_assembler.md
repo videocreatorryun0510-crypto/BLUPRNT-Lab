@@ -96,7 +96,7 @@ Workbenchの「Knowledge Draft Preview」では次を確認できます。
 - JSON / Markdown Export
 - Authoring画面へ戻る操作
 
-この画面にはPromotionボタンを置きません。既存Promotion Workflowは互換維持のため変更していませんが、Phase 5.29のAssembler経路から自動実行されることはありません。
+Phase 5.29時点ではこの画面にPromotionボタンを置きませんでした。Phase 5.30で、検証済みKnowledge Draftを入力とするPromotion Previewを同画面の次段階へ追加しました。Assemblerからの自動実行はなく、明示Previewと明示Promoteが必要です。Authoring Draft直結PromotionはDeprecatedです。
 
 ## 7. Product Owner確認項目
 
@@ -119,4 +119,3 @@ Assembler、Validator、Repositoryを分けたため、将来保存先をDBへ�
 5. 複数利用者の同時編集・Draft版管理・認証は未実装
 
 これらは現在の責務分離を壊す問題ではありません。次PhaseではKnowledge Draftを入力にするPromotion Previewを追加し、旧Authoring Draft直結経路の移行計画を作るのが自然です。
-

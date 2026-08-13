@@ -20,9 +20,7 @@ from knowledge_contracts.v10 import (
 from pydantic import ValidationError
 
 from knowledge_workbench.authoring_models import (
-    AuthoringCategory,
     AuthoringDraftState,
-    AuthoringSemanticSlot,
     KnowledgeAuthoringDraft,
 )
 from knowledge_workbench.authoring_service import KnowledgeAuthoringService
@@ -32,6 +30,12 @@ from knowledge_workbench.claim_key_resolver import (
 )
 from knowledge_workbench.knowledge_registry import KnowledgeRegistry
 from knowledge_workbench.promotion_log import JsonlPromotionLog
+from knowledge_workbench.promotion_mapping import (
+    CATEGORY_SLOTS as _CATEGORY_SLOTS,
+)
+from knowledge_workbench.promotion_mapping import (
+    SLOT_PATHS as _SLOT_PATHS,
+)
 from knowledge_workbench.promotion_models import (
     CommitPromotionRequest,
     DraftDisposition,
@@ -54,115 +58,12 @@ class _PreparedPromotion:
     record: KnowledgeRecord
 
 
-_CATEGORY_SLOTS: dict[AuthoringCategory, set[AuthoringSemanticSlot]] = {
-    AuthoringCategory.TEST_ITEM: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.BIOLOGICAL_BASIS,
-        AuthoringSemanticSlot.ANALYTE_CHARACTERISTIC,
-        AuthoringSemanticSlot.PURPOSE,
-        AuthoringSemanticSlot.INTERPRETATION_CAUTION,
-    },
-    AuthoringCategory.STAINING_METHOD: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.SAFETY_CONSIDERATION,
-    },
-    AuthoringCategory.SPECIMEN: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.OVERVIEW,
-        AuthoringSemanticSlot.CAUTION,
-    },
-    AuthoringCategory.REAGENT: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.CAUTION,
-    },
-    AuthoringCategory.BIOLOGICAL_STRUCTURE: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.OVERVIEW,
-    },
-    AuthoringCategory.DISEASE: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.OVERVIEW,
-    },
-    AuthoringCategory.LABORATORY_TEST_ITEM: {
-        AuthoringSemanticSlot.DEFINITION,
-        AuthoringSemanticSlot.OVERVIEW,
-    },
-}
-
-_SLOT_PATHS: dict[tuple[AuthoringCategory, AuthoringSemanticSlot], tuple[str, ...]] = {
-    **{
-        (category, AuthoringSemanticSlot.DEFINITION): ("core_facts", "definitions")
-        for category in AuthoringCategory
-    },
-    (AuthoringCategory.TEST_ITEM, AuthoringSemanticSlot.BIOLOGICAL_BASIS): (
-        "category_content",
-        "test_item",
-        "biological_basis",
-    ),
-    (AuthoringCategory.TEST_ITEM, AuthoringSemanticSlot.ANALYTE_CHARACTERISTIC): (
-        "category_content",
-        "test_item",
-        "analyte_characteristics",
-    ),
-    (AuthoringCategory.TEST_ITEM, AuthoringSemanticSlot.PURPOSE): (
-        "category_content",
-        "test_item",
-        "purposes",
-    ),
-    (AuthoringCategory.TEST_ITEM, AuthoringSemanticSlot.INTERPRETATION_CAUTION): (
-        "category_content",
-        "test_item",
-        "interpretation_cautions",
-    ),
-    (AuthoringCategory.STAINING_METHOD, AuthoringSemanticSlot.SAFETY_CONSIDERATION): (
-        "category_content",
-        "staining_method",
-        "safety_considerations",
-    ),
-    (AuthoringCategory.SPECIMEN, AuthoringSemanticSlot.OVERVIEW): (
-        "category_content",
-        "specimen",
-        "overview",
-    ),
-    (AuthoringCategory.SPECIMEN, AuthoringSemanticSlot.CAUTION): (
-        "category_content",
-        "specimen",
-        "cautions",
-    ),
-    (AuthoringCategory.REAGENT, AuthoringSemanticSlot.CAUTION): (
-        "category_content",
-        "reagent",
-        "cautions",
-    ),
-    (AuthoringCategory.BIOLOGICAL_STRUCTURE, AuthoringSemanticSlot.OVERVIEW): (
-        "category_content",
-        "biological_structure",
-        "overview",
-    ),
-    (AuthoringCategory.DISEASE, AuthoringSemanticSlot.OVERVIEW): (
-        "category_content",
-        "disease",
-        "overview",
-    ),
-    (AuthoringCategory.LABORATORY_TEST_ITEM, AuthoringSemanticSlot.OVERVIEW): (
-        "category_content",
-        "laboratory_test_item",
-        "overview",
-    ),
-}
-
-
-def promotion_semantic_slots() -> dict[str, list[str]]:
-    """Return the explicit author choices supported by the lossless MVP mapper."""
-
-    return {
-        category.value: sorted(slot.value for slot in slots)
-        for category, slots in _CATEGORY_SLOTS.items()
-    }
-
-
 class KnowledgePromotionService:
-    """Keeps Preview read-only and uses Registry only after explicit commit."""
+    """Deprecated Phase 5.23 implementation retained for import compatibility.
+
+    The HTTP compatibility endpoints return 410 and this service also rejects
+    direct use.  KnowledgeDraftPromotionService is the sole writable path.
+    """
 
     def __init__(
         self,
@@ -176,12 +77,30 @@ class KnowledgePromotionService:
         self._pending: dict[str, _PreparedPromotion] = {}
 
     def preview(self, draft_id: str, *, actor: str = "knowledge_author") -> PromotionPreview:
+        raise PromotionError(
+            "Authoring Draftから直接Promotionできません。Knowledge Draftを使用してください。"
+        )
+
+    def _deprecated_preview_reference(
+        self, draft_id: str, *, actor: str = "knowledge_author"
+    ) -> PromotionPreview:
+        """Historical implementation kept temporarily to make migration reviewable."""
+
         prepared = self._prepare(draft_id)
         self._pending[prepared.preview.preview_id] = prepared
         self._log_preview(prepared.preview, actor)
         return prepared.preview
 
     def commit(self, request: CommitPromotionRequest) -> PromotionResult:
+        raise PromotionError(
+            "Authoring Draft用PromotionはDeprecatedです。Knowledge Draftを使用してください。"
+        )
+
+    def _deprecated_commit_reference(
+        self, request: CommitPromotionRequest
+    ) -> PromotionResult:
+        """Historical implementation kept temporarily to make migration reviewable."""
+
         prepared = self._pending.get(request.preview_id)
         if prepared is None:
             raise PromotionError("Promotion Previewが見つかりません。再度Previewしてください。")

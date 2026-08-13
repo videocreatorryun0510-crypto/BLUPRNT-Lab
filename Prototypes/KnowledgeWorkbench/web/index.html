@@ -528,11 +528,11 @@
             <section id="knowledgeAssemblerPanel" class="promotion-panel" aria-labelledby="knowledge-draft-preview-title">
               <div class="promotion-heading">
                 <div>
-                  <p class="step">PHASE 5.29 · LOSSLESS ASSEMBLY</p>
+                  <p class="step">PHASE 5.29–5.30 · DRAFT → PREVIEW → PROMOTION</p>
                   <h3 id="knowledge-draft-preview-title">Knowledge Draft Preview</h3>
                   <p>
                     人が採用・編集したClaimと選択したReferenceを、内容を変えずに整理します。
-                    Registry登録・Promotion・Approvalは行いません。
+                    内容確認後にPromotion Previewへ進みます。自動承認は行いません。
                   </p>
                 </div>
                 <button id="generateKnowledgeDraftButton" class="primary-action" type="button">
@@ -578,51 +578,47 @@
                   <button id="exportKnowledgeDraftJsonButton" class="secondary-action" type="button" disabled>Export JSON</button>
                   <button id="exportKnowledgeDraftMarkdownButton" class="secondary-action" type="button" disabled>Export Markdown</button>
                   <button id="returnToAuthoringButton" class="secondary-action" type="button">Return to Authoring</button>
+                  <button id="previewKnowledgeDraftPromotionButton" class="primary-action" type="button" disabled>Promotion Preview</button>
                 </div>
+                <section id="knowledgeDraftPromotionPreview" class="authoring-validation" hidden>
+                  <div>
+                    <p class="step">STEP 3 · REGISTRY PREVIEW</p>
+                    <h3>Promotion Preview</h3>
+                    <p>Knowledge Draftだけを入力に、Registryとの差分と次Versionを確認します。</p>
+                  </div>
+                  <div class="promotion-metrics">
+                    <div><span>Registry Key</span><strong id="promotionRegistryKey">--</strong></div>
+                    <div><span>Action</span><strong id="promotionOperation">--</strong></div>
+                    <div><span>Version</span><strong id="promotionVersion">--</strong></div>
+                    <div><span>Approval</span><strong>draft固定</strong></div>
+                    <div><span>Validation</span><strong id="promotionValidation">--</strong></div>
+                    <div><span>Fingerprint</span><strong id="promotionFingerprint">--</strong></div>
+                  </div>
+                  <div class="authoring-column-grid">
+                    <section class="authoring-card">
+                      <h3>Registry Diff</h3>
+                      <div id="promotionRegistryDiff" class="authoring-item-list"></div>
+                    </section>
+                    <section class="authoring-card">
+                      <h3>Promotion Validation</h3>
+                      <ul id="promotionValidationChecks" class="report-list issues"></ul>
+                    </section>
+                  </div>
+                  <div class="promotion-commit-row">
+                    <label>操作者<input id="promotionActor" value="knowledge_author" maxlength="120" /></label>
+                    <label class="wide">コメント<input id="promotionComment" maxlength="500" placeholder="登録理由・変更内容（任意）" /></label>
+                    <button id="commitKnowledgeDraftPromotionButton" class="primary-action" type="button" disabled>Promote</button>
+                  </div>
+                  <p id="promotionMessage" class="control-note" role="status"></p>
+                  <div id="promotionSavedResult" class="promotion-result" hidden></div>
+                  <div class="promotion-log-heading">
+                    <h3>Promotion Log</h3>
+                    <button id="refreshKnowledgeDraftPromotionLogButton" class="secondary-action compact" type="button">更新</button>
+                  </div>
+                  <div id="promotionLogList" class="authoring-item-list"></div>
+                </section>
               </div>
               <p id="knowledgeDraftMessage" class="control-note" role="status"></p>
-            </section>
-
-            <section class="promotion-panel" aria-labelledby="promotion-preview-title">
-              <div class="promotion-heading">
-                <div>
-                  <p class="step">PREVIEW BEFORE REGISTRY WRITE</p>
-                  <h3 id="promotion-preview-title">Promotion Preview</h3>
-                  <p>PreviewではRegistryを変更しません。すべての検査に通った場合だけ正式保存できます。</p>
-                </div>
-                <button id="previewPromotionButton" class="primary-action" type="button">Promotion Preview</button>
-              </div>
-              <div id="promotionPreview" hidden>
-                <div class="promotion-metrics">
-                  <div><span>Knowledge</span><strong id="promotionKnowledgeName">--</strong></div>
-                  <div><span>Category</span><strong id="promotionCategory">--</strong></div>
-                  <div><span>Claims / References</span><strong id="promotionCounts">--</strong></div>
-                  <div><span>Completeness</span><strong id="promotionCompleteness">--</strong></div>
-                  <div><span>Registry Key</span><strong id="promotionRegistryKey">--</strong></div>
-                  <div><span>Action</span><strong id="promotionOperation">--</strong></div>
-                  <div><span>Knowledge ID</span><strong id="promotionKnowledgeId">--</strong></div>
-                  <div><span>Version / Approval</span><strong id="promotionVersion">--</strong></div>
-                </div>
-                <ul id="promotionValidationChecks" class="report-list issues"></ul>
-                <div class="promotion-commit-row">
-                  <label>Promotion後のDraft
-                    <select id="promotionDraftDisposition">
-                      <option value="keep">保持する</option>
-                      <option value="archive">Archivedにする</option>
-                    </select>
-                  </label>
-                  <label>操作者<input id="promotionActor" value="knowledge_author" maxlength="120" /></label>
-                  <label class="wide">コメント<input id="promotionComment" maxlength="500" placeholder="登録理由・変更内容（任意）" /></label>
-                  <button id="commitPromotionButton" class="primary-action" type="button" disabled>正式RegistryへPromotion</button>
-                </div>
-              </div>
-              <p id="promotionMessage" class="control-note" role="status"></p>
-              <div id="promotionSavedResult" class="promotion-result" hidden></div>
-              <div class="promotion-log-heading">
-                <h3>Promotion Log</h3>
-                <button id="refreshPromotionLogButton" class="secondary-action compact" type="button">更新</button>
-              </div>
-              <div id="promotionLogList" class="authoring-item-list"></div>
             </section>
           </div>
         </div>
@@ -1528,6 +1524,6 @@
         <p>この画面の情報はAIによる未確認の下書きです。診断・治療には使用せず、公開前に医学監修と出典確認を行います。</p>
       </footer>
     </main>
-    <script src="/static/app.js?v=evidence-grounded-claims-5.28.0" defer></script>
+    <script src="/static/app.js?v=knowledge-draft-promotion-5.30.0" defer></script>
   </body>
 </html>

@@ -233,26 +233,26 @@ def test_validator_rejects_every_integrity_boundary(
     assert report.save_allowed is False
 
 
-def test_workbench_exposes_preview_without_a_promotion_action() -> None:
+def test_workbench_exposes_draft_preview_before_promotion_action() -> None:
     client = _client()
     page = client.get("/")
     status = client.get("/api/status").json()
     schema = client.get("/api/schema/knowledge-draft-1.0")
-    panel = page.text.split('id="knowledgeAssemblerPanel"', 1)[1].split(
-        'aria-labelledby="promotion-preview-title"', 1
-    )[0]
+    panel = page.text.split('id="knowledgeAssemblerPanel"', 1)[1]
 
     assert "Knowledge Draft Preview" in panel
     assert 'id="generateKnowledgeDraftButton"' in panel
     assert 'id="exportKnowledgeDraftJsonButton"' in panel
     assert 'id="exportKnowledgeDraftMarkdownButton"' in panel
     assert 'id="returnToAuthoringButton"' in panel
+    assert 'id="previewKnowledgeDraftPromotionButton"' in panel
+    assert 'id="commitKnowledgeDraftPromotionButton"' in panel
     assert 'id="previewPromotionButton"' not in panel
     assert 'id="commitPromotionButton"' not in panel
     assert status["knowledge_assembler_version"] == "1.0.0"
     assert status["knowledge_draft_contract_version"] == "1.0"
-    assert status["knowledge_draft_registry_write_enabled"] is False
-    assert status["knowledge_draft_promotion_enabled"] is False
+    assert status["knowledge_draft_registry_write_enabled"] is True
+    assert status["knowledge_draft_promotion_enabled"] is True
     assert status["knowledge_draft_automatic_approval_enabled"] is False
     assert status["knowledge_draft_provider_neutral"] is True
     assert schema.status_code == 200

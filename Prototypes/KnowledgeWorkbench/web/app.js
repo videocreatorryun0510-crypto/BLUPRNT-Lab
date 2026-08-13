@@ -4748,7 +4748,9 @@ function resetKnowledgeDraftPreview() {
   document.querySelector("#knowledgeDraftPreview").hidden = true;
   document.querySelector("#exportKnowledgeDraftJsonButton").disabled = true;
   document.querySelector("#exportKnowledgeDraftMarkdownButton").disabled = true;
+  document.querySelector("#previewKnowledgeDraftPromotionButton").disabled = true;
   document.querySelector("#knowledgeDraftMessage").textContent = "";
+  resetPromotionPreview();
 }
 
 function renderKnowledgeDraftList(targetSelector, items, emptyMessage, renderer) {
@@ -4833,6 +4835,8 @@ function renderKnowledgeDraft(draft, validation) {
   }
   document.querySelector("#exportKnowledgeDraftJsonButton").disabled = !validation.save_allowed;
   document.querySelector("#exportKnowledgeDraftMarkdownButton").disabled = !validation.save_allowed;
+  document.querySelector("#previewKnowledgeDraftPromotionButton").disabled = !validation.save_allowed;
+  resetPromotionPreview();
 }
 
 async function generateKnowledgeDraft() {
@@ -4884,24 +4888,46 @@ document.querySelector("#returnToAuthoringButton").addEventListener("click", () 
 
 function resetPromotionPreview() {
   currentPromotionPreview = null;
-  document.querySelector("#promotionPreview").hidden = true;
-  document.querySelector("#commitPromotionButton").disabled = true;
+  document.querySelector("#knowledgeDraftPromotionPreview").hidden = true;
+  document.querySelector("#commitKnowledgeDraftPromotionButton").disabled = true;
   document.querySelector("#promotionSavedResult").hidden = true;
   document.querySelector("#promotionMessage").textContent = "";
 }
 
 function renderPromotionPreview(preview) {
   currentPromotionPreview = preview;
-  document.querySelector("#promotionPreview").hidden = false;
-  document.querySelector("#promotionKnowledgeName").textContent = preview.knowledge_name;
-  document.querySelector("#promotionCategory").textContent = termTypeLabels[preview.category] || preview.category;
-  document.querySelector("#promotionCounts").textContent = `${preview.claim_count} / ${preview.reference_count}`;
-  document.querySelector("#promotionCompleteness").textContent = `${preview.completeness_score}%`;
+  document.querySelector("#knowledgeDraftPromotionPreview").hidden = false;
   document.querySelector("#promotionRegistryKey").textContent = preview.registry_key;
   document.querySelector("#promotionOperation").textContent =
     preview.operation === "create" ? "新規作成" : "Version更新";
-  document.querySelector("#promotionKnowledgeId").textContent = preview.target_knowledge_id;
-  document.querySelector("#promotionVersion").textContent = `v${preview.target_version} / draft`;
+  document.querySelector("#promotionVersion").textContent =
+    `v${preview.current_version} → v${preview.target_version}`;
+  document.querySelector("#promotionValidation").textContent =
+    preview.validation.promotion_allowed ? "OK" : "要修正";
+  document.querySelector("#promotionFingerprint").textContent =
+    `${preview.draft_fingerprint.slice(0, 12)}…`;
+  const diff = document.querySelector("#promotionRegistryDiff");
+  diff.replaceChildren();
+  const entries = [
+    ["登録種別", preview.registry_diff.is_new ? "新規Knowledge" : "既存Knowledge更新"],
+    ["Summary", preview.registry_diff.summary_changed ? "変更あり" : "変更なし"],
+    ["Claim追加", preview.registry_diff.added_claim_keys.join(", ") || "なし"],
+    ["Claim更新", preview.registry_diff.updated_claim_keys.join(", ") || "なし"],
+    ["Claim削除", preview.registry_diff.removed_claim_keys.join(", ") || "なし"],
+    ["Reference追加", preview.registry_diff.added_reference_keys.join(", ") || "なし"],
+    ["Reference更新", preview.registry_diff.updated_reference_keys.join(", ") || "なし"],
+    ["Reference削除", preview.registry_diff.removed_reference_keys.join(", ") || "なし"],
+  ];
+  entries.forEach(([label, value]) => {
+    const card = document.createElement("article");
+    card.className = "authoring-item";
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const detail = document.createElement("small");
+    detail.textContent = value;
+    card.append(title, detail);
+    diff.appendChild(card);
+  });
   const list = document.querySelector("#promotionValidationChecks");
   list.replaceChildren();
   preview.validation.checks.forEach((check) => {
@@ -4914,16 +4940,19 @@ function renderPromotionPreview(preview) {
     item.append(title, message);
     list.appendChild(item);
   });
-  document.querySelector("#commitPromotionButton").disabled = !preview.validation.promotion_allowed;
+  document.querySelector("#commitKnowledgeDraftPromotionButton").disabled =
+    !preview.validation.promotion_allowed;
   document.querySelector("#promotionMessage").textContent = preview.validation.promotion_allowed
     ? "Promotion可能です。確定するまでRegistryは変更されません。"
     : "不足項目を修正して、もう一度Previewしてください。Registryは変更されていません。";
 }
 
 async function previewPromotion() {
-  if (!currentAuthoringDraft) throw new Error("先に下書きを開いてください。");
+  if (!currentKnowledgeDraft || !currentKnowledgeDraftValidation?.save_allowed) {
+    throw new Error("先にValidation済みKnowledge Draftを生成してください。");
+  }
   const payload = await authoringApi(
-    `/api/authoring/drafts/${currentAuthoringDraft.draft_id}/promotion/preview`,
+    `/api/knowledge-drafts/${currentKnowledgeDraft.knowledge_draft_id}/promotion/preview`,
     { method: "POST" },
   );
   renderPromotionPreview(payload.preview);
@@ -4932,25 +4961,23 @@ async function previewPromotion() {
 
 async function commitPromotion() {
   if (!currentPromotionPreview) throw new Error("先にPromotion Previewを実行してください。");
-  const payload = await authoringApi("/api/authoring/promotions", authoringJsonOptions("POST", {
+  const payload = await authoringApi("/api/knowledge-draft-promotions", authoringJsonOptions("POST", {
     preview_id: currentPromotionPreview.preview_id,
-    draft_disposition: document.querySelector("#promotionDraftDisposition").value,
     actor: document.querySelector("#promotionActor").value.trim() || "knowledge_author",
     comment: document.querySelector("#promotionComment").value.trim(),
   }));
   const result = payload.result;
   const output = document.querySelector("#promotionSavedResult");
   output.hidden = false;
-  output.textContent = `Registry保存完了：${result.knowledge_id} / Version ${result.knowledge_version} / Approval ${result.approval_state} / Draft ${result.draft_lifecycle_state}`;
+  output.textContent = `Registry保存完了：${result.knowledge_id} / Version ${result.knowledge_version} / Approval ${result.approval_state}`;
   document.querySelector("#promotionMessage").textContent = "正式KnowledgeへPromotionしました。自動承認は行っていません。";
-  document.querySelector("#commitPromotionButton").disabled = true;
-  await refreshAuthoringDrafts(currentAuthoringDraft.draft_id);
+  document.querySelector("#commitKnowledgeDraftPromotionButton").disabled = true;
   await refreshPromotionLogs();
   await refreshRegistryList(true);
 }
 
 async function refreshPromotionLogs() {
-  const payload = await authoringApi("/api/authoring/promotion/logs?limit=20");
+  const payload = await authoringApi("/api/knowledge-draft-promotions/logs?limit=20");
   const list = document.querySelector("#promotionLogList");
   list.replaceChildren();
   if (!payload.logs.length) {
@@ -4972,17 +4999,17 @@ async function refreshPromotionLogs() {
   });
 }
 
-document.querySelector("#previewPromotionButton").addEventListener("click", async () => {
+document.querySelector("#previewKnowledgeDraftPromotionButton").addEventListener("click", async () => {
   try { await previewPromotion(); }
   catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Previewできませんでした。"; }
 });
 
-document.querySelector("#commitPromotionButton").addEventListener("click", async () => {
+document.querySelector("#commitKnowledgeDraftPromotionButton").addEventListener("click", async () => {
   try { await commitPromotion(); }
   catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Promotionできませんでした。"; }
 });
 
-document.querySelector("#refreshPromotionLogButton").addEventListener("click", async () => {
+document.querySelector("#refreshKnowledgeDraftPromotionLogButton").addEventListener("click", async () => {
   try { await refreshPromotionLogs(); }
   catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Promotion Logを読み込めませんでした。"; }
 });

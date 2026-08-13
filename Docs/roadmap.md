@@ -59,12 +59,15 @@
 | Phase 5.27：PubMed E-utilities Formal Evidence Provider MVP | 実装完了・実API Pilot成功 |
 | Phase 5.28：Evidence-Grounded Claim Builder MVP | 実装完了・実API Pilot確認中 |
 | Phase 5.29：Knowledge Assembler MVP | 実装完了・プロダクトオーナー確認待ち |
+| Phase 5.30：Knowledge Draft Promotion Integration MVP | 実装完了・プロダクトオーナー確認待ち |
 
 Exam Metadataは医学知識と独立した版付きコンポーネントとし、`knowledge_id`と`claim_id`で結びます。Phase 2.7では、`claim_key`を医学的な意味の固定キー、`claim_id`を内部IDとして分離した永続Registryを実装しました。Phase 2.8では、人によるClaim統合・承認、旧IDから統合先IDへの転送、全履歴、世代Backup/Restore、Registryを書き換えないCSV Previewを実装しました。Phase 3.0〜3.6ではPublisher Core、PDF Adapter、Education、Visual Grammar、Diagram Intent、Semantic Blueprint、Diagram Taxonomyを段階的に追加しました。Phase 4.0では必須6用語と追加4用語を既存経路で検証しました。Phase 4.1ではKnowledge Schemaを変更せず、Gram染色24 Claimのうち16 Claimを互換投影し、RegistryからPublication PlanとSemantic Blueprintまで通しました。Phase 5.0では国家試験全体を22のKnowledge CategoryとRelationで扱うDomain Mapを設計しました。Phase 5.1〜5.6で染色法、検体、試薬、Relation、索引型Growth Engineを実装しました。Phase 5.7でStructure境界を`biological_structure`へ確定し、Phase 5.8では細菌細胞壁1件を正式登録してGram染色の7 Relationをすべて解決しました。Phase 5.9ではコードを変更せず、基盤の安定領域・変更領域・成熟度をレビューしました。Phase 5.10では既存基盤を変えずに`disease`を6番目のCategory Unionへ追加し、鉄欠乏性貧血17 Claimを正式Registryへ登録しました。Phase 5.11では`laboratory_test_item`を7番目のCategory Unionへ追加し、フェリチン11 Claimを正式Registryへ登録しました。Phase 5.12では疾患用Relation 7語の意味、方向、Category範囲をVersion 1.0 Catalogへ固定し、Relation実体を作らずWorkbenchへ表示しました。Phase 5.13ではKnowledge・Registry・Exam Metadataを変更せず、Gemini等へ渡すSource Bundle JSON 1.0を生成する独立Publisherを追加しました。Phase 5.14では承認状態を共通Approval Contractへ固定し、`approved`以外の公開・外部AI送信をApproval Gateで停止します。Phase 5.15ではAI非依存のPresentation Request、Phase 5.16ではProvider非依存のAdapter Interface、Phase 5.17では承認済み正本のProvider Payload解決、Data Egress Policy、Traceable Responseを追加しました。Phase 5.18ではProvider非依存Prompt BuilderとGemini固有Sandbox Adapterを分離し、Phase 5.19ではProvider・Rendererに依存しないPresentation Artifactを教育成果物の唯一の正本Contractとして追加しました。Phase 5.20ではArtifact専用Registry、独立承認、Immutable approved版、History、Diff、Completeness、approved限定Renderer Gatewayを追加しました。Phase 5.20.1ではKnowledgeとArtifactの両方を確認するDual Approval Gateへ強化し、Phase 5.21ではそのKnowledge `approved`が保証する人の医学レビュー基準、Role、Evidence、Checklist、独立Review Versionを設計しました。Phase 5.22では未完成Knowledgeを正式Registryから分離して、人が5項目からSkeleton、Claim、Referenceを短時間で作成・検証・入出力できるAuthoring Workflowを追加しました。Phase 5.23ではSchema・Category・Claim・Reference・Registry重複・ID・FingerprintをPreviewで確認し、明示確定時だけ安定IDとVersionを維持して正式Registryへ`draft`登録するPromotion Workflowを追加しました。Phase 5.24では、Theme、Evidence、Claim、Reference、Knowledge BuilderをProvider非依存のPipelineとして分離し、実検索・LLMなしのSandboxからAuthoring Draft Previewと明示保存まで接続しました。Phase 5.25では、Provider固有のRaw Evidenceを内部へ閉じ、標準化、重複排除、A/B/C順位付けを経たEvidence BundleだけをWorkbenchとClaim Builderへ渡す境界を追加しました。Phase 5.26ではGemini Citationの実探索経路を追加し、Phase 5.26.1でその出力をDiscovery Candidate Setへ訂正して正式Evidence経路から完全分離しました。Phase 5.27ではNCBI公式ESearch・EFetchからPubMed Recordを再取得し、既存Evidence BundleとHuman Selectionまで通す最初のFormal Evidence Providerを追加しました。
 
 Phase 5.28では人が採用したFormal EvidenceだけからLLMが追跡可能なClaim Candidateを抽出し、Support Assessment、Source Locator、重複Preview、人の判断を経て、採用済みDirect ClaimだけをAuthoring Draftへ保存する境界を追加しました。
 
 Phase 5.29ではAuthoring Draftの採用済みClaimと選択済みReferenceを一字も書き換えず、独立したKnowledge Draft 1.0へ構造化するKnowledge Assemblerを追加しました。Category、順序、Reference対応、Metadata、Completeness、Fingerprintだけを組み立て、Validation失敗時は保存しません。Registry、Promotion、Approvalは実行しません。
+
+Phase 5.30では検証済みKnowledge DraftをPromotion可能な唯一の入力に固定しました。読み取り専用PreviewでSummary、Claim、Reference、Fingerprint、Registry差分、新規／更新、次Versionを確認し、明示確定時だけRegistryへ`draft`保存します。Authoring Draft直結APIは削除せずDeprecatedとして書き込みを拒否します。
 
 ### Phase 5.0成果物
 
@@ -471,6 +474,18 @@ Phase 5.29ではAuthoring Draftの採用済みClaimと選択済みReferenceを�
 - Registry・Promotion・Approval・Providerを参照しない境界テスト
 - [Knowledge Assembler](knowledge_assembler.md)
 - [ADR-0025](adr/0025-lossless-knowledge-assembler-boundary.md)
+
+### Phase 5.30成果物
+
+- Knowledge Draft専用Promotion Preview / Result Contract 2.0
+- Knowledge Draft Validation、Summary、Claim、Reference、Category、Fingerprintの再検証
+- Registry差分、新規／Version更新、現在Version／次Versionの保存前表示
+- Preview後のKnowledge Draft・Registry・正式Knowledge・Version変更検出
+- Promotion後`approval = draft`固定と自動承認禁止
+- WorkbenchのKnowledge Draft → Promotion Preview → Promoteの3段階導線
+- Authoring Draft直結Promotion APIのDeprecated・書込拒否
+- [Knowledge Draft Promotion Integration](knowledge_draft_promotion_integration.md)
+- [ADR-0026](adr/0026-knowledge-draft-only-promotion-entry.md)
 
 ---
 

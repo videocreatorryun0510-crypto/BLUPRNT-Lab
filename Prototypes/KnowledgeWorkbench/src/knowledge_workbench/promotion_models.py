@@ -6,6 +6,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from knowledge_workbench.knowledge_draft_models import (
+    KnowledgeDraftClaim,
+    KnowledgeDraftReference,
+)
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -101,3 +106,83 @@ class PromotionLogEvent(StrictModel):
     approval_state: Literal["draft"] | None
     actor: str
     reason_codes: list[str] = Field(default_factory=list)
+
+
+class KnowledgeDraftRegistryDiff(StrictModel):
+    """Human-readable Registry delta calculated before any write occurs."""
+
+    is_new: bool
+    has_changes: bool
+    title_changed: bool
+    category_changed: bool
+    summary_changed: bool
+    added_claim_keys: list[str] = Field(default_factory=list)
+    updated_claim_keys: list[str] = Field(default_factory=list)
+    removed_claim_keys: list[str] = Field(default_factory=list)
+    added_reference_keys: list[str] = Field(default_factory=list)
+    updated_reference_keys: list[str] = Field(default_factory=list)
+    removed_reference_keys: list[str] = Field(default_factory=list)
+
+
+class KnowledgeDraftPromotionValidationReport(StrictModel):
+    draft_validation_valid: bool
+    claim_text_valid: bool
+    summary_valid: bool
+    reference_valid: bool
+    category_valid: bool
+    fingerprint_valid: bool
+    review_state_valid: bool
+    target_version_valid: bool
+    registry_diff_valid: bool
+    schema_valid: bool
+    promotion_allowed: bool
+    checks: list[PromotionCheck]
+
+
+class KnowledgeDraftPromotionPreview(StrictModel):
+    """Phase 5.30 read-only preview whose only input is a Knowledge Draft."""
+
+    preview_version: Literal["2.0"] = "2.0"
+    preview_id: str
+    knowledge_draft_id: str
+    source_authoring_draft_id: str
+    created_at: datetime
+    title: str
+    category: str
+    summary: str
+    claims: tuple[KnowledgeDraftClaim, ...]
+    references: tuple[KnowledgeDraftReference, ...]
+    completeness_score: int = Field(ge=0, le=100)
+    validation: KnowledgeDraftPromotionValidationReport
+    registry_diff: KnowledgeDraftRegistryDiff
+    registry_key: str
+    operation: PromotionOperation
+    target_knowledge_id: str
+    current_version: int = Field(ge=0)
+    target_version: int = Field(ge=1)
+    draft_fingerprint: str
+    registry_fingerprint: str
+    knowledge_fingerprint: str
+    review_state: Literal["draft"] = "draft"
+
+
+class CommitKnowledgeDraftPromotionRequest(StrictModel):
+    preview_id: str
+    actor: str = Field(default="knowledge_author", min_length=1, max_length=120)
+    comment: str = Field(default="", max_length=500)
+
+
+class KnowledgeDraftPromotionResult(StrictModel):
+    promotion_version: Literal["2.0"] = "2.0"
+    promotion_id: str
+    preview_id: str
+    knowledge_draft_id: str
+    promoted_at: datetime
+    operation: PromotionOperation
+    registry_key: str
+    knowledge_id: str
+    knowledge_version: int = Field(ge=1)
+    approval_state: Literal["draft"] = "draft"
+    registry_saved: Literal[True] = True
+    fingerprint: str
+    warnings: list[str] = Field(default_factory=list)

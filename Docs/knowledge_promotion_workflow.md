@@ -1,5 +1,7 @@
 # Phase 5.23 Knowledge Promotion Workflow MVP
 
+> **Phase 5.30で正式経路を更新しました。** この文書はPhase 5.23時点の履歴です。Authoring Draft直結経路は現在Deprecatedで書き込みを拒否します。現行仕様は[Knowledge Draft Promotion Integration](knowledge_draft_promotion_integration.md)を参照してください。
+
 ## 目的
 
 Knowledge Promotionは、Workbenchの未完成なAuthoring Draftを、正式Knowledge Registryへ安全に移すための境界です。

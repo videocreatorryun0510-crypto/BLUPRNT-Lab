@@ -185,6 +185,10 @@ from knowledge_workbench.knowledge_draft_models import (
     AssembleKnowledgeDraftRequest,
     KnowledgeDraft,
 )
+from knowledge_workbench.knowledge_draft_promotion_service import (
+    KnowledgeDraftPromotionError,
+    KnowledgeDraftPromotionService,
+)
 from knowledge_workbench.knowledge_draft_repository import (
     FileKnowledgeDraftRepository,
     KnowledgeDraftNotFoundError,
@@ -209,15 +213,14 @@ from knowledge_workbench.knowledge_relation_repository import (
 )
 from knowledge_workbench.knowledge_relation_service import KnowledgeRelationService
 from knowledge_workbench.promotion_log import JsonlPromotionLog, PromotionLogError
+from knowledge_workbench.promotion_mapping import promotion_semantic_slots
 from knowledge_workbench.promotion_models import (
+    CommitKnowledgeDraftPromotionRequest,
     CommitPromotionRequest,
+    KnowledgeDraftPromotionPreview,
+    KnowledgeDraftPromotionResult,
     PromotionPreview,
     PromotionResult,
-)
-from knowledge_workbench.promotion_service import (
-    KnowledgePromotionService,
-    PromotionError,
-    promotion_semantic_slots,
 )
 from knowledge_workbench.providers.base import KnowledgeProvider
 from knowledge_workbench.providers.gemini_claim_adapter import (
@@ -595,7 +598,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.29.0",
+        version="5.30.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -796,8 +799,8 @@ def create_app(
         / "promotion_logs"
         / "promotion.jsonl"
     )
-    promotion_service = KnowledgePromotionService(
-        authoring_service,
+    promotion_service = KnowledgeDraftPromotionService(
+        knowledge_draft_service,
         resolved_registry,
         JsonlPromotionLog(promotion_log_path),
     )
@@ -1278,11 +1281,13 @@ def create_app(
             "knowledge_assembler_version": "1.0.0",
             "knowledge_draft_contract_version": "1.0",
             "knowledge_draft_output": str(knowledge_draft_output_directory),
-            "knowledge_draft_registry_write_enabled": False,
-            "knowledge_draft_promotion_enabled": False,
+            "knowledge_draft_registry_write_enabled": True,
+            "knowledge_draft_promotion_enabled": True,
             "knowledge_draft_automatic_approval_enabled": False,
             "knowledge_draft_provider_neutral": True,
-            "knowledge_promotion_version": "1.0",
+            "knowledge_promotion_version": "2.0",
+            "knowledge_promotion_input": "knowledge_draft_only",
+            "authoring_draft_promotion_path": "deprecated_rejected",
             "knowledge_promotion_preview_mutates_registry": False,
             "knowledge_promotion_registry_write_enabled": True,
             "knowledge_promotion_approval_state": "draft",
@@ -1964,6 +1969,14 @@ def create_app(
     def promotion_result_schema_v10() -> dict[str, object]:
         return PromotionResult.model_json_schema()
 
+    @app.get("/api/schema/knowledge-draft-promotion-preview-2.0")
+    def knowledge_draft_promotion_preview_schema_v20() -> dict[str, object]:
+        return KnowledgeDraftPromotionPreview.model_json_schema()
+
+    @app.get("/api/schema/knowledge-draft-promotion-result-2.0")
+    def knowledge_draft_promotion_result_schema_v20() -> dict[str, object]:
+        return KnowledgeDraftPromotionResult.model_json_schema()
+
     @app.get("/api/authoring/promotion/semantic-slots")
     def list_promotion_semantic_slots() -> dict[str, object]:
         return {"status": "success", "semantic_slots": promotion_semantic_slots()}
@@ -2004,42 +2017,47 @@ def create_app(
 
     @app.post("/api/authoring/drafts/{draft_id}/promotion/preview")
     def preview_authoring_promotion(draft_id: str) -> JSONResponse:
-        try:
-            preview = promotion_service.preview(draft_id)
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": (
-                        "ready" if preview.validation.promotion_allowed else "blocked"
-                    ),
-                    "preview": preview.model_dump(mode="json"),
-                    "registry_mutated": False,
-                    "approval_state": "draft",
-                },
-            )
-        except AuthoringDraftNotFoundError as error:
-            return _authoring_error(error, 404, "authoring_draft_not_found")
-        except (PromotionError, PromotionLogError, ValidationError, ValueError) as error:
-            return _authoring_error(error, 422, "promotion_preview_failed")
+        return JSONResponse(
+            status_code=410,
+            content={
+                "status": "deprecated",
+                "errors": [
+                    {
+                        "code": "authoring_promotion_path_deprecated",
+                        "message": (
+                            "Authoring Draftから直接Promotionできません。"
+                            "Knowledge Draftを生成してからPreviewしてください。"
+                        ),
+                    }
+                ],
+                "draft_id": draft_id,
+                "replacement": (
+                    "/api/knowledge-drafts/{knowledge_draft_id}/promotion/preview"
+                ),
+                "registry_mutated": False,
+            },
+        )
 
     @app.post("/api/authoring/promotions")
     def commit_authoring_promotion(request: CommitPromotionRequest) -> JSONResponse:
-        try:
-            result = promotion_service.commit(request)
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "result": result.model_dump(mode="json"),
-                    "registry_mutated": True,
-                    "approval_state": "draft",
-                    "automatic_approval_performed": False,
-                },
-            )
-        except (PromotionError, PromotionLogError, RegistryOperationError) as error:
-            return _authoring_error(error, 409, "promotion_commit_failed")
-        except (ValidationError, ValueError) as error:
-            return _authoring_error(error, 422, "promotion_validation_failed")
+        return JSONResponse(
+            status_code=410,
+            content={
+                "status": "deprecated",
+                "errors": [
+                    {
+                        "code": "authoring_promotion_path_deprecated",
+                        "message": (
+                            "Authoring Draft用Promotion APIは利用終了しました。"
+                            "Knowledge Draft用APIを使用してください。"
+                        ),
+                    }
+                ],
+                "preview_id": request.preview_id,
+                "replacement": "/api/knowledge-draft-promotions",
+                "registry_mutated": False,
+            },
+        )
 
     @app.get("/api/authoring/promotion/logs")
     def list_authoring_promotion_logs(limit: int = 100) -> JSONResponse:
@@ -2053,6 +2071,7 @@ def create_app(
                         item.model_dump(mode="json")
                         for item in promotion_service.logs(limit=safe_limit)
                     ],
+                    "deprecated_endpoint": True,
                 },
             )
         except PromotionLogError as error:
@@ -2245,6 +2264,74 @@ def create_app(
                     "draft_saved": False,
                 },
             )
+
+    @app.post("/api/knowledge-drafts/{knowledge_draft_id}/promotion/preview")
+    def preview_knowledge_draft_promotion(knowledge_draft_id: str) -> JSONResponse:
+        try:
+            preview = promotion_service.preview(knowledge_draft_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": (
+                        "ready" if preview.validation.promotion_allowed else "blocked"
+                    ),
+                    "preview": preview.model_dump(mode="json"),
+                    "registry_mutated": False,
+                    "approval_state": "draft",
+                },
+            )
+        except (KnowledgeDraftNotFoundError, AuthoringDraftNotFoundError) as error:
+            return _authoring_error(error, 404, "knowledge_draft_not_found")
+        except (
+            KnowledgeDraftPromotionError,
+            PromotionLogError,
+            KnowledgeDraftStorageError,
+            ValidationError,
+            ValueError,
+        ) as error:
+            return _authoring_error(error, 422, "knowledge_draft_promotion_preview_failed")
+
+    @app.post("/api/knowledge-draft-promotions")
+    def commit_knowledge_draft_promotion(
+        request: CommitKnowledgeDraftPromotionRequest,
+    ) -> JSONResponse:
+        try:
+            result = promotion_service.commit(request)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "result": result.model_dump(mode="json"),
+                    "registry_mutated": True,
+                    "approval_state": "draft",
+                    "automatic_approval_performed": False,
+                },
+            )
+        except (
+            KnowledgeDraftPromotionError,
+            PromotionLogError,
+            RegistryOperationError,
+        ) as error:
+            return _authoring_error(error, 409, "knowledge_draft_promotion_commit_failed")
+        except (ValidationError, ValueError) as error:
+            return _authoring_error(error, 422, "knowledge_draft_promotion_validation_failed")
+
+    @app.get("/api/knowledge-draft-promotions/logs")
+    def list_knowledge_draft_promotion_logs(limit: int = 100) -> JSONResponse:
+        try:
+            safe_limit = max(1, min(limit, 500))
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "logs": [
+                        item.model_dump(mode="json")
+                        for item in promotion_service.logs(limit=safe_limit)
+                    ],
+                },
+            )
+        except PromotionLogError as error:
+            return _authoring_error(error, 500, "promotion_log_unavailable")
 
     @app.post("/api/gemini-acceptance/preflight")
     def gemini_acceptance_preflight() -> JSONResponse:

@@ -10,7 +10,7 @@ BLUPRNT Lab は、臨床検査技師国家試験を中心とする医療教育�
 4. **note Publisher** — note向け記事
 
 > **現在の状態**  
-> **Phase 5.29「Knowledge Assembler MVP」を実装しました。** 人が採用・修正したClaimと選択したReferenceを一字も書き換えず、Promotion前の独立Knowledge Draft 1.0へ構造化します。Summaryも既存Claimの完全一致コピーだけを許可し、Registry・Promotion・Approvalは実行しません。詳細は[Knowledge Assembler](Docs/knowledge_assembler.md)に記録しています。
+> **Phase 5.30「Knowledge Draft Promotion Integration MVP」を実装しました。** Authoring DraftからRegistryへ直接登録する経路を停止し、検証済みKnowledge Draft → Promotion Preview → 明示Promotionを唯一の正式経路にしました。Registry差分と次Versionを保存前に確認でき、保存後もApprovalは必ず`draft`です。詳細は[Knowledge Draft Promotion Integration](Docs/knowledge_draft_promotion_integration.md)に記録しています。
 
 ---
 

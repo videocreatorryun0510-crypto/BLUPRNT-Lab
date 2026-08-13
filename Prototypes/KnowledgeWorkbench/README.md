@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.29
+# Knowledge Workbench — Phase 5.30
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -14,7 +14,7 @@ Phase 5.18.1では、実Knowledgeを使わないGemini実API受入テストを�
 
 Phase 5.22では、AIを使わず人がKnowledgeを素早く作るKnowledge Wizardを追加しました。Category、Title、Alias、Difficulty、Exam Importanceの5項目から、既存Knowledge Contract 1.0に適合する空のSkeletonを作ります。ClaimとReferenceを追加・編集し、JSONまたはMarkdownへ出力できます。未完成データは正式Registryから分離したAuthoring Draftとして保存され、Approval、Artifact、Publisherは変更しません。
 
-Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflowを追加しました。Claimごとの保存先、Schema、Category、Reference、ID、重複、Fingerprintを読み取り専用Previewで確認し、確定した場合だけ既存Registryへ保存します。Promotion後のApproval Stateは必ず`draft`で、自動承認は行いません。
+Phase 5.23では、Authoring Draftを正式Registryへ移すPromotion Workflowを追加しました。Phase 5.30以降、この直結経路はDeprecatedであり、Knowledge Draftを生成・確認した後だけPromotionできます。Promotion後のApproval Stateは引き続き必ず`draft`で、自動承認は行いません。
 
 Phase 5.24では、テーマ・医療用語だけを入力し、Evidence Search、Ranking、Claim、Reference、Knowledge Builderを通してAuthoring Draft Previewを作るProvider非依存Pipelineを追加しました。今回は外部検索とLLMを呼ばず、既存ローカルKnowledge例を使うSandboxです。保存先はAuthoring Draftだけで、Promotion、Registry、Review、Approvalは自動実行しません。
 
@@ -26,7 +26,7 @@ Phase 5.27では、NCBI公式E-utilitiesを使うPubMed Formal Evidence Provider
 
 Phase 5.28では、人が「採用」したFormal EvidenceだけからAIがClaim Candidateを抽出します。各候補にはEvidence ID、Abstract内Locator、PMID/DOI、Support Level、Confidence、重複判定が付きます。Workbenchで採用・修正・除外・保留を記録し、採用済みDirect ClaimだけをAuthoring Draftへ保存できます。正式Claim、Promotion、Registry、医学承認は変更しません。
 
-Phase 5.29では、Authoring DraftのClaimとReferenceを内容変更せずKnowledge Draft 1.0へ整理するKnowledge Assemblerを追加しました。Summaryは既存Claim本文の完全一致コピーで、Claim順、Reference対応、Category、Metadata、Fingerprintを保存前に検証します。Knowledge Draftは正式Registryと別に保存され、PromotionとApprovalは実行しません。
+Phase 5.29では、Authoring DraftのClaimとReferenceを内容変更せずKnowledge Draft 1.0へ整理するKnowledge Assemblerを追加しました。Phase 5.30では、このKnowledge DraftだけをPromotion可能な入力に固定しました。WorkbenchでDraftを確認し、Registry Diff・次Version・Validation・FingerprintをPreviewした後、明示操作でRegistryへ`draft`登録します。Authoring Draft直結APIは互換のため残しますが、Deprecatedとして書き込みを拒否します。
 
 ## できること
 
@@ -170,7 +170,7 @@ AIでKnowledgeを生成する場合は`.env`の`OPENAI_API_KEY=`へOpenAI APIキ
 6. 保存する場合だけ「Authoring Draftへ保存」を押します。
 7. 保存後は既存Authoring画面でClaimとReferenceを修正できます。
 
-Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。Phase 5.28の「選択EvidenceからClaim候補生成」は、採用済みEvidenceだけを実LLMへ渡します。Phase 5.29の「Generate Draft」は、Authoring Draftの内容を変えずKnowledge Draft Previewを作ります。詳しくは[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Evidence-Grounded Claim Builder](../../Docs/evidence_grounded_claim_builder.md)、[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
+Phase 5.25のDraft Preview Sandboxは`フェリチン`、`鉄欠乏性貧血`、`Gram染色`に対応します。Phase 5.26.1の「探索候補を検索」は正式EvidenceではないDiscovery Resultsを表示します。Phase 5.27の「PubMed正式Evidence検索」はPubMedへ直接問い合わせ、候補ごとの「PubMedで正式Evidence取得」はCandidateを変換せずPubMedへ再検索します。Phase 5.28の「選択EvidenceからClaim候補生成」は、採用済みEvidenceだけを実LLMへ渡します。Phase 5.29の「Generate Draft」は、Authoring Draftの内容を変えずKnowledge Draft Previewを作ります。Phase 5.30では、その画面内の「Promotion Preview」からRegistry差分と次Versionを確認し、「Promote」で`draft`登録します。詳しくは[Knowledge Draft Promotion Integration](../../Docs/knowledge_draft_promotion_integration.md)、[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Evidence-Grounded Claim Builder](../../Docs/evidence_grounded_claim_builder.md)、[PubMed Formal Evidence Provider](../../Docs/pubmed_formal_evidence_provider.md)、[Discovery Candidate Boundary](../../Docs/discovery_candidate_boundary.md)、[Evidence Intelligence Layer](../../Docs/evidence_intelligence_layer.md)を参照してください。
 
 ## PubMed正式Evidenceを確認する
 
@@ -196,7 +196,7 @@ Discovery Resultsから進む場合は「PubMedで正式Evidence取得」を押�
 9. 必要ならJSONまたはMarkdownへ出力します。「Return to Authoring」で編集へ戻れます。この欄からPromotionは実行できません。
 10. 既存Promotion Workflowを利用する場合は、別欄の「Promotion Preview」で正式登録前の検査を行います。
 
-Authoring Draftは`data/authoring_drafts/`、検証済みKnowledge Draftは`data/knowledge_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。いずれもGit管理対象外です。AssemblerはRegistryを変更せず、Knowledge DraftのApprovalは`draft`固定です。詳しくは[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)、[Knowledge Promotion Workflow](../../Docs/knowledge_promotion_workflow.md)を参照してください。
+Authoring Draftは`data/authoring_drafts/`、検証済みKnowledge Draftは`data/knowledge_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。いずれもGit管理対象外です。Assembler単体ではRegistryを変更せず、Knowledge DraftのApprovalは`draft`固定です。Promotion Previewも読み取り専用で、明示Promote時だけRegistryへ保存します。詳しくは[Knowledge Draft Promotion Integration](../../Docs/knowledge_draft_promotion_integration.md)、[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)を参照してください。
 
 ## 国家試験CSVをPreviewして取り込む
 
