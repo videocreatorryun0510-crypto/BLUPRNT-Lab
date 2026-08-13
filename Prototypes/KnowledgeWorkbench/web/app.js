@@ -125,12 +125,15 @@ const geminiAcceptanceResultPanel = document.querySelector(
 );
 const diseaseVocabularyBadge = document.querySelector("#diseaseVocabularyBadge");
 const diseaseVocabularyList = document.querySelector("#diseaseVocabularyList");
+const medicalReviewQueue = document.querySelector("#medicalReviewQueue");
+const medicalReviewPanel = document.querySelector("#medicalReviewPanel");
 let currentRegistry = null;
 let currentPreviewId = null;
 let currentPreviewCanCommit = false;
 let geminiAcceptanceFingerprint = null;
 let geminiAcceptanceExecutionStarted = false;
 let currentArtifactRegistry = null;
+let currentMedicalReviewContext = null;
 
 const termTypeLabels = {
   test_item: "検査項目",
@@ -5014,6 +5017,301 @@ document.querySelector("#refreshKnowledgeDraftPromotionLogButton").addEventListe
   catch (error) { document.querySelector("#promotionMessage").textContent = error instanceof Error ? error.message : "Promotion Logを読み込めませんでした。"; }
 });
 
+async function medicalReviewApi(path, options = {}) {
+  const response = await fetch(path, options);
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.errors?.[0]?.message || "Medical Reviewを処理できませんでした。");
+  }
+  return payload;
+}
+
+function medicalReviewOption(value, label) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  return option;
+}
+
+async function refreshMedicalReviewQueue(autoLoad = false) {
+  const payload = await medicalReviewApi("/api/medical-review/queue");
+  const selected = medicalReviewQueue.value;
+  medicalReviewQueue.replaceChildren();
+  payload.queue.forEach((item) => {
+    const option = medicalReviewOption(
+      item.knowledge_id,
+      `${item.knowledge_name} · ${item.category} · K${item.knowledge_version} / R${item.review_version}`,
+    );
+    medicalReviewQueue.appendChild(option);
+  });
+  if ([...medicalReviewQueue.options].some((item) => item.value === selected)) {
+    medicalReviewQueue.value = selected;
+  }
+  if (!payload.queue.length) {
+    medicalReviewQueue.appendChild(medicalReviewOption("", "Review対象はまだありません"));
+    medicalReviewPanel.hidden = true;
+  } else if (autoLoad) {
+    await loadMedicalReview();
+  }
+}
+
+function renderMedicalReviewEligibility(eligibility) {
+  const list = document.querySelector("#medicalReviewEligibilityChecks");
+  list.replaceChildren();
+  eligibility.checks.forEach((check) => {
+    const item = document.createElement("li");
+    item.dataset.severity = check.passed ? "info" : "error";
+    const title = document.createElement("strong");
+    title.textContent = `${check.passed ? "✓" : "×"} ${check.code}`;
+    const message = document.createElement("span");
+    message.textContent = check.message;
+    item.append(title, message);
+    list.appendChild(item);
+  });
+  const validity = document.querySelector("#medicalReviewValidityBadge");
+  validity.textContent = eligibility.validity || "Reviewなし";
+  validity.className = eligibility.validity === "current" ? "badge success" : "badge warning";
+  const eligible = document.querySelector("#medicalReviewEligibilityBadge");
+  eligible.textContent = eligibility.eligible_for_final_approval ? "承認候補" : "承認不可";
+  eligible.className = eligibility.eligible_for_final_approval ? "badge success" : "badge warning";
+}
+
+function renderMedicalReviewClaims(claims) {
+  const list = document.querySelector("#medicalReviewClaimList");
+  list.replaceChildren();
+  claims.forEach((claim) => {
+    const card = document.createElement("article");
+    card.className = "medical-review-card medical-review-claim-card";
+    card.dataset.claimId = claim.claim_id;
+    const title = document.createElement("strong");
+    title.textContent = `${claim.claim_key} · v${claim.claim_version}`;
+    const assertion = document.createElement("p");
+    assertion.textContent = claim.assertion;
+    const path = document.createElement("small");
+    path.textContent = claim.field_path;
+    card.append(title, assertion, path);
+
+    if (!claim.evidence.length) {
+      const missing = document.createElement("p");
+      missing.className = "warning-text";
+      missing.textContent = "Evidenceがありません。approvedにはできません。";
+      card.appendChild(missing);
+    }
+    claim.evidence.forEach((evidence) => {
+      const evidenceCard = document.createElement("div");
+      evidenceCard.className = "medical-review-evidence";
+      evidenceCard.dataset.evidenceId = evidence.source_id;
+      const evidenceTitle = document.createElement("strong");
+      evidenceTitle.textContent = evidence.title;
+      const identifiers = document.createElement("p");
+      identifiers.textContent = [
+        evidence.issuing_organization,
+        evidence.pmid ? `PMID ${evidence.pmid}` : "",
+        evidence.doi ? `DOI ${evidence.doi}` : "",
+        evidence.pages ? `p. ${evidence.pages}` : "",
+      ].filter(Boolean).join(" · ");
+      evidenceCard.append(evidenceTitle, identifiers);
+      [
+        ["exists", "資料実在"],
+        ["current", "現行性確認"],
+        ["direct", "Claimを直接支持"],
+      ].forEach(([name, label]) => {
+        const wrapper = document.createElement("label");
+        const inputElement = document.createElement("input");
+        inputElement.type = "checkbox";
+        inputElement.dataset.reviewField = name;
+        const text = document.createElement("span");
+        text.textContent = label;
+        wrapper.append(inputElement, text);
+        evidenceCard.appendChild(wrapper);
+      });
+      const level = document.createElement("select");
+      level.dataset.reviewField = "level";
+      ["A", "B", "C"].forEach((value) => level.appendChild(medicalReviewOption(value, `Level ${value}`)));
+      const support = document.createElement("select");
+      support.dataset.reviewField = "support";
+      ["supports", "partially_supports", "conflicts", "does_not_support"].forEach((value) => {
+        support.appendChild(medicalReviewOption(value, value));
+      });
+      const locator = document.createElement("input");
+      locator.dataset.reviewField = "locator";
+      locator.placeholder = "章・ページ・表番号など";
+      locator.value = evidence.pages || evidence.chapter || "";
+      const comment = document.createElement("input");
+      comment.dataset.reviewField = "comment";
+      comment.placeholder = "Evidence評価コメント";
+      evidenceCard.append(level, support, locator, comment);
+      card.appendChild(evidenceCard);
+    });
+    const decisionRow = document.createElement("div");
+    decisionRow.className = "review-row";
+    const decisionLabel = document.createElement("label");
+    decisionLabel.textContent = "Claim Decision";
+    const decision = document.createElement("select");
+    decision.dataset.reviewField = "claim-decision";
+    ["revision_required", "insufficient_evidence", "approved", "rejected", "not_applicable"].forEach((value) => {
+      decision.appendChild(medicalReviewOption(value, value));
+    });
+    const commentLabel = document.createElement("label");
+    commentLabel.textContent = "Comment";
+    const claimComment = document.createElement("textarea");
+    claimComment.dataset.reviewField = "claim-comment";
+    claimComment.rows = 2;
+    claimComment.placeholder = "判断理由・修正指示";
+    decisionRow.append(decisionLabel, decision, commentLabel, claimComment);
+    card.appendChild(decisionRow);
+    list.appendChild(card);
+  });
+}
+
+function renderMedicalReviewChecklist(checklist) {
+  const list = document.querySelector("#medicalReviewChecklist");
+  list.replaceChildren();
+  checklist.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "medical-review-card medical-review-checklist-card";
+    card.dataset.itemId = item.item_id;
+    const title = document.createElement("strong");
+    title.textContent = `${item.item_id} · ${item.severity} · ${item.label}`;
+    const row = document.createElement("div");
+    row.className = "review-row";
+    const resultLabel = document.createElement("label");
+    resultLabel.textContent = "Result";
+    const result = document.createElement("select");
+    result.dataset.reviewField = "checklist-result";
+    ["not_reviewed", "pass", "fail", "not_applicable"].forEach((value) => {
+      result.appendChild(medicalReviewOption(value, value));
+    });
+    const reasonLabel = document.createElement("label");
+    reasonLabel.textContent = "理由";
+    const reason = document.createElement("input");
+    reason.dataset.reviewField = "checklist-reason";
+    reason.placeholder = "特にnot_applicableでは必須";
+    row.append(resultLabel, result, reasonLabel, reason);
+    card.append(title, row);
+    list.appendChild(card);
+  });
+}
+
+function renderMedicalReviewHistory(reviews) {
+  const list = document.querySelector("#medicalReviewHistory");
+  list.replaceChildren();
+  if (!reviews.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "Review履歴はまだありません。";
+    list.appendChild(empty);
+    return;
+  }
+  reviews.slice().reverse().forEach((review) => {
+    const card = document.createElement("article");
+    card.className = "medical-review-card";
+    const title = document.createElement("strong");
+    title.textContent = `Review v${review.review_version} · ${review.decision}`;
+    const detail = document.createElement("p");
+    detail.textContent = `${review.reviewer_id} · ${new Date(review.reviewed_at).toLocaleString("ja-JP")} · 期限 ${new Date(review.valid_until).toLocaleDateString("ja-JP")}`;
+    const comment = document.createElement("small");
+    comment.textContent = review.comments;
+    card.append(title, detail, comment);
+    list.appendChild(card);
+  });
+}
+
+async function loadMedicalReview() {
+  const knowledgeId = medicalReviewQueue.value;
+  if (!knowledgeId) return;
+  const context = await medicalReviewApi(`/api/medical-review/knowledge/${encodeURIComponent(knowledgeId)}`);
+  const histories = await medicalReviewApi(`/api/medical-review/knowledge/${encodeURIComponent(knowledgeId)}/reviews`);
+  currentMedicalReviewContext = context;
+  medicalReviewPanel.hidden = false;
+  document.querySelector("#medicalReviewSubtitle").textContent = `${context.queue_entry.knowledge_name} · ${context.queue_entry.category}`;
+  document.querySelector("#medicalReviewKnowledgeVersion").textContent = `v${context.queue_entry.knowledge_version}`;
+  document.querySelector("#medicalReviewVersion").textContent = context.queue_entry.review_version ? `v${context.queue_entry.review_version}` : "未Review";
+  document.querySelector("#medicalReviewClaimCount").textContent = context.queue_entry.claim_count;
+  document.querySelector("#medicalReviewClaimProgress").textContent = `${context.queue_entry.reviewed_claim_count} / ${context.queue_entry.unreviewed_claim_count}`;
+  document.querySelector("#medicalReviewEvidenceCoverage").textContent = `${context.queue_entry.evidence_coverage}%`;
+  document.querySelector("#medicalReviewCompleteness").textContent = `${context.queue_entry.completeness}%`;
+  document.querySelector("#medicalReviewCurrentDecision").textContent = context.queue_entry.current_decision || "未Review";
+  document.querySelector("#medicalReviewDeadlineStatus").textContent = context.queue_entry.review_deadline ? new Date(context.queue_entry.review_deadline).toLocaleDateString("ja-JP") : "未設定";
+  const reviewerSelect = document.querySelector("#medicalReviewerSelect");
+  reviewerSelect.replaceChildren();
+  context.reviewers.forEach((reviewer) => {
+    reviewerSelect.appendChild(medicalReviewOption(reviewer.reviewer_id, reviewer.display_name));
+  });
+  const due = new Date();
+  due.setDate(due.getDate() + 90);
+  document.querySelector("#medicalReviewValidUntil").value = due.toISOString().slice(0, 16);
+  renderMedicalReviewClaims(context.claims);
+  renderMedicalReviewChecklist(context.checklist);
+  renderMedicalReviewEligibility(context.eligibility);
+  renderMedicalReviewHistory(histories.reviews);
+  medicalReviewPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function buildMedicalReviewRequest() {
+  if (!currentMedicalReviewContext) throw new Error("Review対象を先に開いてください。");
+  const validUntil = document.querySelector("#medicalReviewValidUntil").value;
+  if (!validUntil) throw new Error("Review期限を入力してください。");
+  const claimReviews = [...document.querySelectorAll(".medical-review-claim-card")].map((card) => ({
+    claim_id: card.dataset.claimId,
+    evidence_assessments: [...card.querySelectorAll(".medical-review-evidence")].map((evidence) => ({
+      evidence_id: evidence.dataset.evidenceId,
+      exists_confirmed: evidence.querySelector('[data-review-field="exists"]').checked,
+      current_confirmed: evidence.querySelector('[data-review-field="current"]').checked,
+      directly_supports: evidence.querySelector('[data-review-field="direct"]').checked,
+      evidence_level: evidence.querySelector('[data-review-field="level"]').value,
+      support: evidence.querySelector('[data-review-field="support"]').value,
+      locator: evidence.querySelector('[data-review-field="locator"]').value.trim(),
+      comment: evidence.querySelector('[data-review-field="comment"]').value.trim(),
+    })),
+    decision: card.querySelector('[data-review-field="claim-decision"]').value,
+    comment: card.querySelector('[data-review-field="claim-comment"]').value.trim(),
+  }));
+  const checklistResults = [...document.querySelectorAll(".medical-review-checklist-card")].map((card) => ({
+    item_id: card.dataset.itemId,
+    result: card.querySelector('[data-review-field="checklist-result"]').value,
+    reason: card.querySelector('[data-review-field="checklist-reason"]').value.trim(),
+  }));
+  return {
+    knowledge_id: currentMedicalReviewContext.queue_entry.knowledge_id,
+    reviewer_id: document.querySelector("#medicalReviewerSelect").value,
+    reviewer_role: document.querySelector("#medicalReviewerRole").value,
+    review_scope: "knowledge_and_claims",
+    claim_reviews: claimReviews,
+    checklist_results: checklistResults,
+    decision: document.querySelector("#medicalReviewDecision").value,
+    comments: document.querySelector("#medicalReviewComments").value.trim(),
+    valid_until: new Date(validUntil).toISOString(),
+  };
+}
+
+async function saveMedicalReview() {
+  const request = buildMedicalReviewRequest();
+  const payload = await medicalReviewApi("/api/medical-review/reviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  document.querySelector("#medicalReviewMessage").textContent =
+    `Review v${payload.review.review_version}を追記しました。Knowledgeは${payload.approval_state_changed ? "変更" : "draftのまま"}です。`;
+  renderMedicalReviewEligibility(payload.eligibility);
+  await refreshMedicalReviewQueue(false);
+  medicalReviewQueue.value = request.knowledge_id;
+  await loadMedicalReview();
+}
+
+document.querySelector("#refreshMedicalReviewQueueButton").addEventListener("click", async () => {
+  try { await refreshMedicalReviewQueue(false); }
+  catch (error) { document.querySelector("#medicalReviewMessage").textContent = error instanceof Error ? error.message : "Queueを更新できませんでした。"; }
+});
+document.querySelector("#loadMedicalReviewButton").addEventListener("click", async () => {
+  try { await loadMedicalReview(); }
+  catch (error) { document.querySelector("#medicalReviewMessage").textContent = error instanceof Error ? error.message : "Review画面を開けませんでした。"; }
+});
+document.querySelector("#saveMedicalReviewButton").addEventListener("click", async () => {
+  try { await saveMedicalReview(); }
+  catch (error) { document.querySelector("#medicalReviewMessage").textContent = error instanceof Error ? error.message : "Reviewを保存できませんでした。"; }
+});
+
 fetch("/api/status")
   .then((response) => response.json())
   .then((status) => {
@@ -5039,6 +5337,7 @@ fetch("/api/status")
   .catch(() => {});
 
 refreshRegistryList(true);
+refreshMedicalReviewQueue(false).catch(() => {});
 refreshArtifactRegistryList(true);
 refreshBackups();
 loadDiseaseRelationVocabulary();

@@ -1,7 +1,7 @@
 # Medical Review Contract Version 1.0 — Design Proposal
 
 - Phase: 5.21
-- Status: Design only / not implemented
+- Status: Implemented by Phase 5.31
 - Contract ID: `medical_review_contract_v1`
 
 ## 1. 責務

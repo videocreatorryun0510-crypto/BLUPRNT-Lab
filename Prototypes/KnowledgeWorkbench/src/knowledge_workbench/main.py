@@ -212,6 +212,20 @@ from knowledge_workbench.knowledge_relation_repository import (
     KnowledgeRelationRepository,
 )
 from knowledge_workbench.knowledge_relation_service import KnowledgeRelationService
+from knowledge_workbench.medical_review_models import (
+    CreateMedicalReviewRequest,
+    medical_review_record_json_schema,
+)
+from knowledge_workbench.medical_review_registry import (
+    FixtureReviewerRegistry,
+    MedicalReviewRegistry,
+    ReviewerRegistry,
+    SQLiteMedicalReviewRegistry,
+)
+from knowledge_workbench.medical_review_service import (
+    MedicalReviewService,
+    MedicalReviewServiceError,
+)
 from knowledge_workbench.promotion_log import JsonlPromotionLog, PromotionLogError
 from knowledge_workbench.promotion_mapping import promotion_semantic_slots
 from knowledge_workbench.promotion_models import (
@@ -595,10 +609,12 @@ def create_app(
     grounded_search_provider: GeminiGroundedSearchProvider | None = None,
     pubmed_evidence_provider: PubMedEvidenceProvider | None = None,
     claim_generation_adapter: ClaimGenerationAdapter | None = None,
+    medical_review_registry: MedicalReviewRegistry | None = None,
+    reviewer_registry: ReviewerRegistry | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="BLUPRNT Lab Knowledge Workbench",
-        version="5.30.0",
+        version="5.31.0",
         docs_url="/api/docs",
         redoc_url=None,
     )
@@ -625,6 +641,27 @@ def create_app(
         if resolved_relation_repository is not None
         else None
     )
+    resolved_medical_review_registry = medical_review_registry or (
+        SQLiteMedicalReviewRegistry(
+            Path(temporary_registry_directory.name) / "medical_review_registry.sqlite3"
+        )
+        if temporary_registry_directory is not None
+        else SQLiteMedicalReviewRegistry(
+            resolved_settings.registry_path.parent / "medical_review_registry.sqlite3"
+        )
+    )
+    resolved_reviewer_registry = reviewer_registry or FixtureReviewerRegistry()
+    isolated_fixture_approval = (
+        temporary_registry_directory is not None
+        and getattr(provider, "provider_name", "") == "test_fixture"
+    )
+    medical_review_service = MedicalReviewService(
+        resolved_registry,
+        resolved_medical_review_registry,
+        resolved_reviewer_registry,
+        allow_fixture_identity_for_approval=isolated_fixture_approval,
+    )
+    app.state.medical_review_service = medical_review_service
     app.state.registry_tempdir = temporary_registry_directory
     authoring_output_directory = (
         Path(temporary_registry_directory.name) / "authoring_drafts"
@@ -1160,6 +1197,11 @@ def create_app(
             ),
             "openai_key_configured": bool(resolved_settings.openai_api_key),
             "medical_review_required": True,
+            "medical_review_contract_version": "1.0",
+            "medical_review_registry": "independent_append_only_sqlite",
+            "medical_review_checklist_version": "1.0",
+            "medical_review_evidence_policy_version": "1.0",
+            "medical_review_approval_mode": "human_review_eligibility_only",
             "source_bundle_schema_version": "1.0",
             "source_bundle_publisher_version": "1.1.0",
             "source_bundle_supported_knowledge_ids": list(
@@ -2427,6 +2469,10 @@ def create_app(
     def schema_v10() -> dict[str, object]:
         return knowledge_record_json_schema()
 
+    @app.get("/api/schema/medical-review-record-1.0")
+    def medical_review_schema_v10() -> dict[str, object]:
+        return medical_review_record_json_schema()
+
     @app.get("/api/schema/knowledge-0.3")
     def schema_v03() -> dict[str, object]:
         return knowledge_record_v03_json_schema()
@@ -2502,6 +2548,88 @@ def create_app(
     @app.get("/api/registry")
     def registry_snapshot() -> dict[str, object]:
         return resolved_registry.snapshot().model_dump(mode="json")
+
+    @app.get("/api/medical-review/reviewers")
+    def medical_review_reviewers() -> dict[str, object]:
+        return {
+            "reviewers": [
+                item.model_dump(mode="json")
+                for item in resolved_reviewer_registry.list_active()
+            ]
+        }
+
+    @app.get("/api/medical-review/queue")
+    def medical_review_queue() -> dict[str, object]:
+        return {
+            "queue": [
+                item.model_dump(mode="json") for item in medical_review_service.queue()
+            ]
+        }
+
+    @app.get("/api/medical-review/knowledge/{knowledge_id}")
+    def medical_review_knowledge(knowledge_id: str) -> Response:
+        try:
+            return JSONResponse(
+                content=medical_review_service.knowledge_context(knowledge_id).model_dump(
+                    mode="json"
+                )
+            )
+        except MedicalReviewServiceError as error:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error", "errors": [{"message": str(error)}]},
+            )
+
+    @app.get("/api/medical-review/knowledge/{knowledge_id}/reviews")
+    def medical_reviews_for_knowledge(knowledge_id: str) -> Response:
+        try:
+            reviews = medical_review_service.reviews_for_knowledge(knowledge_id)
+            return JSONResponse(
+                content={
+                    "reviews": [item.model_dump(mode="json") for item in reviews]
+                }
+            )
+        except MedicalReviewServiceError as error:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error", "errors": [{"message": str(error)}]},
+            )
+
+    @app.get("/api/medical-review/knowledge/{knowledge_id}/eligibility")
+    def medical_review_eligibility(knowledge_id: str) -> Response:
+        try:
+            return JSONResponse(
+                content=medical_review_service.evaluate_eligibility(knowledge_id).model_dump(
+                    mode="json"
+                )
+            )
+        except MedicalReviewServiceError as error:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error", "errors": [{"message": str(error)}]},
+            )
+
+    @app.post("/api/medical-review/reviews")
+    def create_medical_review(request: CreateMedicalReviewRequest) -> Response:
+        try:
+            review = medical_review_service.create_review(request)
+            eligibility = medical_review_service.evaluate_eligibility(
+                review.knowledge_id, review
+            )
+            return JSONResponse(
+                status_code=201,
+                content={
+                    "review": review.model_dump(mode="json"),
+                    "eligibility": eligibility.model_dump(mode="json"),
+                    "knowledge_registry_changed": False,
+                    "approval_state_changed": False,
+                },
+            )
+        except MedicalReviewServiceError as error:
+            return JSONResponse(
+                status_code=422,
+                content={"status": "error", "errors": [{"message": str(error)}]},
+            )
 
     @app.get("/api/registry/{knowledge_id}")
     def registry_knowledge(knowledge_id: str) -> dict[str, object]:
@@ -4081,6 +4209,28 @@ def create_app(
         knowledge_id: str, request: RegistryStatusRequest
     ) -> JSONResponse:
         try:
+            if (
+                request.target_status == RegistryStatus.APPROVED
+                and not isolated_fixture_approval
+            ):
+                eligibility = medical_review_service.evaluate_eligibility(knowledge_id)
+                if not eligibility.eligible_for_final_approval:
+                    return JSONResponse(
+                        status_code=409,
+                        content={
+                            "status": "medical_review_required",
+                            "errors": [
+                                {
+                                    "code": "medical_review_required",
+                                    "message": (
+                                        "最新の人によるMedical Reviewが承認条件を"
+                                        "満たしていません。"
+                                    ),
+                                }
+                            ],
+                            "eligibility": eligibility.model_dump(mode="json"),
+                        },
+                    )
             resolved_registry.transition_status(
                 RegistryEntityType.KNOWLEDGE,
                 knowledge_id,

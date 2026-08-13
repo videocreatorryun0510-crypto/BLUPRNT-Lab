@@ -1,4 +1,4 @@
-# Knowledge Workbench — Phase 5.30
+# Knowledge Workbench — Phase 5.31
 
 医療用語を1つ入力し、OpenAIの医学的事実を**Knowledge JSON Version 1.0**へ、国家試験情報を独立した**Exam Metadata Version 1.0**へ変換・検証・表示する画面です。正式Category `staining_method`、`specimen`、`reagent`、`biological_structure`、`disease`、`laboratory_test_item`を登録・編集できます。AI生成はASTとHbA1c、正式Category編集はGram染色、抗酸菌染色、塗抹標本、Gram染色用試薬、細菌細胞壁、鉄欠乏性貧血、フェリチンが対象です。PDFは生成しません。
 
@@ -27,6 +27,8 @@ Phase 5.27では、NCBI公式E-utilitiesを使うPubMed Formal Evidence Provider
 Phase 5.28では、人が「採用」したFormal EvidenceだけからAIがClaim Candidateを抽出します。各候補にはEvidence ID、Abstract内Locator、PMID/DOI、Support Level、Confidence、重複判定が付きます。Workbenchで採用・修正・除外・保留を記録し、採用済みDirect ClaimだけをAuthoring Draftへ保存できます。正式Claim、Promotion、Registry、医学承認は変更しません。
 
 Phase 5.29では、Authoring DraftのClaimとReferenceを内容変更せずKnowledge Draft 1.0へ整理するKnowledge Assemblerを追加しました。Phase 5.30では、このKnowledge DraftだけをPromotion可能な入力に固定しました。WorkbenchでDraftを確認し、Registry Diff・次Version・Validation・FingerprintをPreviewした後、明示操作でRegistryへ`draft`登録します。Authoring Draft直結APIは互換のため残しますが、Deprecatedとして書き込みを拒否します。
+
+Phase 5.31では、Registryの`draft` Knowledgeを人が医学レビューするMedical Review Queueを追加しました。ClaimごとのEvidence、PMID/DOI、Evidence Level、Decision、CommentとCategory Checklistを確認し、結果をKnowledge Registryとは別の追記型Review Registryへ保存します。Review後もKnowledgeは自動承認されず、現行Version・Fingerprint・全Claim・Evidence・Checklist・期限・Final Decisionが揃ったかを「Final Approval候補」として別表示します。詳しくは[Medical Review Registry MVP](../../Docs/medical_review_registry_mvp.md)を参照してください。
 
 ## できること
 
@@ -197,6 +199,20 @@ Discovery Resultsから進む場合は「PubMedで正式Evidence取得」を押�
 10. 既存Promotion Workflowを利用する場合は、別欄の「Promotion Preview」で正式登録前の検査を行います。
 
 Authoring Draftは`data/authoring_drafts/`、検証済みKnowledge Draftは`data/knowledge_drafts/`へ1件ずつ保存され、Promotion監査は`data/promotion_logs/promotion.jsonl`へ記録されます。いずれもGit管理対象外です。Assembler単体ではRegistryを変更せず、Knowledge DraftのApprovalは`draft`固定です。Promotion Previewも読み取り専用で、明示Promote時だけRegistryへ保存します。詳しくは[Knowledge Draft Promotion Integration](../../Docs/knowledge_draft_promotion_integration.md)、[Knowledge Assembler](../../Docs/knowledge_assembler.md)、[Knowledge Authoring Workflow](../../Docs/knowledge_authoring_workflow.md)を参照してください。
+
+## Medical Review Queueで人による医学レビューを記録する
+
+1. KnowledgeをPromotionし、Knowledge Registryへ`draft`登録します。
+2. 「Medical Review Queue」を更新し、対象Knowledgeを選んで「Review画面」を押します。
+3. 各Claimの本文と根拠資料、PMID/DOI、ページを確認します。
+4. 資料の実在、現行性、直接支持、Evidence Level、Support、Locatorを人が入力します。
+5. Claim DecisionとCommentを1件ずつ記録します。
+6. 共通ChecklistとCategory Checklistを人が確認します。
+7. Reviewer Registry ID、Role、Review期限、Final Decision、判断理由を入力します。
+8. 「Review Versionを追記保存」を押します。
+9. Approval Eligibilityで不一致項目を確認します。
+
+保存先は`data/medical_review_registry.sqlite3`です。Knowledge Registryとは別で、過去Reviewを上書きしません。画面のReviewerはMVP Fixtureであり、実Registryの正式承認には使えません。実Reviewerの本人確認・権限管理は未実装です。
 
 ## 国家試験CSVをPreviewして取り込む
 

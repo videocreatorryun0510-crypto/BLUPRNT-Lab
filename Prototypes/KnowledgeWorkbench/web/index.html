@@ -1262,6 +1262,108 @@
         </details>
       </section>
 
+      <section class="registry-browser medical-review-browser" aria-labelledby="medical-review-title">
+        <div>
+          <p class="step">PHASE 5.31 · HUMAN MEDICAL REVIEW</p>
+          <h2 id="medical-review-title">Medical Review Queue</h2>
+          <p>
+            draft KnowledgeをClaimと根拠ごとに人が確認します。Reviewは別台帳へ追記し、
+            Knowledge本文や承認状態は自動変更しません。
+          </p>
+        </div>
+        <div class="registry-browser-controls">
+          <label for="medicalReviewQueue">Review対象</label>
+          <select id="medicalReviewQueue"></select>
+          <button id="loadMedicalReviewButton" class="primary-action" type="button">Review画面</button>
+          <button id="refreshMedicalReviewQueueButton" class="secondary-action" type="button">Queue更新</button>
+        </div>
+      </section>
+
+      <section id="medicalReviewPanel" class="registry-panel medical-review-panel" hidden aria-labelledby="medical-review-detail-title">
+        <div class="registry-heading">
+          <div>
+            <p class="step">IMMUTABLE REVIEW RECORD · VERSION 1.0</p>
+            <h2 id="medical-review-detail-title">Knowledge Review</h2>
+            <p id="medicalReviewSubtitle">対象Knowledgeを選択してください。</p>
+          </div>
+          <div class="status-stack">
+            <span id="medicalReviewValidityBadge" class="badge neutral">Reviewなし</span>
+            <span id="medicalReviewEligibilityBadge" class="badge warning">承認不可</span>
+          </div>
+        </div>
+        <div class="registry-metrics">
+          <div><span>Knowledge Version</span><strong id="medicalReviewKnowledgeVersion">--</strong></div>
+          <div><span>Review Version</span><strong id="medicalReviewVersion">--</strong></div>
+          <div><span>Claim</span><strong id="medicalReviewClaimCount">--</strong></div>
+          <div><span>Reviewed / 未Review</span><strong id="medicalReviewClaimProgress">--</strong></div>
+          <div><span>Evidence Coverage</span><strong id="medicalReviewEvidenceCoverage">--</strong></div>
+          <div><span>Completeness</span><strong id="medicalReviewCompleteness">--</strong></div>
+          <div><span>Current Decision</span><strong id="medicalReviewCurrentDecision">--</strong></div>
+          <div><span>Review期限</span><strong id="medicalReviewDeadlineStatus">--</strong></div>
+        </div>
+        <div class="operation-message" id="medicalReviewMessage" role="status">
+          AIは医学レビューも承認も行いません。MVP Reviewer IDはFixtureです。
+        </div>
+
+        <section class="registry-operation-panel" aria-labelledby="medical-reviewer-title">
+          <div>
+            <p class="step">REVIEWER IDENTITY</p>
+            <h3 id="medical-reviewer-title">ReviewerとReview期限</h3>
+          </div>
+          <div class="operation-fields medical-review-fields">
+            <label for="medicalReviewerSelect">Reviewer Registry ID</label>
+            <select id="medicalReviewerSelect"></select>
+            <label for="medicalReviewerRole">Role</label>
+            <select id="medicalReviewerRole">
+              <option value="medical_reviewer">medical_reviewer</option>
+              <option value="final_approver">final_approver</option>
+            </select>
+            <label for="medicalReviewValidUntil">Review期限</label>
+            <input id="medicalReviewValidUntil" type="datetime-local" />
+          </div>
+        </section>
+
+        <details open>
+          <summary>Claim Review・Evidence Assessment</summary>
+          <div id="medicalReviewClaimList" class="claim-dictionary medical-review-claim-list"></div>
+        </details>
+
+        <details open>
+          <summary>Medical Review Checklist</summary>
+          <div id="medicalReviewChecklist" class="claim-dictionary medical-review-checklist"></div>
+        </details>
+
+        <section class="registry-operation-panel" aria-labelledby="medical-review-decision-title">
+          <div>
+            <p class="step">HUMAN FINAL DECISION</p>
+            <h3 id="medical-review-decision-title">Knowledge Review Decision</h3>
+            <p>approved_with_conditionsは承認可能・外部送信可能を意味しません。</p>
+          </div>
+          <div class="operation-fields medical-review-fields">
+            <label for="medicalReviewDecision">Decision</label>
+            <select id="medicalReviewDecision">
+              <option value="revision_required">revision_required</option>
+              <option value="insufficient_evidence">insufficient_evidence</option>
+              <option value="approved_with_conditions">approved_with_conditions</option>
+              <option value="approved">approved</option>
+              <option value="rejected">rejected</option>
+            </select>
+            <label for="medicalReviewComments">判断理由・修正指示</label>
+            <textarea id="medicalReviewComments" maxlength="4000" rows="4" placeholder="人が確認した範囲、判断理由、修正指示を記録します"></textarea>
+          </div>
+          <button id="saveMedicalReviewButton" class="primary-action" type="button">Review Versionを追記保存</button>
+        </section>
+
+        <details>
+          <summary>Approval Eligibility（派生判定）</summary>
+          <ul id="medicalReviewEligibilityChecks" class="report-list issues"></ul>
+        </details>
+        <details>
+          <summary>Review履歴（上書きされません）</summary>
+          <div id="medicalReviewHistory" class="knowledge-relation-list"></div>
+        </details>
+      </section>
+
       <section class="artifact-registry-browser" aria-labelledby="artifact-registry-title">
         <div>
           <p class="step">PHASE 5.20.1 · DUAL APPROVAL GATE</p>

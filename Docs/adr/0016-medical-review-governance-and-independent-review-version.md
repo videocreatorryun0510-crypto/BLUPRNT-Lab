@@ -1,6 +1,6 @@
 # ADR 0016: 医学承認を人のReview Recordと独立Review Versionへ固定する
 
-- Status: Proposed
+- Status: Accepted; implemented by Phase 5.31
 - Date: 2026-08-06
 - Phase: 5.21 Medical Review Governance & Approval Criteria Design
 

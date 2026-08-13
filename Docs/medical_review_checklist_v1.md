@@ -2,7 +2,7 @@
 
 - Checklist ID: `medical_review_checklist_v1`
 - Phase: 5.21
-- Status: Product Owner approval pending
+- Status: Implemented by Phase 5.31
 - Result vocabulary: `pass` / `fail` / `not_applicable` / `not_reviewed`
 - Severity: `blocker` / `required` / `advisory`
 
